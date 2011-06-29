@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.0
+jCanvas v3.1b
 Caleb Evans
 */
 (function($, document, Math, undefined) {
@@ -91,7 +91,7 @@ jC.closePath = function(ctx, params) {
 	}
 };
 
-// Measure angles in degrees if chosen
+// Measure angles in correct units
 jC.checkUnits = function(params) {
 	if (params.inDegrees === true) {
 		return Math.PI / 180;
@@ -100,9 +100,26 @@ jC.checkUnits = function(params) {
 	}
 };
 
+// Rotate shape
+jC.rotate = function(ctx, params, width, height) {
+	
+	// Always rotate from center
+	if (params.fromCenter === false) {
+		params.x += width/2;
+		params.y += height/2;
+	}
+	params.toRad = jC.checkUnits(params);
+	
+	ctx.save();
+	ctx.translate(params.x, params.y);
+	ctx.rotate(params.angle*params.toRad);
+	ctx.translate(-params.x, -params.y);
+};
+
+
 // Load canvas
 $.fn.loadCanvas = function(ctx) {
-	return this[0].getContext(ctx || '2d');
+	return this[0].getContext('2d');
 };
 
 // Draw on canvas manually
@@ -263,14 +280,14 @@ $.fn.translateCanvas = function(args) {
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
-		toRad = jC.checkUnits(params);
+		params = $.extend({}, jC.prefs, args);
+	params.toRad = jC.checkUnits(params);
 	
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		ctx.save();
 		ctx.translate(params.x, params.y);
-		ctx.rotate(params.angle*toRad);
+		ctx.rotate(params.angle*params.toRad);
 		ctx.translate(-params.x, -params.y);
 	}
 	return this;
@@ -280,19 +297,13 @@ $.fn.rotateCanvas = function(args) {
 $.fn.drawRect = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
-		toRad = jC.checkUnits(params),
 		x1, y1, x2, y2, r;
-	
-	// Draw from center if chosen
-	if (params.fromCenter === true) {
-		params.x -= params.width / 2;
-		params.y -= params.height / 2;
-	}
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
-	
+		jC.rotate(ctx, params, params.width, params.height);
+					
 		// Draw rounded rectangle if chosen
 		if (params.cornerRadius > 0) {
 			x1 = params.x;
@@ -309,19 +320,23 @@ $.fn.drawRect = function(args) {
 			ctx.beginPath();
 			ctx.moveTo(x1+r,y1);
 			ctx.lineTo(x2-r,y1);
-			ctx.arc(x2-r, y1+r, r, 270*toRad, 360*toRad, false);
+			ctx.arc(x2-r, y1+r, r, 270*params.toRad, 360*params.toRad, false);
 			ctx.lineTo(x2,y2-r);
-			ctx.arc(x2-r, y2-r, r, 0, 90*toRad, false);
+			ctx.arc(x2-r, y2-r, r, 0, 90*params.toRad, false);
 			ctx.lineTo(x1+r,y2);
-			ctx.arc(x1+r, y2-r, r, 90*toRad, 180*toRad, false);
+			ctx.arc(x1+r, y2-r, r, 90*params.toRad, 180*params.toRad, false);
 			ctx.lineTo(x1,y1+r);
-			ctx.arc(x1+r, y1+r, r, 180*toRad, 270*toRad, false);
+			ctx.arc(x1+r, y1+r, r, 180*params.toRad, 270*params.toRad, false);
 			ctx.fill();
 			ctx.stroke();
 			ctx.closePath();
 		} else {
-			ctx.fillRect(params.x, params.y, params.width, params.height);
-			ctx.strokeRect(params.x, params.y, params.width, params.height);
+			ctx.beginPath();
+			ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
+			ctx.restore();
+			ctx.fill();
+			ctx.stroke();
+			ctx.closePath();
 		}
 	}
 	return this;
@@ -330,27 +345,22 @@ $.fn.drawRect = function(args) {
 // Draw arc
 $.fn.drawArc = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
-		toRad = jC.checkUnits(params);
+		params = $.extend({}, jC.prefs, args);
 	
 	// Change default end angle to radians if needed
 	if (params.inDegrees === false && params.end === 360) {
 		params.end *= Math.PI / 180;
 	}
-	
-	// Draw from center if chosen
-	if (params.fromCenter === false) {
-		params.x += params.radius;
-		params.y += params.radius;
-	}
-	
+		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
+		jC.rotate(ctx, params, params.radius, params.radius);
 		
 		ctx.beginPath();
-		ctx.arc(params.x, params.y, params.radius, (params.start*toRad)-(Math.PI/2), (params.end*toRad)-(Math.PI/2), params.ccw);
+		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(Math.PI/2), (params.end*params.toRad)-(Math.PI/2), params.ccw);
 		// Close path if chosen
+		ctx.restore();
 		jC.closePath(ctx, params);
 	}
 	return this;
@@ -361,16 +371,11 @@ $.fn.drawEllipse = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
 		controlW = params.width * (4/3);
-	
-	// Draw from center if chosen
-	if (params.fromCenter === false) {
-		params.x += params.width / 2;
-		params.y += params.height / 2;
-	}
 		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
+		jC.rotate(ctx, params, params.width, params.height);
 		
 		// Create ellipse
 		ctx.beginPath();
@@ -384,6 +389,7 @@ $.fn.drawEllipse = function(args) {
 		ctx.closePath();
 		ctx.fill();
 		ctx.stroke();
+		ctx.restore();
 	}
 	return this;
 };
@@ -503,6 +509,7 @@ $.fn.drawText = function(args) {
 		
 		ctx.strokeText(params.text, params.x, params.y);
 		ctx.fillText(params.text, params.x, params.y);
+		ctx.restore();
 	}
 	return this;
 };
@@ -532,16 +539,11 @@ $.fn.drawImage = function(args) {
 			} else if (args.width === undefined && args.height !== undefined) {
 				img.height = args.height;
 				img.width = img.height * scaleFac;
-			}
-		
-			// Draw from center if chosen
-			if (params.fromCenter === true) {
-				params.x -= img.width / 2;
-				params.y -= img.height / 2;
-			}
-						
+			}						
 			// Draw image
-			ctx.drawImage(img, params.x, params.y, img.width, img.height);
+			jC.rotate(ctx, params, img.width, img.height);
+			ctx.drawImage(img, params.x-img.width/2, params.y-img.height/2, img.width, img.height);
+			ctx.restore();
 			return true;
 		} else {
 			return false;
@@ -577,11 +579,10 @@ $.fn.drawImage = function(args) {
 $.fn.drawPolygon = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
-		theta, dtheta, x, y,
-		toRad = jC.checkUnits(params), i;
+		theta, dtheta, x, y, i;
 	params.closed = true;
 	
-	theta = (Math.PI/2) + (Math.PI/params.sides) + (params.angle*toRad);
+	theta = (Math.PI/2) + (Math.PI/params.sides);
 	dtheta = (Math.PI*2) / params.sides;
 	
 	for (e=0; e<this.length; e+=1) {
@@ -590,14 +591,11 @@ $.fn.drawPolygon = function(args) {
 	
 		// Calculate points and draw
 		if (params.sides >= 3) {
+			jC.rotate(ctx, params, params.radius, params.radius);
 			ctx.beginPath();
 			for (i=0; i<params.sides; i+=1) {
 				x = params.x + (params.radius * Math.cos(theta));
 				y = params.y + (params.radius * Math.sin(theta));
-				if (params.fromCenter === false) {
-					x += params.radius;
-					y += params.radius;
-				}
 				// Draw path
 				if (i === 0) {
 					ctx.moveTo(x, y);
@@ -607,6 +605,7 @@ $.fn.drawPolygon = function(args) {
 				theta += dtheta;
 			}
 			jC.closePath(ctx, params);
+			ctx.restore();
 		}
 	}
 	return this;
@@ -619,25 +618,27 @@ $.fn.setPixels = function(args) {
 		imgData, data, len, px;
 	
 	for (e=0; e<this.length; e+=1) {
-		elem = this[e];
-		ctx = elem.getContext('2d');
-		imgData = ctx.getImageData(params.x, params.y, params.width || elem.width, params.height || elem.height);
-		data = imgData.data;
-		len = data.length;
-		px = [];
-		
-		// Loop through pixels with "each" method
-		if (params.each !== undefined) {
-			for (i=0; i<len; i+=4) {
-				px = params.each.call(elem, data[i], data[i+1], data[i+2], data[i+3]);
-				data[i] = px[0];
-				data[i+1] = px[1];
-				data[i+2] = px[2];
-				data[i+3] = px[3];
+		try {
+			elem = this[e];
+			ctx = elem.getContext('2d');
+			imgData = ctx.getImageData(params.x, params.y, params.width || elem.width, params.height || elem.height);
+			data = imgData.data;
+			len = data.length;
+			px = [];
+			
+			// Loop through pixels with "each" method
+			if (params.each !== undefined) {
+				for (i=0; i<len; i+=4) {
+					px = params.each.call(elem, data[i], data[i+1], data[i+2], data[i+3]);
+					data[i] = px[0];
+					data[i+1] = px[1];
+					data[i+2] = px[2];
+					data[i+3] = px[3];
+				}
 			}
-		}
-		// Put pixels on canvas
-		ctx.putImageData(imgData, params.x, params.y);
+			// Put pixels on canvas
+			ctx.putImageData(imgData, params.x, params.y);
+		} catch(error) {}
 	}
 	return this;
 };
