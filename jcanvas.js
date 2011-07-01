@@ -23,12 +23,13 @@ function jC(args, defaults) {
 jC.defaults = {
 	width: 0,
 	height: 0,
-	cornerRadius: 0,
+	cornerRadius: 3,
 	fillStyle: 'transparent',
 	strokeStyle: 'transparent',
 	strokeWidth: 1,
 	strokeCap: 'butt',
 	strokeJoin: 'miter',
+	rounded: false,
 	shadowX: 0,
 	shadowY: 0,
 	shadowBlur: 3,
@@ -64,8 +65,10 @@ jC.setGlobals = function(ctx, params) {
 	ctx.fillStyle = params.fillColor || params.fillStyle;
 	ctx.strokeStyle = params.strokeColor || params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
-	ctx.lineCap = params.strokeCap;
-	ctx.lineJoin = params.strokeJoin;
+	if (params.rounded === true) {
+		ctx.lineCap = 'round';
+		ctx.lineJoin = 'round';
+	}
 	ctx.shadowOffsetX = params.shadowX;
 	ctx.shadowOffsetY = params.shadowY;
 	ctx.shadowBlur = params.shadowBlur;
@@ -305,12 +308,12 @@ $.fn.drawRect = function(args) {
 		jC.rotate(ctx, params, params.width, params.height);
 					
 		// Draw rounded rectangle if chosen
-		if (params.cornerRadius > 0) {
+		if (args.cornerRadius > 0 || params.rounded === true) {
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
 			x2 = params.x + params.width/2;
 			y2 = params.y + params.height/2;
-			r = params.cornerRadius;
+			r = params.cornerRadius || params.strokeWidth;
 			if ((x2 - x1) - (2 * r) < 0) {
 				r = (x2 - x1) / 2;
 			}
