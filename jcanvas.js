@@ -119,7 +119,7 @@ jC.rotate = function(ctx, params, width, height) {
 
 // Load canvas
 $.fn.loadCanvas = function(ctx) {
-	return this[0].getContext('2d');
+	return this[0].getContext(ctx || '2d');
 };
 
 // Draw on canvas manually
@@ -306,10 +306,10 @@ $.fn.drawRect = function(args) {
 					
 		// Draw rounded rectangle if chosen
 		if (params.cornerRadius > 0) {
-			x1 = params.x;
-			y1 = params.y;
-			x2 = params.x + params.width;
-			y2 = params.y + params.height;
+			x1 = params.x - params.width/2;
+			y1 = params.y - params.height/2;
+			x2 = params.x + params.width/2;
+			y2 = params.y + params.height/2;
 			r = params.cornerRadius;
 			if ((x2 - x1) - (2 * r) < 0) {
 				r = (x2 - x1) / 2;
