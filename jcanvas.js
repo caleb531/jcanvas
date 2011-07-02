@@ -649,7 +649,7 @@ $.fn.setPixels = function(args) {
 
 // Enable/disable backward compatibility
 jC.retrofit = function() {
-	jC.retrp = true;
+	jC.retro = true;
 	$.fn.drawQuadCurve = $.fn.drawQuad;
 	$.fn.drawBezierCurve = $.fn.drawBezier;
 	$.fn.canvasDefaults = jC;
