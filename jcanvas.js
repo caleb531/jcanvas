@@ -59,12 +59,15 @@ jC.defaults = {
 };
 // Merge defaults with preferences
 jC.prefs = $.extend({}, jC.defaults);
+jC.retro = false;
 
 // Set global properties
 jC.setGlobals = function(ctx, params) {
 	ctx.fillStyle = params.fillColor || params.fillStyle;
 	ctx.strokeStyle = params.strokeColor || params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
+	ctx.lineCap = params.strokeCap;
+	ctx.lineJoin = params.strokeJoin;
 	if (params.rounded === true) {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
@@ -616,12 +619,11 @@ $.fn.drawPolygon = function(args) {
 
 // Get pixels on the canvas
 $.fn.setPixels = function(args) {
-	var ctx = this.loadCanvas(), elem, e, i,
+	var ctx, elem, e, i,
 		params = $.extend({}, jC.prefs, args),
 		imgData, data, len, px;
 	
 	for (e=0; e<this.length; e+=1) {
-		try {
 			elem = this[e];
 			ctx = elem.getContext('2d');
 			imgData = ctx.getImageData(params.x, params.y, params.width || elem.width, params.height || elem.height);
@@ -641,13 +643,13 @@ $.fn.setPixels = function(args) {
 			}
 			// Put pixels on canvas
 			ctx.putImageData(imgData, params.x, params.y);
-		} catch(error) {}
 	}
 	return this;
 };
 
 // Enable/disable backward compatibility
 jC.retrofit = function() {
+	jC.retrp = true;
 	$.fn.drawQuadCurve = $.fn.drawQuad;
 	$.fn.drawBezierCurve = $.fn.drawBezier;
 	$.fn.canvasDefaults = jC;
