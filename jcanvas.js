@@ -1,6 +1,10 @@
 /*!
 jCanvas v3.1b
-Caleb Evans
+http://calebevans.me/projects/jcanvas/
+
+Copyright 2011, Caleb Evans
+Licensed under the MIT license
+http://calebevans.me/projects/jcanvas/license.html
 */
 (function($, document, Math, undefined) {
 
