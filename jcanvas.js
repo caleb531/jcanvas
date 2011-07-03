@@ -156,10 +156,10 @@ $.fn.gradient = function(args) {
 		stops += 1;
 		i += 1;
 	}
-	
+		
 	// Calculate color stop percentages if absent
 	for (i=1; i<=stops; i+=1) {
-		percent = Math.round((stops-1) * (i-1));
+		percent = Math.round((100 / (stops-1)) * (i-1)) / 100;
 		if (params['s' + i] === undefined) {
 			params['s' + i] = percent;
 		}
