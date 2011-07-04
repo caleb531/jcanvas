@@ -26,7 +26,7 @@ function jC(args, defaults) {
 jC.defaults = {
 	width: 0,
 	height: 0,
-	cornerRadius: 3,
+	cornerRadius: 0,
 	fillStyle: 'transparent',
 	strokeStyle: 'transparent',
 	strokeWidth: 1,
@@ -312,9 +312,9 @@ $.fn.drawRect = function(args) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
 		jC.rotate(ctx, params, params.width, params.height);
-					
+			
 		// Draw rounded rectangle if chosen
-		if (args.cornerRadius > 0 || params.rounded === true) {
+		if (params.cornerRadius) {
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
 			x2 = params.x + params.width/2;
