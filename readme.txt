@@ -9,3 +9,6 @@ http://calebevans.me/projects/jcanvas/docs.html
 
 SUPPORT
 http://calebevans.me/projects/jcanvas/support.html
+
+LICENSE
+http://calebevans.me/projects/jcanvas/about.html

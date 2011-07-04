@@ -1,8 +1,7 @@
 /*!
-jCanvas v3.1b
-http://calebevans.me/projects/jcanvas/
-
+jCanvas v3.1
 Copyright 2011, Caleb Evans
+
 Licensed under the MIT license
 http://calebevans.me/projects/jcanvas/license.html
 */
@@ -10,15 +9,15 @@ http://calebevans.me/projects/jcanvas/license.html
 
 // jCanvas function
 function jC(args, defaults) {
-	// Reset to defaults if no value is passed
 	if (args === undefined) {
+		// Reset to defaults if nothing is passed
 		jC.prefs = jC.defaults;
-	// Set defaults
 	} else if (defaults === true) {
+		// Merge arguments with defaults if chosen
 		jC.defaults = $.extend({}, jC.defaults, args);
 		jC.prefs = $.extend({}, jC.defaults);
-	// Merge arguments with preferences
 	} else {
+		// Merge arguments with preferences
 		jC.prefs = $.extend({}, jC.prefs, args);
 	}
 	return this;
@@ -344,9 +343,7 @@ $.fn.drawRect = function(args) {
 			ctx.beginPath();
 			ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			ctx.restore();
-			ctx.fill();
-			ctx.stroke();
-			ctx.closePath();
+			jC.closePath(ctx, params);
 		}
 	}
 	return this;
@@ -396,10 +393,8 @@ $.fn.drawEllipse = function(args) {
 		ctx.bezierCurveTo(params.x+controlW/2,params.y+params.height/2,
 			params.x+controlW/2,params.y-params.height/2,
 			params.x,params.y-params.height/2);
-		ctx.closePath();
-		ctx.fill();
-		ctx.stroke();
 		ctx.restore();
+		jC.closePath(ctx, params);
 	}
 	return this;
 };
