@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.2
+jCanvas v3.2b
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -43,7 +43,6 @@ jC.defaults = {
 	x: 0, y: 0,
 	x1: 0, y1: 0,
 	x2: 0, y2: 0,
-	r1: 10, r2: 100,
 	radius: 0,
 	start: 0,
 	end: 360,
@@ -148,10 +147,10 @@ $.fn.gradient = function(args) {
 		gradient, stops = 0, percent, i = 1;
 		
 	// Create radial gradient if chosen
-	if (args.r1 === undefined && args.r2 === undefined) {
-		gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
-	} else {
+	if (params.r1 !== undefined && params.r2 !== undefined) {
 		gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
+	} else {
+		gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
 	}
 	
 	// Count number of color stops
