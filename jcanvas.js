@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.1
+jCanvas v3.2
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -225,11 +225,7 @@ $.fn.clearCanvas = function(args) {
 
 		// Clear entire canvas if chosen
 		ctx.beginPath();
-		if (args === undefined) {
-			ctx.clearRect(0, 0, this.width(), this.height());
-		} else {
-			ctx.clearRect(params.x, params.y, params.width || this.width(), params.height || this.height());
-		} 
+		ctx.clearRect(params.x, params.y, params.width || this.width(), params.height || this.height());
 		ctx.closePath();
 	}
 	return this;
@@ -533,16 +529,16 @@ $.fn.drawImage = function(args) {
 		if (img.complete === true) {
 			scaleFac = img.width / img.height;
 			// If width/height are specified
-			if (args.width !== undefined && args.height !== undefined) {
-				img.width = args.width;
-				img.height = args.height;
+			if (params.width && params.height) {
+				img.width = params.width;
+				img.height = params.height;
 			// If width is specified
-			} else if (args.width !== undefined && args.height === undefined) {
-				img.width = args.width;
+			} else if (params.width && !params.height) {
+				img.width = params.width;
 				img.height = img.width / scaleFac;
 			// If height is specified
-			} else if (args.width === undefined && args.height !== undefined) {
-				img.height = args.height;
+			} else if (!params.width && params.height) {
+				img.height = params.height;
 				img.width = img.height * scaleFac;
 			}						
 			// Draw image
@@ -654,6 +650,30 @@ jC.retrofit = function() {
 	$.fn.canvasDefaults = jC;
 	$.fn.canvas = jC;
 	return $;
+};
+
+// Create jCanvas queue
+jC.queue = [];
+
+// Create object
+jC.create = function(args) {
+	var obj = $.extend({}, jC.prefs, args);
+	jC.queue.push(obj);
+	return obj;
+};
+
+// Draw from jCanvas queue
+$.fn.drawQueue = function() {
+	var ctx, items = jC.queue.length,
+		obj, e, i;
+	for (e=0; e<this.length; e+=1) {
+		ctx = this[e].getContext('2d');
+		for (i=0; i<items; i+=1) {
+			obj = jC.queue[i];
+			obj.fn && $.fn[obj.fn].call(this, obj);
+		}
+	}
+	return this;
 };
 
 return ($.jCanvas = jC);
