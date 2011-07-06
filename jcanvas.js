@@ -662,11 +662,15 @@ jC.create = function(args) {
 };
 
 // Draw from jCanvas queue
-$.fn.drawQueue = function() {
+$.fn.drawQueue = function(clear) {
 	var ctx, items = jC.queue.length,
 		obj, e, i;
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
+		if (clear === true) {
+			ctx.clearRect(0, 0, this[e].width, this[e].height)
+		}
+		// Draw items on queue
 		for (i=0; i<items; i+=1) {
 			obj = jC.queue[i];
 			obj.fn && $.fn[obj.fn].call(this, obj);
