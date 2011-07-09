@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.2b
+jCanvas v3.2
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -212,19 +212,21 @@ $.fn.clearCanvas = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args);
 
-	// Draw from center if chosen
-	if (params.fromCenter === true) {
-		params.x -= params.width / 2;
-		params.y -= params.height / 2;
-	}
-
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
-
-		// Clear entire canvas if chosen
+		
+		params.width = params.width = this[e].width;
+		params.height = params.height = this[e].height;		
+		jC.rotate(ctx, params, params.width, params.height);
+		
+		// Clear entire canvas
+		if (args === undefined) {
+			params.x = params.width/2;
+			params.y = params.height/2;
+		}
 		ctx.beginPath();
-		ctx.clearRect(params.x, params.y, params.width || this.width(), params.height || this.height());
+		ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 		ctx.closePath();
 	}
 	return this;
@@ -641,16 +643,6 @@ $.fn.setPixels = function(args) {
 	return this;
 };
 
-// Enable/disable backward compatibility
-jC.retrofit = function() {
-	jC.retro = true;
-	$.fn.drawQuadCurve = $.fn.drawQuad;
-	$.fn.drawBezierCurve = $.fn.drawBezier;
-	$.fn.canvasDefaults = jC;
-	$.fn.canvas = jC;
-	return $;
-};
-
 // Create jCanvas queue
 jC.queue = [];
 
@@ -668,7 +660,7 @@ $.fn.drawQueue = function(clear) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		if (clear === true) {
-			ctx.clearRect(0, 0, this[e].width, this[e].height)
+			ctx.clearRect(0, 0, this[e].width, this[e].height);
 		}
 		// Draw items on queue
 		for (i=0; i<items; i+=1) {
@@ -677,6 +669,16 @@ $.fn.drawQueue = function(clear) {
 		}
 	}
 	return this;
+};
+
+// Enable backward compatibility
+jC.retrofit = function() {
+	jC.retro = true;
+	$.fn.drawQuadCurve = $.fn.drawQuad;
+	$.fn.drawBezierCurve = $.fn.drawBezier;
+	$.fn.canvasDefaults = jC;
+	$.fn.canvas = jC;
+	return $;
 };
 
 return ($.jCanvas = jC);
