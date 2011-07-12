@@ -579,10 +579,10 @@ $.fn.drawImage = function(args) {
 };
 
 // Draw polygon
-$.fn.drawPolygon = function(args) {
+$.fn.drawPoly = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
-		theta, dtheta, inner, x, y, i;
+		theta, dtheta, inner, x1, y1, x2, y2, i;
 
 	inner = Math.PI / params.sides;
 	theta = (Math.PI/2) + inner;
@@ -680,6 +680,7 @@ $.fn.drawQueue = function(clear) {
 // Enable backward compatibility
 jC.retrofit = function() {
 	jC.retro = true;
+	$.fn.drawPolygon = $.fn.drawPoly;
 	$.fn.drawQuadCurve = $.fn.drawQuad;
 	$.fn.drawBezierCurve = $.fn.drawBezier;
 	$.fn.canvasDefaults = jC;
