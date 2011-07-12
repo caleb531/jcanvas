@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.2
+jCanvas v3.3b
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -51,6 +51,7 @@ jC.defaults = {
 	fromCenter: true,
 	closed: false,
 	sides: 3,
+	points: 5,
 	angle: 0,
 	text: '',
 	font: 'normal 12pt sans-serif',
@@ -581,34 +582,39 @@ $.fn.drawImage = function(args) {
 $.fn.drawPolygon = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
-		theta, dtheta, x, y, i;
+		theta, dtheta, inner, x, y, i;
+
+	inner = Math.PI / params.sides;
+	theta = (Math.PI/2) + inner;
+	dtheta = (Math.PI*2) / params.sides;
+	params.apothem = Math.cos(dtheta/2) * params.radius;
 	params.closed = true;
 	
-	theta = (Math.PI/2) + (Math.PI/params.sides);
-	dtheta = (Math.PI*2) / params.sides;
-	
+	if (params.sides >= 3) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
 	
 		// Calculate points and draw
-		if (params.sides >= 3) {
-			jC.rotate(ctx, params, params.radius, params.radius);
-			ctx.beginPath();
-			for (i=0; i<params.sides; i+=1) {
-				x = params.x + (params.radius * Math.cos(theta));
-				y = params.y + (params.radius * Math.sin(theta));
-				// Draw path
-				if (i === 0) {
-					ctx.moveTo(x, y);
-				} else {
-					ctx.lineTo(x, y);
-				}
-				theta += dtheta;
+		jC.rotate(ctx, params, params.radius, params.radius);
+		ctx.beginPath();
+		for (i=0; i<params.sides; i+=1) {
+			x1 = params.x + (params.radius * Math.cos(theta));
+			y1 = params.y + (params.radius * Math.sin(theta));
+			x2 = params.x + (params.apothem*params.bulge * Math.cos(theta+inner));
+			y2 = params.y + (params.apothem*params.bulge  * Math.sin(theta+inner));
+			// Draw path
+			if (i === 0) {
+				ctx.moveTo(x1, y1);
+			} else {
+				ctx.lineTo(x1, y1);
 			}
-			jC.closePath(ctx, params);
-			ctx.restore();
+			params.bulge && ctx.lineTo(x2, y2);
+			theta += dtheta;
 		}
+		jC.closePath(ctx, params);
+		ctx.restore();
+	}
 	}
 	return this;
 };
