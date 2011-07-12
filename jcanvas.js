@@ -134,7 +134,6 @@ $.fn.loadCanvas = function(ctx) {
 // Draw on canvas manually
 $.fn.draw = function(callback) {
 	var ctx, e;
-	
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		callback.call(this[e], ctx);
@@ -677,6 +676,18 @@ $.fn.drawQueue = function(clear) {
 	return this;
 };
 
+// Normalize layerX/layerY for mouse events
+var fix = $.event.fix;
+$.event.fix = function(e) {
+	e = fix.call($.event, e);
+	if (e.layerX === undefined && e.layerY === undefined) {
+		e.layerX = e.offsetX;
+		e.layerY = e.offsetY;
+	}
+	return e;
+};
+$.event.fix.prototype = fix.prototype;
+
 // Enable backward compatibility
 jC.retrofit = function() {
 	jC.retro = true;
@@ -687,6 +698,7 @@ jC.retrofit = function() {
 	$.fn.canvas = jC;
 	return $;
 };
+jC.retrofit();
 
 return ($.jCanvas = jC);
 }(jQuery, document, Math));
