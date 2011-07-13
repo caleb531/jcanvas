@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.3b
+jCanvas v3.5
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -192,7 +192,7 @@ $.fn.pattern = function(args) {
 		create();
 		// Run callback function
 		if (params.load) {
-			params.load(pattern);
+			params.load.call(this[0], pattern);
 		}
 	}
 	// Draw when image is loaded
@@ -307,12 +307,13 @@ $.fn.drawRect = function(args) {
 		jC.rotate(ctx, params, params.width, params.height);
 			
 		// Draw rounded rectangle if chosen
-		if (params.cornerRadius >= 0) {
+		if (params.cornerRadius > 0) {
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
 			x2 = params.x + params.width/2;
 			y2 = params.y + params.height/2;
-			r = params.cornerRadius || params.strokeWidth;
+			r = params.cornerRadius;
+			// Prevent over-rounded corners
 			if ((x2 - x1) - (2 * r) < 0) {
 				r = (x2 - x1) / 2;
 			}
@@ -349,7 +350,7 @@ $.fn.drawArc = function(args) {
 	
 	// Change default end angle to radians if needed
 	if (params.inDegrees === false && params.end === 360) {
-		params.end *= Math.PI / 180;
+		params.end = Math.PI * 2;
 	}
 		
 	for (e=0; e<this.length; e+=1) {
@@ -357,6 +358,7 @@ $.fn.drawArc = function(args) {
 		jC.setGlobals(ctx, params);
 		jC.rotate(ctx, params, params.radius, params.radius);
 		
+		// Draw arc
 		ctx.beginPath();
 		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(Math.PI/2), (params.end*params.toRad)-(Math.PI/2), params.ccw);
 		// Close path if chosen
@@ -380,9 +382,11 @@ $.fn.drawEllipse = function(args) {
 		// Create ellipse
 		ctx.beginPath();
 		ctx.moveTo(params.x, params.y-params.height/2);
+		// Left side
 		ctx.bezierCurveTo(params.x-controlW/2,params.y-params.height/2,
 			params.x-controlW/2,params.y+params.height/2,
 			params.x,params.y+params.height/2);
+		// Right side
 		ctx.bezierCurveTo(params.x+controlW/2,params.y+params.height/2,
 			params.x+controlW/2,params.y-params.height/2,
 			params.x,params.y-params.height/2);
@@ -514,7 +518,7 @@ $.fn.drawText = function(args) {
 
 // Draw image
 $.fn.drawImage = function(args) {
-	var ctx, e,
+	var ctx, elem,  e,
 		params = $.extend({}, jC.prefs, args),
 		// Define image source
 		img = document.createElement('img'),
@@ -548,25 +552,30 @@ $.fn.drawImage = function(args) {
 		}
 	}
 	// On load function
-	function onload() {
+	function onload(elem, ctx) {
 		draw(ctx);
 		// Run callback function
 		if (params.load) {
-			params.load();
+			params.load.call(elem);
 		}
 	}
 	// Draw image if already loaded
 	for (e=0; e<this.length; e+=1) {
-		ctx = this[e].getContext('2d');
+		elem = this[e];
+		ctx = elem.getContext('2d');
 		jC.setGlobals(ctx, params);
 		
 		// Draw when image is loaded
 		if (params.load) {
-			img.onload = onload;
+			img.onload = function() {
+				onload(elem, ctx);
+			};
 		} else {
 			// Check if image is loaded
 			if (draw(ctx) === false) {
-				img.onload = onload;
+				img.onload = function() {
+					onload(elem, ctx);
+				};
 			}
 		}
 	}
@@ -604,11 +613,14 @@ $.fn.drawPolygon = function(args) {
 			} else {
 				ctx.lineTo(x1, y1);
 			}
-			params.projection && ctx.lineTo(x2, y2);
+			// Project if chosen
+			if (params.projection !== undefined) {
+				ctx.lineTo(x2, y2);
+			}
 			theta += dtheta;
 		}
-		jC.closePath(ctx, params);
 		ctx.restore();
+		jC.closePath(ctx, params);
 	}
 	}
 	return this;
@@ -623,7 +635,14 @@ $.fn.setPixels = function(args) {
 	for (e=0; e<this.length; e+=1) {
 			elem = this[e];
 			ctx = elem.getContext('2d');
-			imgData = ctx.getImageData(params.x, params.y, params.width || elem.width, params.height || elem.height);
+			if (!params.x && !params.y && !params.width && !params.height) {
+				params.width = elem.width;
+				params.height = elem.height;
+				params.x = params.width/2;
+				params.y = params.height/2;
+			}
+			jC.rotate(ctx, params, params.width, params.height);
+			imgData = ctx.getImageData(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			data = imgData.data;
 			len = data.length;
 			px = [];
@@ -639,7 +658,8 @@ $.fn.setPixels = function(args) {
 				}
 			}
 			// Put pixels on canvas
-			ctx.putImageData(imgData, params.x, params.y);
+			ctx.putImageData(imgData, params.x-params.width/2, params.y-params.height/2);
+			ctx.restore();
 	}
 	return this;
 };
@@ -666,7 +686,7 @@ $.fn.drawQueue = function(clear) {
 		// Draw items on queue
 		for (i=0; i<items; i+=1) {
 			obj = jC.queue[i];
-			obj.fn && $.fn[obj.fn].call(this, obj);
+			if (obj.fn) {$.fn[obj.fn].call(this, obj);}
 		}
 	}
 	return this;
