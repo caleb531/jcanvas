@@ -215,19 +215,15 @@ $.fn.clearCanvas = function(args) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
-		
-		params.width = params.width = this[e].width;
-		params.height = params.height = this[e].height;		
+
 		jC.rotate(ctx, params, params.width, params.height);
 		
 		// Clear entire canvas
 		if (args === undefined) {
-			params.x = params.width/2;
-			params.y = params.height/2;
+			ctx.clearRect(0, 0, this[e].width, this[e].height);
+		} else {
+			ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 		}
-		ctx.beginPath();
-		ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
-		ctx.closePath();
 	}
 	return this;
 };
@@ -311,7 +307,7 @@ $.fn.drawRect = function(args) {
 		jC.rotate(ctx, params, params.width, params.height);
 			
 		// Draw rounded rectangle if chosen
-		if (params.cornerRadius) {
+		if (params.cornerRadius >= 0) {
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
 			x2 = params.x + params.width/2;
@@ -326,13 +322,13 @@ $.fn.drawRect = function(args) {
 			ctx.beginPath();
 			ctx.moveTo(x1+r,y1);
 			ctx.lineTo(x2-r,y1);
-			ctx.arc(x2-r, y1+r, r, 270*params.toRad, 360*params.toRad, false);
+			ctx.arc(x2-r, y1+r, r, 3*Math.PI/2, Math.PI*2, false);
 			ctx.lineTo(x2,y2-r);
-			ctx.arc(x2-r, y2-r, r, 0, 90*params.toRad, false);
+			ctx.arc(x2-r, y2-r, r, 0, Math.PI/2, false);
 			ctx.lineTo(x1+r,y2);
-			ctx.arc(x1+r, y2-r, r, 90*params.toRad, 180*params.toRad, false);
+			ctx.arc(x1+r, y2-r, r, Math.PI/2, Math.PI, false);
 			ctx.lineTo(x1,y1+r);
-			ctx.arc(x1+r, y1+r, r, 180*params.toRad, 270*params.toRad, false);
+			ctx.arc(x1+r, y1+r, r, Math.PI, 3*Math.PI/2, false);
 			ctx.fill();
 			ctx.stroke();
 			ctx.closePath();
@@ -578,7 +574,7 @@ $.fn.drawImage = function(args) {
 };
 
 // Draw polygon
-$.fn.drawPoly = function(args) {
+$.fn.drawPolygon = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
 		theta, dtheta, inner, x1, y1, x2, y2, i;
@@ -600,15 +596,15 @@ $.fn.drawPoly = function(args) {
 		for (i=0; i<params.sides; i+=1) {
 			x1 = params.x + (params.radius * Math.cos(theta));
 			y1 = params.y + (params.radius * Math.sin(theta));
-			x2 = params.x + (params.apothem*params.bulge * Math.cos(theta+inner));
-			y2 = params.y + (params.apothem*params.bulge  * Math.sin(theta+inner));
+			x2 = params.x + (params.apothem*params.projection * Math.cos(theta+inner));
+			y2 = params.y + (params.apothem*params.projection  * Math.sin(theta+inner));
 			// Draw path
 			if (i === 0) {
 				ctx.moveTo(x1, y1);
 			} else {
 				ctx.lineTo(x1, y1);
 			}
-			params.bulge && ctx.lineTo(x2, y2);
+			params.projection && ctx.lineTo(x2, y2);
 			theta += dtheta;
 		}
 		jC.closePath(ctx, params);
@@ -676,22 +672,20 @@ $.fn.drawQueue = function(clear) {
 	return this;
 };
 
-// Normalize layerX/layerY for mouse events
+// Normalize layerX/layerY for jQuery mouse events
 var fix = $.event.fix;
-$.event.fix = function(e) {
-	e = fix.call($.event, e);
-	if (e.layerX === undefined && e.layerY === undefined) {
-		e.layerX = e.offsetX;
-		e.layerY = e.offsetY;
+$.event.fix = function(event) {
+	event = fix.call($.event, event);
+	if (event.layerX === undefined && event.layerY === undefined) {
+		event.layerX = event.offsetX;
+		event.layerY = event.offsetY;
 	}
-	return e;
+	return event;
 };
-$.event.fix.prototype = fix.prototype;
 
 // Enable backward compatibility
 jC.retrofit = function() {
 	jC.retro = true;
-	$.fn.drawPolygon = $.fn.drawPoly;
 	$.fn.drawQuadCurve = $.fn.drawQuad;
 	$.fn.drawBezierCurve = $.fn.drawBezier;
 	$.fn.canvasDefaults = jC;
