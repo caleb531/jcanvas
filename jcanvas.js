@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.5
+jCanvas v3.6b
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -9,15 +9,15 @@ http://calebevans.me/projects/jcanvas/license.html
 
 // jCanvas function
 function jC(args, defaults) {
+	// Reset to defaults if nothing is passed
 	if (args === undefined) {
-		// Reset to defaults if nothing is passed
-		jC.prefs = jC.defaults;
+		jC.prefs = $.extend({}, jC.defaults);
+	// Merge arguments with defaults
 	} else if (defaults === true) {
-		// Merge arguments with defaults if chosen
 		jC.defaults = $.extend({}, jC.defaults, args);
 		jC.prefs = $.extend({}, jC.defaults);
+	// Merge arguments with preferences
 	} else {
-		// Merge arguments with preferences
 		jC.prefs = $.extend({}, jC.prefs, args);
 	}
 	return this;
@@ -85,6 +85,7 @@ jC.setGlobals = function(ctx, params) {
 
 // Close path if chosen
 jC.closePath = function(ctx, params) {
+	// Mask if chosen
 	if (params.mask === true) {
 		ctx.save();
 		ctx.clip();
@@ -144,8 +145,11 @@ $.fn.draw = function(callback) {
 $.fn.gradient = function(args) {
 	var ctx = this.loadCanvas(),
 		params = $.extend({}, jC.prefs, args),
-		gradient, stops = 0, percent, i = 1;
-		
+		gradient,
+		stops = 0,
+		percent,
+		i = 1;
+	
 	// Create radial gradient if chosen
 	if (params.r1 !== undefined && params.r2 !== undefined) {
 		gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
@@ -174,8 +178,8 @@ $.fn.gradient = function(args) {
 $.fn.pattern = function(args) {
 	var ctx = this.loadCanvas(),
 		params = $.extend({}, jC.prefs, args),
-		pattern,
-		img = document.createElement('img');
+		img = document.createElement('img'),
+		pattern;
 	img.src = params.source;
 	
 	// Create pattern
@@ -552,7 +556,7 @@ $.fn.drawImage = function(args) {
 		}
 	}
 	// On load function
-	function onload(elem, ctx) {
+	function onload() {
 		draw(ctx);
 		// Run callback function
 		if (params.load) {
@@ -567,15 +571,11 @@ $.fn.drawImage = function(args) {
 		
 		// Draw when image is loaded
 		if (params.load) {
-			img.onload = function() {
-				onload(elem, ctx);
-			};
+			img.onload = onload;
 		} else {
 			// Check if image is loaded
 			if (draw(ctx) === false) {
-				img.onload = function() {
-					onload(elem, ctx);
-				};
+				img.onload = onload;
 			}
 		}
 	}
@@ -603,10 +603,10 @@ $.fn.drawPolygon = function(args) {
 		jC.rotate(ctx, params, params.radius, params.radius);
 		ctx.beginPath();
 		for (i=0; i<params.sides; i+=1) {
-			x1 = params.x + (params.radius * Math.cos(theta));
-			y1 = params.y + (params.radius * Math.sin(theta));
-			x2 = params.x + (params.apothem*params.projection * Math.cos(theta+inner));
-			y2 = params.y + (params.apothem*params.projection  * Math.sin(theta+inner));
+			x1 = Math.round(params.x + (params.radius * Math.cos(theta)));
+			y1 = Math.round(params.y + (params.radius * Math.sin(theta)));
+			x2 = Math.round(params.x + (params.apothem*params.projection * Math.cos(theta+inner)));
+			y2 = Math.round(params.y + (params.apothem*params.projection * Math.sin(theta+inner)));
 			// Draw path
 			if (i === 0) {
 				ctx.moveTo(x1, y1);
@@ -665,28 +665,29 @@ $.fn.setPixels = function(args) {
 };
 
 // Create jCanvas queue
-jC.queue = [];
+jC.layers = [];
 
-// Create object
-jC.create = function(args) {
+// Create layer
+jC.newLayer = function(args) {
 	var obj = $.extend({}, jC.prefs, args);
-	jC.queue.push(obj);
+	jC.layers.push(obj);
 	return obj;
 };
 
-// Draw from jCanvas queue
-$.fn.drawQueue = function(clear) {
-	var ctx, items = jC.queue.length,
+// Draw jCanvas layers
+$.fn.drawLayers = function(clear) {
+	var ctx, items = jC.layers.length,
 		obj, e, i;
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
+		// Optionally clear canvas
 		if (clear === true) {
 			ctx.clearRect(0, 0, this[e].width, this[e].height);
 		}
 		// Draw items on queue
 		for (i=0; i<items; i+=1) {
-			obj = jC.queue[i];
-			if (obj.fn) {$.fn[obj.fn].call(this, obj);}
+			obj = jC.layers[i];
+			if (obj.fn) {$.fn[obj.fn].call(this.eq(e), obj);}
 		}
 	}
 	return this;
@@ -696,6 +697,7 @@ $.fn.drawQueue = function(clear) {
 var fix = $.event.fix;
 $.event.fix = function(event) {
 	event = fix.call($.event, event);
+	// Use offsetX/offsetY for Opera
 	if (event.layerX === undefined && event.layerY === undefined) {
 		event.layerX = event.offsetX;
 		event.layerY = event.offsetY;
@@ -712,7 +714,6 @@ jC.retrofit = function() {
 	$.fn.canvas = jC;
 	return $;
 };
-jC.retrofit();
 
 return ($.jCanvas = jC);
 }(jQuery, document, Math));
