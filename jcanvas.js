@@ -71,6 +71,7 @@ jC.setGlobals = function(ctx, params) {
 	ctx.lineWidth = params.strokeWidth;
 	ctx.lineCap = params.strokeCap;
 	ctx.lineJoin = params.strokeJoin;
+	// Set rounded corners for paths
 	if (params.rounded === true) {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
@@ -668,16 +669,16 @@ $.fn.setPixels = function(args) {
 jC.layers = [];
 
 // Create layer
-jC.newLayer = function(args) {
-	var obj = $.extend({}, jC.prefs, args);
-	jC.layers.push(obj);
-	return obj;
+jC.addLayer = function(args) {
+	var params = $.extend({}, jC.prefs, args);
+	jC.layers.push(params);
+	return params;
 };
 
 // Draw jCanvas layers
 $.fn.drawLayers = function(clear) {
 	var ctx, items = jC.layers.length,
-		obj, e, i;
+		params, e, i;
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		// Optionally clear canvas
@@ -686,8 +687,8 @@ $.fn.drawLayers = function(clear) {
 		}
 		// Draw items on queue
 		for (i=0; i<items; i+=1) {
-			obj = jC.layers[i];
-			if (obj.fn) {$.fn[obj.fn].call(this.eq(e), obj);}
+			params = jC.layers[i];
+			if (params.fn) {$.fn[params.fn].call(this.eq(e), params);}
 		}
 	}
 	return this;
@@ -712,6 +713,9 @@ jC.retrofit = function() {
 	$.fn.drawBezierCurve = $.fn.drawBezier;
 	$.fn.canvasDefaults = jC;
 	$.fn.canvas = jC;
+	jC.queue = jC.layers;
+	jC.create = jC.addLayer;
+	$.fn.drawQueue = $.fn.drawLayers;
 	return $;
 };
 
