@@ -1,11 +1,11 @@
 /*!
-jCanvas v3.6b
+jCanvas v3.6
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
 http://calebevans.me/projects/jcanvas/license.html
 */
-(function($, document, Math, undefined) {
+(function($, document, Math, Image, undefined) {
 
 // jCanvas function
 function jC(args, defaults) {
@@ -24,8 +24,7 @@ function jC(args, defaults) {
 }
 // Set jCanvas default properties
 jC.defaults = {
-	width: 0,
-	height: 0,
+	width: 0, height: 0,
 	cornerRadius: 0,
 	fillStyle: 'transparent',
 	strokeStyle: 'transparent',
@@ -33,8 +32,7 @@ jC.defaults = {
 	strokeCap: 'butt',
 	strokeJoin: 'miter',
 	rounded: false,
-	shadowX: 0,
-	shadowY: 0,
+	shadowX: 0, shadowY: 0,
 	shadowBlur: 3,
 	shadowColor: 'transparent',
 	opacity: 1,
@@ -44,8 +42,7 @@ jC.defaults = {
 	x1: 0, y1: 0,
 	x2: 0, y2: 0,
 	radius: 0,
-	start: 0,
-	end: 360,
+	start: 0, end: 360,
 	ccw: false,
 	inDegrees: true,
 	fromCenter: true,
@@ -146,9 +143,8 @@ $.fn.draw = function(callback) {
 $.fn.gradient = function(args) {
 	var ctx = this.loadCanvas(),
 		params = $.extend({}, jC.prefs, args),
-		gradient,
+		gradient, percent,
 		stops = 0,
-		percent,
 		i = 1;
 	
 	// Create radial gradient if chosen
@@ -179,7 +175,7 @@ $.fn.gradient = function(args) {
 $.fn.pattern = function(args) {
 	var ctx = this.loadCanvas(),
 		params = $.extend({}, jC.prefs, args),
-		img = document.createElement('img'),
+		img = new Image(),
 		pattern;
 	img.src = params.source;
 	
@@ -219,7 +215,6 @@ $.fn.clearCanvas = function(args) {
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
 
 		jC.rotate(ctx, params, params.width, params.height);
 		
@@ -526,7 +521,7 @@ $.fn.drawImage = function(args) {
 	var ctx, elem,  e,
 		params = $.extend({}, jC.prefs, args),
 		// Define image source
-		img = document.createElement('img'),
+		img = new Image(),
 		scaleFac;
 	img.src = params.source;
 
@@ -587,11 +582,11 @@ $.fn.drawImage = function(args) {
 $.fn.drawPolygon = function(args) {
 	var ctx, e,
 		params = $.extend({}, jC.prefs, args),
-		theta, dtheta, inner, x1, y1, x2, y2, i;
+		inner = Math.PI / params.sides,
+		theta = (Math.PI/2) + inner,
+		dtheta = (Math.PI*2) / params.sides,
+		x1, y1, x2, y2, i;
 
-	inner = Math.PI / params.sides;
-	theta = (Math.PI/2) + inner;
-	dtheta = (Math.PI*2) / params.sides;
 	params.apothem = Math.cos(dtheta/2) * params.radius;
 	params.closed = true;
 	
@@ -599,15 +594,15 @@ $.fn.drawPolygon = function(args) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		jC.setGlobals(ctx, params);
-	
+		
 		// Calculate points and draw
 		jC.rotate(ctx, params, params.radius, params.radius);
 		ctx.beginPath();
 		for (i=0; i<params.sides; i+=1) {
 			x1 = Math.round(params.x + (params.radius * Math.cos(theta)));
 			y1 = Math.round(params.y + (params.radius * Math.sin(theta)));
-			x2 = Math.round(params.x + (params.apothem*params.projection * Math.cos(theta+inner)));
-			y2 = Math.round(params.y + (params.apothem*params.projection * Math.sin(theta+inner)));
+			x2 = Math.round(params.y + ((params.apothem+params.apothem*params.projection) * Math.cos(theta+inner)));
+			y2 = Math.round(params.y + ((params.apothem+params.apothem*params.projection) * Math.sin(theta+inner)));
 			// Draw path
 			if (i === 0) {
 				ctx.moveTo(x1, y1);
@@ -688,7 +683,9 @@ $.fn.drawLayers = function(clear) {
 		// Draw items on queue
 		for (i=0; i<items; i+=1) {
 			params = jC.layers[i];
-			if (params.fn) {$.fn[params.fn].call(this.eq(e), params);}
+			if (params.fn) {
+				$.fn[params.fn].call(this.eq(e), params);
+			}
 		}
 	}
 	return this;
@@ -720,4 +717,4 @@ jC.retrofit = function() {
 };
 
 return ($.jCanvas = jC);
-}(jQuery, document, Math));
+}(jQuery, document, Math, Image));
