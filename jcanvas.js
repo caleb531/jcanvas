@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.6
+jCanvas v3.7b
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -124,6 +124,8 @@ jC.rotate = function(ctx, params, width, height) {
 	ctx.translate(-params.x, -params.y);
 };
 
+// Make $.fn method for jCanvas object
+$.fn.jCanvas = jC;
 
 // Load canvas
 $.fn.loadCanvas = function(ctx) {
