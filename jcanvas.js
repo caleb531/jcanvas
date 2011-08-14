@@ -1,5 +1,5 @@
 /*!
-jCanvas v3.7b
+jCanvas v4.0b
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
@@ -7,23 +7,28 @@ http://calebevans.me/projects/jcanvas/license.html
 */
 (function($, document, Math, Image, undefined) {
 
+var defaults, prefs, layers,
+	fn = $.fn,
+	extend = $.extend,
+	fix = $.event.fix;
+
 // jCanvas function
-function jC(args, defaults) {
+function jC(args, setDefaults) {
 	// Reset to defaults if nothing is passed
-	if (args === undefined) {
-		jC.prefs = $.extend({}, jC.defaults);
+	if (!args) {
+		prefs = extend({}, defaults);
 	// Merge arguments with defaults
-	} else if (defaults === true) {
-		jC.defaults = $.extend({}, jC.defaults, args);
-		jC.prefs = $.extend({}, jC.defaults);
+	} else if (setDefaults) {
+		defaults = extend({}, defaults, args);
+		prefs = extend({}, defaults);
 	// Merge arguments with preferences
 	} else {
-		jC.prefs = $.extend({}, jC.prefs, args);
+		prefs = extend({}, prefs, args);
 	}
 	return this;
 }
 // Set jCanvas default properties
-jC.defaults = {
+defaults = {
 	width: 0, height: 0,
 	cornerRadius: 0,
 	fillStyle: 'transparent',
@@ -58,18 +63,18 @@ jC.defaults = {
 	repeat: 'repeat'
 };
 // Merge defaults with preferences
-jC.prefs = $.extend({}, jC.defaults);
+prefs = extend({}, defaults);
 jC.retro = false;
 
 // Set global properties
-jC.setGlobals = function(ctx, params) {
-	ctx.fillStyle = params.fillColor || params.fillStyle;
-	ctx.strokeStyle = params.strokeColor || params.strokeStyle;
+function setGlobals(ctx, params) {
+	ctx.fillStyle = params.fillStyle;
+	ctx.strokeStyle = params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
 	ctx.lineCap = params.strokeCap;
 	ctx.lineJoin = params.strokeJoin;
 	// Set rounded corners for paths
-	if (params.rounded === true) {
+	if (params.rounded) {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 	}
@@ -77,18 +82,24 @@ jC.setGlobals = function(ctx, params) {
 	ctx.shadowOffsetY = params.shadowY;
 	ctx.shadowBlur = params.shadowBlur;
 	ctx.shadowColor = params.shadowColor;
-	ctx.globalAlpha = params.globalAlpha || params.opacity;
+	ctx.globalAlpha = params.opacity;
 	ctx.globalCompositeOperation = params.compositing;
+	// Backward-compatibility
+	if (jC.retro) {
+		ctx.fillStyle = params.fillColor;
+		ctx.strokeStyle = params.strokeColor;
+		ctx.globalAlpha = params.opacity;
+	}
 };
 
 // Close path if chosen
-jC.closePath = function(ctx, params) {
+function closePath(ctx, params) {
 	// Mask if chosen
-	if (params.mask === true) {
+	if (params.mask) {
 		ctx.save();
 		ctx.clip();
 	}
-	if (params.closed === true) {
+	if (params.closed) {
 		ctx.closePath();
 		ctx.fill();
 		ctx.stroke();
@@ -100,8 +111,8 @@ jC.closePath = function(ctx, params) {
 };
 
 // Measure angles in correct units
-jC.checkUnits = function(params) {
-	if (params.inDegrees === true) {
+function checkUnits(params) {
+	if (params.inDegrees) {
 		return Math.PI / 180;
 	} else {
 		return 1;
@@ -109,14 +120,14 @@ jC.checkUnits = function(params) {
 };
 
 // Rotate shape
-jC.rotate = function(ctx, params, width, height) {
+function rotate(ctx, params, width, height) {
 	
 	// Always rotate from center
-	if (params.fromCenter === false) {
+	if (!params.fromCenter) {
 		params.x += width/2;
 		params.y += height/2;
 	}
-	params.toRad = jC.checkUnits(params);
+	params.toRad = params.inDegrees ? Math.PI/180 : 1;
 	
 	ctx.save();
 	ctx.translate(params.x, params.y);
@@ -124,16 +135,16 @@ jC.rotate = function(ctx, params, width, height) {
 	ctx.translate(-params.x, -params.y);
 };
 
-// Make $.fn method for jCanvas object
-$.fn.jCanvas = jC;
+// Make a "chainable" jCanvas method
+fn.jCanvas = jC;
 
 // Load canvas
-$.fn.loadCanvas = function(ctx) {
+fn.loadCanvas = function(ctx) {
 	return this[0].getContext(ctx || '2d');
 };
 
 // Draw on canvas manually
-$.fn.draw = function(callback) {
+fn.draw = function(callback) {
 	var ctx, e;
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -142,9 +153,9 @@ $.fn.draw = function(callback) {
 };
 
 // Create gradient
-$.fn.gradient = function(args) {
+fn.gradient = function(args) {
 	var ctx = this.loadCanvas(),
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		gradient, percent,
 		stops = 0,
 		i = 1;
@@ -174,16 +185,16 @@ $.fn.gradient = function(args) {
 };
 
 // Create pattern
-$.fn.pattern = function(args) {
+fn.pattern = function(args) {
 	var ctx = this.loadCanvas(),
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		img = new Image(),
 		pattern;
 	img.src = params.source;
 	
 	// Create pattern
 	function create() {
-		if (img.complete === true) {
+		if (img.complete) {
 			// Create pattern
 			pattern = ctx.createPattern(img, params.repeat);
 			return true;
@@ -203,7 +214,7 @@ $.fn.pattern = function(args) {
 		img.onload = onload;
 	} else {
 		// Check if image is loaded
-		if (create() === false) {
+		if (!create()) {
 			img.onload = onload;
 		}
 	}
@@ -211,17 +222,17 @@ $.fn.pattern = function(args) {
 };
 
 // Clear canvas
-$.fn.clearCanvas = function(args) {
+fn.clearCanvas = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args);
+		params = extend({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 
-		jC.rotate(ctx, params, params.width, params.height);
+		rotate(ctx, params, params.width, params.height);
 		
 		// Clear entire canvas
-		if (args === undefined) {
+		if (!args) {
 			ctx.clearRect(0, 0, this[e].width, this[e].height);
 		} else {
 			ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
@@ -231,7 +242,7 @@ $.fn.clearCanvas = function(args) {
 };
 
 // Save canvas
-$.fn.saveCanvas = function() {
+fn.saveCanvas = function() {
 	var ctx, e;
 	
 	for (e=0; e<this.length; e+=1) {
@@ -242,7 +253,7 @@ $.fn.saveCanvas = function() {
 };
 
 // Restore canvas
-$.fn.restoreCanvas = function() {
+fn.restoreCanvas = function() {
 	var ctx, e;
 	
 	for (e=0; e<this.length; e+=1) {
@@ -253,9 +264,9 @@ $.fn.restoreCanvas = function() {
 };
 
 // Scale canvas
-$.fn.scaleCanvas = function(args) {
+fn.scaleCanvas = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args);
+		params = extend({}, prefs, args);
 		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -269,9 +280,9 @@ $.fn.scaleCanvas = function(args) {
 };
 
 // Translate canvas
-$.fn.translateCanvas = function(args) {
+fn.translateCanvas = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args);
+		params = extend({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -282,10 +293,10 @@ $.fn.translateCanvas = function(args) {
 };
 
 // Rotate canvas
-$.fn.rotateCanvas = function(args) {
+fn.rotateCanvas = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args);
-	params.toRad = jC.checkUnits(params);
+		params = extend({}, prefs, args);
+	params.toRad = checkUnits(params);
 	
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -298,15 +309,15 @@ $.fn.rotateCanvas = function(args) {
 };
 
 // Draw rectangle
-$.fn.drawRect = function(args) {
+fn.drawRect = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		x1, y1, x2, y2, r;
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
-		jC.rotate(ctx, params, params.width, params.height);
+		setGlobals(ctx, params);
+		rotate(ctx, params, params.width, params.height);
 			
 		// Draw rounded rectangle if chosen
 		if (params.cornerRadius > 0) {
@@ -339,47 +350,47 @@ $.fn.drawRect = function(args) {
 			ctx.beginPath();
 			ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			ctx.restore();
-			jC.closePath(ctx, params);
+			closePath(ctx, params);
 		}
 	}
 	return this;
 };
 
 // Draw arc
-$.fn.drawArc = function(args) {
+fn.drawArc = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args);
+		params = extend({}, prefs, args);
 	
 	// Change default end angle to radians if needed
-	if (params.inDegrees === false && params.end === 360) {
+	if (!params.inDegrees && params.end === 360) {
 		params.end = Math.PI * 2;
 	}
 		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
-		jC.rotate(ctx, params, params.radius, params.radius);
+		setGlobals(ctx, params);
+		rotate(ctx, params, params.radius, params.radius);
 		
 		// Draw arc
 		ctx.beginPath();
 		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(Math.PI/2), (params.end*params.toRad)-(Math.PI/2), params.ccw);
 		// Close path if chosen
 		ctx.restore();
-		jC.closePath(ctx, params);
+		closePath(ctx, params);
 	}
 	return this;
 };
 
 // Draw ellipse
-$.fn.drawEllipse = function(args) {
+fn.drawEllipse = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		controlW = params.width * (4/3);
 		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
-		jC.rotate(ctx, params, params.width, params.height);
+		setGlobals(ctx, params);
+		rotate(ctx, params, params.width, params.height);
 		
 		// Create ellipse
 		ctx.beginPath();
@@ -393,20 +404,20 @@ $.fn.drawEllipse = function(args) {
 			params.x+controlW/2,params.y-params.height/2,
 			params.x,params.y-params.height/2);
 		ctx.restore();
-		jC.closePath(ctx, params);
+		closePath(ctx, params);
 	}
 	return this;
 };
 
 // Draw line
-$.fn.drawLine = function(args) {
+fn.drawLine = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		l = 2, lx = 0, ly = 0;
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
+		setGlobals(ctx, params);
 		
 		// Draw each point
 		ctx.beginPath();
@@ -422,22 +433,22 @@ $.fn.drawLine = function(args) {
 			l += 1;
 		}
 		// Close path if chosen
-		jC.closePath(ctx, params);
+		closePath(ctx, params);
 	}
 	return this;
 };
 
 // Draw quadratic curve
-$.fn.drawQuad = function(args) {
+fn.drawQuad = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		l = 2,
 		lx = 0, ly = 0,
 		lcx = 0, lcy = 0;
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
+		setGlobals(ctx, params);
 			
 		// Draw each point
 		ctx.beginPath();
@@ -455,15 +466,15 @@ $.fn.drawQuad = function(args) {
 			l += 1;
 		}
 		// Close path if chosen
-		jC.closePath(ctx, params);
+		closePath(ctx, params);
 	}
 	return this;
 };
 
 // Draw Bezier curve
-$.fn.drawBezier = function(args) {
+fn.drawBezier = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		l = 2, lc = 1,
 		lx = 0, ly = 0,
 		lcx1 = 0, lcy1 = 0,
@@ -471,7 +482,7 @@ $.fn.drawBezier = function(args) {
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
+		setGlobals(ctx, params);
 	
 		// Draw each point
 		ctx.beginPath();
@@ -492,19 +503,19 @@ $.fn.drawBezier = function(args) {
 			lc += 2;
 		}
 		// Close path if chosen
-		jC.closePath(ctx, params);
+		closePath(ctx, params);
 	}
 	return this;
 };
 
 // Draw text
-$.fn.drawText = function(args) {
+fn.drawText = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args);
+		params = extend({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
+		setGlobals(ctx, params);
 	
 		// Set text-specific properties
 		ctx.textBaseline = params.baseline;
@@ -519,9 +530,9 @@ $.fn.drawText = function(args) {
 };
 
 // Draw image
-$.fn.drawImage = function(args) {
+fn.drawImage = function(args) {
 	var ctx, elem,  e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		// Define image source
 		img = new Image(),
 		scaleFac;
@@ -529,7 +540,7 @@ $.fn.drawImage = function(args) {
 
 	// Draw image function
 	function draw(ctx) {
-		if (img.complete === true) {
+		if (img.complete) {
 			scaleFac = img.width / img.height;
 			// If width/height are specified
 			if (params.width && params.height) {
@@ -545,7 +556,7 @@ $.fn.drawImage = function(args) {
 				img.width = img.height * scaleFac;
 			}						
 			// Draw image
-			jC.rotate(ctx, params, img.width, img.height);
+			rotate(ctx, params, img.width, img.height);
 			ctx.drawImage(img, params.x-img.width/2, params.y-img.height/2, img.width, img.height);
 			ctx.restore();
 			return true;
@@ -565,14 +576,98 @@ $.fn.drawImage = function(args) {
 	for (e=0; e<this.length; e+=1) {
 		elem = this[e];
 		ctx = elem.getContext('2d');
-		jC.setGlobals(ctx, params);
+		setGlobals(ctx, params);
 		
 		// Draw when image is loaded
 		if (params.load) {
 			img.onload = onload;
 		} else {
 			// Check if image is loaded
-			if (draw(ctx) === false) {
+			if (!draw(ctx)) {
+				img.onload = onload;
+			}
+		}
+	}
+	return this;
+};
+
+// Draw Image (new)
+fn.drawImage = function(args) {
+	var ctx, elem,  e,
+		params = extend({}, prefs, args),
+		// Define image source
+		img = new Image(),
+		scaleFac;
+	img.src = params.source;
+
+	// Draw image function
+	function draw(ctx) {
+		if (img.complete) {
+			scaleFac = img.width / img.height;
+			
+			// Crop image
+			if (params.sx === undefined) {
+				params.sx = img.width / 2;
+			}
+			if (params.sy === undefined) {
+				params.sy = img.height / 2;
+			}
+			params.sWidth = params.sWidth || img.width;
+			params.sHeight = params.sHeight || img.height;
+			
+			// If width/height are specified
+			if (params.width && params.height) {
+				img.width = params.width;
+				img.height = params.height;
+			// If width is specified
+			} else if (params.width && !params.height) {
+				img.width = params.width;
+				img.height = img.width / scaleFac;
+			// If height is specified
+			} else if (!params.width && params.height) {
+				img.height = params.height;
+				img.width = img.height * scaleFac;
+			}
+			
+			// Draw image
+			rotate(ctx, params, img.width, img.height);
+			ctx.drawImage(
+				img,
+				params.sx-params.sWidth/2,
+				params.sy-params.sHeight/2,
+				params.sWidth,
+				params.sHeight,
+				params.x-img.width/2,
+				params.y-img.height/2,
+				img.width,
+				img.height
+			);
+			ctx.restore();
+			return true;
+		} else {
+			return false;
+		}
+	}
+	// On load function
+	function onload() {
+		draw(ctx);
+		// Run callback function
+		if (params.load) {
+			params.load.call(elem);
+		}
+	}
+	// Draw image if already loaded
+	for (e=0; e<this.length; e+=1) {
+		elem = this[e];
+		ctx = elem.getContext('2d');
+		setGlobals(ctx, params);
+		
+		// Draw when image is loaded
+		if (params.load) {
+			img.onload = onload;
+		} else {
+			// Check if image is loaded
+			if (!draw(ctx)) {
 				img.onload = onload;
 			}
 		}
@@ -581,9 +676,9 @@ $.fn.drawImage = function(args) {
 };
 
 // Draw polygon
-$.fn.drawPolygon = function(args) {
+fn.drawPolygon = function(args) {
 	var ctx, e,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		inner = Math.PI / params.sides,
 		theta = (Math.PI/2) + inner,
 		dtheta = (Math.PI*2) / params.sides,
@@ -595,10 +690,10 @@ $.fn.drawPolygon = function(args) {
 	if (params.sides >= 3) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		jC.setGlobals(ctx, params);
+		setGlobals(ctx, params);
 		
 		// Calculate points and draw
-		jC.rotate(ctx, params, params.radius, params.radius);
+		rotate(ctx, params, params.radius, params.radius);
 		ctx.beginPath();
 		for (i=0; i<params.sides; i+=1) {
 			x1 = Math.round(params.x + (params.radius * Math.cos(theta)));
@@ -618,28 +713,29 @@ $.fn.drawPolygon = function(args) {
 			theta += dtheta;
 		}
 		ctx.restore();
-		jC.closePath(ctx, params);
+		closePath(ctx, params);
 	}
 	}
 	return this;
 };
 
 // Get pixels on the canvas
-$.fn.setPixels = function(args) {
+fn.setPixels = function(args) {
 	var ctx, elem, e, i,
-		params = $.extend({}, jC.prefs, args),
+		params = extend({}, prefs, args),
 		imgData, data, len, px;
 	
 	for (e=0; e<this.length; e+=1) {
 			elem = this[e];
 			ctx = elem.getContext('2d');
+			// Measure from center
 			if (!params.x && !params.y && !params.width && !params.height) {
 				params.width = elem.width;
 				params.height = elem.height;
 				params.x = params.width/2;
 				params.y = params.height/2;
 			}
-			jC.rotate(ctx, params, params.width, params.height);
+			rotate(ctx, params, params.width, params.height);
 			imgData = ctx.getImageData(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			data = imgData.data;
 			len = data.length;
@@ -663,30 +759,30 @@ $.fn.setPixels = function(args) {
 };
 
 // Create jCanvas queue
-jC.layers = [];
+layers = [];
 
 // Create layer
-jC.addLayer = function(args) {
-	var params = $.extend({}, jC.prefs, args);
-	jC.layers.push(params);
+function addLayer(args) {
+	var params = extend({}, prefs, args);
+	layers.push(params);
 	return params;
 };
 
 // Draw jCanvas layers
-$.fn.drawLayers = function(clear) {
-	var ctx, items = jC.layers.length,
+fn.drawLayers = function(clear) {
+	var ctx, items = layers.length,
 		params, e, i;
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		// Optionally clear canvas
-		if (clear === true) {
+		if (clear) {
 			ctx.clearRect(0, 0, this[e].width, this[e].height);
 		}
 		// Draw items on queue
 		for (i=0; i<items; i+=1) {
-			params = jC.layers[i];
+			params = layers[i];
 			if (params.fn) {
-				$.fn[params.fn].call(this.eq(e), params);
+				fn[params.fn].call(this.eq(e), params);
 			}
 		}
 	}
@@ -694,7 +790,6 @@ $.fn.drawLayers = function(clear) {
 };
 
 // Normalize layerX/layerY for jQuery mouse events
-var fix = $.event.fix;
 $.event.fix = function(event) {
 	event = fix.call($.event, event);
 	// Use offsetX/offsetY for Opera
@@ -706,17 +801,27 @@ $.event.fix = function(event) {
 };
 
 // Enable backward compatibility
-jC.retrofit = function() {
+function retrofit() {
 	jC.retro = true;
-	$.fn.drawQuadCurve = $.fn.drawQuad;
-	$.fn.drawBezierCurve = $.fn.drawBezier;
-	$.fn.canvasDefaults = jC;
-	$.fn.canvas = jC;
-	jC.queue = jC.layers;
-	jC.create = jC.addLayer;
-	$.fn.drawQueue = $.fn.drawLayers;
+	fn.drawQuadCurve = fn.drawQuad;
+	fn.drawBezierCurve = fn.drawBezier;
+	fn.canvasDefaults = jC;
+	fn.canvas = jC;
+	queue = layers;
+	create = addLayer;
+	fn.drawQueue = fn.drawLayers;
 	return $;
 };
+
+// Make API accessible
+jC.defaults = defaults;
+jC.prefs = prefs;
+jC.setGlobals = setGlobals;
+jC.checkUnits = checkUnits;
+jC.rotate = rotate;
+jC.layers = layers;
+jC.addLayer = addLayer;
+jC.retrofit = retrofit;
 
 return ($.jCanvas = jC);
 }(jQuery, document, Math, Image));
