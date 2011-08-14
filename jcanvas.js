@@ -10,7 +10,8 @@ http://calebevans.me/projects/jcanvas/license.html
 var defaults, prefs, layers,
 	fn = $.fn,
 	extend = $.extend,
-	fix = $.event.fix;
+	fix = $.event.fix,
+	pi = Math.PI;
 
 // jCanvas function
 function jC(args, setDefaults) {
@@ -64,7 +65,6 @@ defaults = {
 };
 // Merge defaults with preferences
 prefs = extend({}, defaults);
-jC.retro = false;
 
 // Set global properties
 function setGlobals(ctx, params) {
@@ -84,13 +84,7 @@ function setGlobals(ctx, params) {
 	ctx.shadowColor = params.shadowColor;
 	ctx.globalAlpha = params.opacity;
 	ctx.globalCompositeOperation = params.compositing;
-	// Backward-compatibility
-	if (jC.retro) {
-		ctx.fillStyle = params.fillColor;
-		ctx.strokeStyle = params.strokeColor;
-		ctx.globalAlpha = params.opacity;
-	}
-};
+}
 
 // Close path if chosen
 function closePath(ctx, params) {
@@ -108,16 +102,16 @@ function closePath(ctx, params) {
 		ctx.stroke();
 		ctx.closePath();
 	}
-};
+}
 
 // Measure angles in correct units
 function checkUnits(params) {
 	if (params.inDegrees) {
-		return Math.PI / 180;
+		return pi / 180;
 	} else {
 		return 1;
 	}
-};
+}
 
 // Rotate shape
 function rotate(ctx, params, width, height) {
@@ -127,13 +121,13 @@ function rotate(ctx, params, width, height) {
 		params.x += width/2;
 		params.y += height/2;
 	}
-	params.toRad = params.inDegrees ? Math.PI/180 : 1;
+	params.toRad = params.inDegrees ? pi/180 : 1;
 	
 	ctx.save();
 	ctx.translate(params.x, params.y);
 	ctx.rotate(params.angle*params.toRad);
 	ctx.translate(-params.x, -params.y);
-};
+}
 
 // Make a "chainable" jCanvas method
 fn.jCanvas = jC;
@@ -154,7 +148,7 @@ fn.draw = function(callback) {
 
 // Create gradient
 fn.gradient = function(args) {
-	var ctx = this.loadCanvas(),
+	var ctx = this[0].getContext('2d'),
 		params = extend({}, prefs, args),
 		gradient, percent,
 		stops = 0,
@@ -186,7 +180,7 @@ fn.gradient = function(args) {
 
 // Create pattern
 fn.pattern = function(args) {
-	var ctx = this.loadCanvas(),
+	var ctx = this[0].getContext('2d'),
 		params = extend({}, prefs, args),
 		img = new Image(),
 		pattern;
@@ -336,13 +330,13 @@ fn.drawRect = function(args) {
 			ctx.beginPath();
 			ctx.moveTo(x1+r,y1);
 			ctx.lineTo(x2-r,y1);
-			ctx.arc(x2-r, y1+r, r, 3*Math.PI/2, Math.PI*2, false);
+			ctx.arc(x2-r, y1+r, r, 3*pi/2, pi*2, false);
 			ctx.lineTo(x2,y2-r);
-			ctx.arc(x2-r, y2-r, r, 0, Math.PI/2, false);
+			ctx.arc(x2-r, y2-r, r, 0, pi/2, false);
 			ctx.lineTo(x1+r,y2);
-			ctx.arc(x1+r, y2-r, r, Math.PI/2, Math.PI, false);
+			ctx.arc(x1+r, y2-r, r, pi/2, pi, false);
 			ctx.lineTo(x1,y1+r);
-			ctx.arc(x1+r, y1+r, r, Math.PI, 3*Math.PI/2, false);
+			ctx.arc(x1+r, y1+r, r, pi, 3*pi/2, false);
 			ctx.fill();
 			ctx.stroke();
 			ctx.closePath();
@@ -363,7 +357,7 @@ fn.drawArc = function(args) {
 	
 	// Change default end angle to radians if needed
 	if (!params.inDegrees && params.end === 360) {
-		params.end = Math.PI * 2;
+		params.end = pi * 2;
 	}
 		
 	for (e=0; e<this.length; e+=1) {
@@ -373,7 +367,7 @@ fn.drawArc = function(args) {
 		
 		// Draw arc
 		ctx.beginPath();
-		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(Math.PI/2), (params.end*params.toRad)-(Math.PI/2), params.ccw);
+		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(pi/2), (params.end*params.toRad)-(pi/2), params.ccw);
 		// Close path if chosen
 		ctx.restore();
 		closePath(ctx, params);
@@ -524,74 +518,11 @@ fn.drawText = function(args) {
 		
 		ctx.strokeText(params.text, params.x, params.y);
 		ctx.fillText(params.text, params.x, params.y);
-		ctx.restore();
 	}
 	return this;
 };
 
 // Draw image
-fn.drawImage = function(args) {
-	var ctx, elem,  e,
-		params = extend({}, prefs, args),
-		// Define image source
-		img = new Image(),
-		scaleFac;
-	img.src = params.source;
-
-	// Draw image function
-	function draw(ctx) {
-		if (img.complete) {
-			scaleFac = img.width / img.height;
-			// If width/height are specified
-			if (params.width && params.height) {
-				img.width = params.width;
-				img.height = params.height;
-			// If width is specified
-			} else if (params.width && !params.height) {
-				img.width = params.width;
-				img.height = img.width / scaleFac;
-			// If height is specified
-			} else if (!params.width && params.height) {
-				img.height = params.height;
-				img.width = img.height * scaleFac;
-			}						
-			// Draw image
-			rotate(ctx, params, img.width, img.height);
-			ctx.drawImage(img, params.x-img.width/2, params.y-img.height/2, img.width, img.height);
-			ctx.restore();
-			return true;
-		} else {
-			return false;
-		}
-	}
-	// On load function
-	function onload() {
-		draw(ctx);
-		// Run callback function
-		if (params.load) {
-			params.load.call(elem);
-		}
-	}
-	// Draw image if already loaded
-	for (e=0; e<this.length; e+=1) {
-		elem = this[e];
-		ctx = elem.getContext('2d');
-		setGlobals(ctx, params);
-		
-		// Draw when image is loaded
-		if (params.load) {
-			img.onload = onload;
-		} else {
-			// Check if image is loaded
-			if (!draw(ctx)) {
-				img.onload = onload;
-			}
-		}
-	}
-	return this;
-};
-
-// Draw Image (new)
 fn.drawImage = function(args) {
 	var ctx, elem,  e,
 		params = extend({}, prefs, args),
@@ -679,9 +610,9 @@ fn.drawImage = function(args) {
 fn.drawPolygon = function(args) {
 	var ctx, e,
 		params = extend({}, prefs, args),
-		inner = Math.PI / params.sides,
-		theta = (Math.PI/2) + inner,
-		dtheta = (Math.PI*2) / params.sides,
+		inner = pi / params.sides,
+		theta = (pi/2) + inner,
+		dtheta = (pi*2) / params.sides,
 		x1, y1, x2, y2, i;
 
 	params.apothem = Math.cos(dtheta/2) * params.radius;
@@ -766,7 +697,7 @@ function addLayer(args) {
 	var params = extend({}, prefs, args);
 	layers.push(params);
 	return params;
-};
+}
 
 // Draw jCanvas layers
 fn.drawLayers = function(clear) {
@@ -803,17 +734,13 @@ $.event.fix = function(event) {
 // Enable backward compatibility
 function retrofit() {
 	jC.retro = true;
-	fn.drawQuadCurve = fn.drawQuad;
-	fn.drawBezierCurve = fn.drawBezier;
-	fn.canvasDefaults = jC;
-	fn.canvas = jC;
-	queue = layers;
-	create = addLayer;
+	jC.queue = layers;
+	jC.create = addLayer;
 	fn.drawQueue = fn.drawLayers;
 	return $;
-};
+}
 
-// Make API accessible
+// Export jCanvas objects
 jC.defaults = defaults;
 jC.prefs = prefs;
 jC.setGlobals = setGlobals;
@@ -822,6 +749,7 @@ jC.rotate = rotate;
 jC.layers = layers;
 jC.addLayer = addLayer;
 jC.retrofit = retrofit;
+jC.retro = false;
+$.jCanvas = jC;
 
-return ($.jCanvas = jC);
 }(jQuery, document, Math, Image));
