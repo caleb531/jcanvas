@@ -3,15 +3,19 @@ jCanvas v4.0b
 Copyright 2011, Caleb Evans
 
 Licensed under the MIT license
-http://calebevans.me/projects/jcanvas/license.html
+http://bit.ly/onG8YJ
 */
 (function($, document, Math, Image, undefined) {
 
+// Define aliases for better compression
 var defaults, prefs, layers,
 	fn = $.fn,
 	extend = $.extend,
 	fix = $.event.fix,
-	pi = Math.PI;
+	pi = Math.PI,
+	round = Math.round,
+	sin = Math.sin,
+	cos = Math.cos;
 
 // jCanvas function
 function jC(args, setDefaults) {
@@ -169,7 +173,7 @@ fn.gradient = function(args) {
 		
 	// Calculate color stop percentages if absent
 	for (i=1; i<=stops; i+=1) {
-		percent = Math.round((100 / (stops-1)) * (i-1)) / 100;
+		percent = round((100 / (stops-1)) * (i-1)) / 100;
 		if (params['s' + i] === undefined) {
 			params['s' + i] = percent;
 		}
@@ -546,32 +550,29 @@ fn.drawImage = function(args) {
 			params.sWidth = params.sWidth || img.width;
 			params.sHeight = params.sHeight || img.height;
 			
-			// If width/height are specified
-			if (params.width && params.height) {
-				img.width = params.width;
-				img.height = params.height;
 			// If width is specified
-			} else if (params.width && !params.height) {
-				img.width = params.width;
-				img.height = img.width / scaleFac;
+			if (params.width && !params.height) {
+				params.height = params.width / scaleFac;
 			// If height is specified
 			} else if (!params.width && params.height) {
-				img.height = params.height;
-				img.width = img.height * scaleFac;
+				params.width = params.height * scaleFac;
+			} else if (!params.width && !params.height) {
+				params.width = img.width;
+				params.height = img.height;
 			}
 			
 			// Draw image
-			rotate(ctx, params, img.width, img.height);
+			rotate(ctx, params, params.width, params.height);
 			ctx.drawImage(
 				img,
 				params.sx-params.sWidth/2,
 				params.sy-params.sHeight/2,
 				params.sWidth,
 				params.sHeight,
-				params.x-img.width/2,
-				params.y-img.height/2,
-				img.width,
-				img.height
+				params.x-params.width/2,
+				params.y-params.height/2,
+				params.width,
+				params.height
 			);
 			ctx.restore();
 			return true;
@@ -613,9 +614,8 @@ fn.drawPolygon = function(args) {
 		inner = pi / params.sides,
 		theta = (pi/2) + inner,
 		dtheta = (pi*2) / params.sides,
+		apothem = cos(dtheta/2) * params.radius,
 		x1, y1, x2, y2, i;
-
-	params.apothem = Math.cos(dtheta/2) * params.radius;
 	params.closed = true;
 	
 	if (params.sides >= 3) {
@@ -627,10 +627,10 @@ fn.drawPolygon = function(args) {
 		rotate(ctx, params, params.radius, params.radius);
 		ctx.beginPath();
 		for (i=0; i<params.sides; i+=1) {
-			x1 = Math.round(params.x + (params.radius * Math.cos(theta)));
-			y1 = Math.round(params.y + (params.radius * Math.sin(theta)));
-			x2 = Math.round(params.y + ((params.apothem+params.apothem*params.projection) * Math.cos(theta+inner)));
-			y2 = Math.round(params.y + ((params.apothem+params.apothem*params.projection) * Math.sin(theta+inner)));
+			x1 = round(params.x + (params.radius * cos(theta)));
+			y1 = round(params.y + (params.radius * sin(theta)));
+			x2 = round(params.y + ((apothem+apothem*params.projection) * cos(theta+inner)));
+			y2 = round(params.y + ((apothem+apothem*params.projection) * sin(theta+inner)));
 			// Draw path
 			if (i === 0) {
 				ctx.moveTo(x1, y1);
@@ -740,7 +740,7 @@ function retrofit() {
 	return $;
 }
 
-// Export jCanvas objects
+// Export jCanvas functions/objects
 jC.defaults = defaults;
 jC.prefs = prefs;
 jC.setGlobals = setGlobals;
