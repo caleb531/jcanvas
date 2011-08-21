@@ -123,9 +123,12 @@ function rotate(ctx, params, width, height) {
 	}
 	
 	ctx.save();
-	ctx.translate(params.x, params.y);
-	ctx.rotate(params.angle*toRad);
-	ctx.translate(-params.x, -params.y);
+	// Don't rotate if not needed
+	if (params.angle) {
+		ctx.translate(params.x, params.y);
+		ctx.rotate(params.angle*toRad);
+		ctx.translate(-params.x, -params.y);
+	}
 	return toRad;
 }
 
@@ -139,11 +142,11 @@ fn.loadCanvas = function(ctx) {
 
 // Draw on canvas manually
 fn.draw = function(callback) {
-	var ctx, e;
+	var e;
 	for (e=0; e<this.length; e+=1) {
-		ctx = this[e].getContext('2d');
-		callback.call(this[e], ctx);
+		callback.call(this[e], this[e].getContext('2d'));
 	}
+	return this;
 };
 
 // Create gradient
@@ -203,11 +206,11 @@ fn.pattern = function(args) {
 			params.load.call(this[0], pattern);
 		}
 	}
-	// Draw when image is loaded
+	// Draw when image is loaded (if chosen)
 	if (params.load) {
 		img.onload = onload;
 	} else {
-		// Check if image is loaded
+		// Draw image if loaded
 		if (!create()) {
 			img.onload = onload;
 		}
@@ -307,7 +310,7 @@ fn.drawRect = function(args) {
 		setGlobals(ctx, params);
 		rotate(ctx, params, params.width, params.height);
 			
-		// Draw rounded rectangle if chosen
+		// Draw a rounded rectangle if chosen
 		if (params.cornerRadius > 0) {
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
@@ -381,13 +384,9 @@ fn.drawEllipse = function(args) {
 		ctx.beginPath();
 		ctx.moveTo(params.x, params.y-params.height/2);
 		// Left side
-		ctx.bezierCurveTo(params.x-controlW/2,params.y-params.height/2,
-			params.x-controlW/2,params.y+params.height/2,
-			params.x,params.y+params.height/2);
+		ctx.bezierCurveTo(params.x-controlW/2, params.y-params.height/2, params.x-controlW/2, params.y+params.height/2, params.x, params.y+params.height/2);
 		// Right side
-		ctx.bezierCurveTo(params.x+controlW/2,params.y+params.height/2,
-			params.x+controlW/2,params.y-params.height/2,
-			params.x,params.y-params.height/2);
+		ctx.bezierCurveTo(params.x+controlW/2, params.y+params.height/2, params.x+controlW/2, params.y-params.height/2, params.x, params.y-params.height/2);
 		ctx.restore();
 		closePath(ctx, params);
 	}
@@ -553,12 +552,12 @@ fn.drawImage = function(args) {
 			rotate(ctx, params, params.width, params.height);
 			ctx.drawImage(
 				img,
-				params.sx-params.sWidth/2,
-				params.sy-params.sHeight/2,
+				params.sx - params.sWidth / 2,
+				params.sy - params.sHeight / 2,
 				params.sWidth,
 				params.sHeight,
-				params.x-params.width/2,
-				params.y-params.height/2,
+				params.x - params.width / 2,
+				params.y - params.height / 2,
 				params.width,
 				params.height
 			);
@@ -582,11 +581,11 @@ fn.drawImage = function(args) {
 		ctx = elem.getContext('2d');
 		setGlobals(ctx, params);
 		
-		// Draw when image is loaded
+		// Draw when image is loaded (if chosen)
 		if (params.load) {
 			img.onload = onload;
 		} else {
-			// Check if image is loaded
+			// Draw image if loaded
 			if (!draw(ctx)) {
 				img.onload = onload;
 			}
@@ -617,7 +616,7 @@ fn.drawPolygon = function(args) {
 		for (i=0; i<params.sides; i+=1) {
 			x1 = round(params.x + (params.radius * cos(theta)));
 			y1 = round(params.y + (params.radius * sin(theta)));
-			x2 = round(params.y + ((apothem+apothem*params.projection) * cos(theta+inner)));
+			x2 = round(params.x + ((apothem+apothem*params.projection) * cos(theta+inner)));
 			y2 = round(params.y + ((apothem+apothem*params.projection) * sin(theta+inner)));
 			// Draw path
 			if (i === 0) {
