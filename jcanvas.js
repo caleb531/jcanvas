@@ -1,7 +1,6 @@
 /*!
 jCanvas v4.0b
 Copyright 2011, Caleb Evans
-
 Licensed under the MIT license
 http://bit.ly/onG8YJ
 */
@@ -58,7 +57,6 @@ defaults = {
 	fromCenter: true,
 	closed: false,
 	sides: 3,
-	points: 5,
 	angle: 0,
 	text: '',
 	font: 'normal 12pt sans-serif',
@@ -108,32 +106,30 @@ function closePath(ctx, params) {
 	}
 }
 
-// Measure angles in correct units
+// Measure angles in chosen units
 function checkUnits(params) {
-	if (params.inDegrees) {
-		return pi / 180;
-	} else {
-		return 1;
-	}
+	return params.inDegrees ? pi/180 : 1;
 }
 
-// Rotate shape
+// Rotate individual shape
 function rotate(ctx, params, width, height) {
+	
+	var toRad = params.inDegrees ? pi/180 : 1;
 	
 	// Always rotate from center
 	if (!params.fromCenter) {
 		params.x += width/2;
 		params.y += height/2;
 	}
-	params.toRad = params.inDegrees ? pi/180 : 1;
 	
 	ctx.save();
 	ctx.translate(params.x, params.y);
-	ctx.rotate(params.angle*params.toRad);
+	ctx.rotate(params.angle*toRad);
 	ctx.translate(-params.x, -params.y);
+	return toRad;
 }
 
-// Make a "chainable" jCanvas method
+// Make jCanvas function "chainable"
 fn.jCanvas = jC;
 
 // Load canvas
@@ -244,8 +240,7 @@ fn.saveCanvas = function() {
 	var ctx, e;
 	
 	for (e=0; e<this.length; e+=1) {
-		ctx = this[e].getContext('2d');
-		ctx.save();
+		this[e].getContext('2d').save();
 	}
 	return this;
 };
@@ -255,8 +250,7 @@ fn.restoreCanvas = function() {
 	var ctx, e;
 	
 	for (e=0; e<this.length; e+=1) {
-		ctx = this[e].getContext('2d');
-		ctx.restore();
+		this[e].getContext('2d').restore();
 	}
 	return this;
 };
@@ -294,14 +288,10 @@ fn.translateCanvas = function(args) {
 fn.rotateCanvas = function(args) {
 	var ctx, e,
 		params = extend({}, prefs, args);
-	params.toRad = checkUnits(params);
 	
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
-		ctx.save();
-		ctx.translate(params.x, params.y);
-		ctx.rotate(params.angle*params.toRad);
-		ctx.translate(-params.x, -params.y);
+		rotate(ctx, params, 0, 0);
 	}
 	return this;
 };
@@ -334,29 +324,26 @@ fn.drawRect = function(args) {
 			ctx.beginPath();
 			ctx.moveTo(x1+r,y1);
 			ctx.lineTo(x2-r,y1);
-			ctx.arc(x2-r, y1+r, r, 3*pi/2, pi*2, false);
+			ctx.arc(x2-r, y1+r, r, 3*pi/2, pi*2);
 			ctx.lineTo(x2,y2-r);
-			ctx.arc(x2-r, y2-r, r, 0, pi/2, false);
+			ctx.arc(x2-r, y2-r, r, 0, pi/2);
 			ctx.lineTo(x1+r,y2);
-			ctx.arc(x1+r, y2-r, r, pi/2, pi, false);
+			ctx.arc(x1+r, y2-r, r, pi/2, pi);
 			ctx.lineTo(x1,y1+r);
-			ctx.arc(x1+r, y1+r, r, pi, 3*pi/2, false);
-			ctx.fill();
-			ctx.stroke();
-			ctx.closePath();
+			ctx.arc(x1+r, y1+r, r, pi, 3*pi/2);
 		} else {
 			ctx.beginPath();
 			ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			ctx.restore();
-			closePath(ctx, params);
 		}
+		closePath(ctx, params);
 	}
 	return this;
 };
 
 // Draw arc
 fn.drawArc = function(args) {
-	var ctx, e,
+	var ctx, e, toRad,
 		params = extend({}, prefs, args);
 	
 	// Change default end angle to radians if needed
@@ -367,11 +354,11 @@ fn.drawArc = function(args) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
-		rotate(ctx, params, params.radius, params.radius);
+		toRad = rotate(ctx, params, params.radius, params.radius);
 		
 		// Draw arc
 		ctx.beginPath();
-		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(pi/2), (params.end*params.toRad)-(pi/2), params.ccw);
+		ctx.arc(params.x, params.y, params.radius, (params.start*toRad)-(pi/2), (params.end*toRad)-(pi/2), params.ccw);
 		// Close path if chosen
 		ctx.restore();
 		closePath(ctx, params);
@@ -411,7 +398,7 @@ fn.drawEllipse = function(args) {
 fn.drawLine = function(args) {
 	var ctx, e,
 		params = extend({}, prefs, args),
-		l = 2, lx = 0, ly = 0;
+		l = 2, lx, ly;
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -441,8 +428,8 @@ fn.drawQuad = function(args) {
 	var ctx, e,
 		params = extend({}, prefs, args),
 		l = 2,
-		lx = 0, ly = 0,
-		lcx = 0, lcy = 0;
+		lx, ly,
+		lcx, lcy;
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -474,9 +461,9 @@ fn.drawBezier = function(args) {
 	var ctx, e,
 		params = extend({}, prefs, args),
 		l = 2, lc = 1,
-		lx = 0, ly = 0,
-		lcx1 = 0, lcy1 = 0,
-		lcx2 = 0, lcy2 = 0;
+		lx, ly,
+		lcx1, lcy1,
+		lcx2, lcy2;
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -528,7 +515,7 @@ fn.drawText = function(args) {
 
 // Draw image
 fn.drawImage = function(args) {
-	var ctx, elem,  e,
+	var ctx, elem, e,
 		params = extend({}, prefs, args),
 		// Define image source
 		img = new Image(),
@@ -550,12 +537,13 @@ fn.drawImage = function(args) {
 			params.sWidth = params.sWidth || img.width;
 			params.sHeight = params.sHeight || img.height;
 			
-			// If width is specified
+			// If only width is present
 			if (params.width && !params.height) {
 				params.height = params.width / scaleFac;
-			// If height is specified
+			// If only height is present
 			} else if (!params.width && params.height) {
 				params.width = params.height * scaleFac;
+			// If width and height are both absent
 			} else if (!params.width && !params.height) {
 				params.width = img.width;
 				params.height = img.height;
@@ -637,7 +625,7 @@ fn.drawPolygon = function(args) {
 			} else {
 				ctx.lineTo(x1, y1);
 			}
-			// Project if chosen
+			// Project sides if chosen
 			if (params.projection !== undefined) {
 				ctx.lineTo(x2, y2);
 			}
@@ -689,7 +677,7 @@ fn.setPixels = function(args) {
 	return this;
 };
 
-// Create jCanvas queue
+// Create jCanvas layers array
 layers = [];
 
 // Create layer
@@ -701,8 +689,7 @@ function addLayer(args) {
 
 // Draw jCanvas layers
 fn.drawLayers = function(clear) {
-	var ctx, items = layers.length,
-		params, e, i;
+	var ctx, params, e, i;
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		// Optionally clear canvas
@@ -710,7 +697,7 @@ fn.drawLayers = function(clear) {
 			ctx.clearRect(0, 0, this[e].width, this[e].height);
 		}
 		// Draw items on queue
-		for (i=0; i<items; i+=1) {
+		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
 			if (params.fn) {
 				fn[params.fn].call(this.eq(e), params);
@@ -737,7 +724,7 @@ function retrofit() {
 	jC.queue = layers;
 	jC.create = addLayer;
 	fn.drawQueue = fn.drawLayers;
-	return $;
+	return jC;
 }
 
 // Export jCanvas functions/objects
