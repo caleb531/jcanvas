@@ -107,7 +107,7 @@ function closePath(ctx, params) {
 }
 
 // Measure angles in chosen units
-function checkUnits(params) {
+function convertAngles(params) {
 	return params.inDegrees ? pi/180 : 1;
 }
 
@@ -614,10 +614,10 @@ fn.drawPolygon = function(args) {
 		rotate(ctx, params, params.radius, params.radius);
 		ctx.beginPath();
 		for (i=0; i<params.sides; i+=1) {
-			x1 = round(params.x + (params.radius * cos(theta)));
-			y1 = round(params.y + (params.radius * sin(theta)));
-			x2 = round(params.x + ((apothem+apothem*params.projection) * cos(theta+inner)));
-			y2 = round(params.y + ((apothem+apothem*params.projection) * sin(theta+inner)));
+			x1 = params.x + (params.radius * cos(theta));
+			y1 = params.y + (params.radius * sin(theta));
+			x2 = params.x + ((apothem+apothem*params.projection) * cos(theta+inner));
+			y2 = params.y + ((apothem+apothem*params.projection) * sin(theta+inner));
 			// Draw path
 			if (i === 0) {
 				ctx.moveTo(x1, y1);
@@ -723,6 +723,7 @@ function retrofit() {
 	jC.queue = layers;
 	jC.create = addLayer;
 	fn.drawQueue = fn.drawLayers;
+	jC.checkUnits = jC.convertAngles;
 	return jC;
 }
 
@@ -730,7 +731,7 @@ function retrofit() {
 jC.defaults = defaults;
 jC.prefs = prefs;
 jC.setGlobals = setGlobals;
-jC.checkUnits = checkUnits;
+jC.convertAngles = convertAngles;
 jC.rotate = rotate;
 jC.layers = layers;
 jC.addLayer = addLayer;
