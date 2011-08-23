@@ -1,12 +1,12 @@
 /*!
-jCanvas v4.0b
+jCanvas v4.0
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 http://bit.ly/onG8YJ
 */
 (function($, document, Math, Image, undefined) {
 
-// Define aliases for better compression
+// Define local variables for better compression
 var defaults, prefs, layers,
 	fn = $.fn,
 	extend = $.extend,
@@ -50,7 +50,6 @@ defaults = {
 	x: 0, y: 0,
 	x1: 0, y1: 0,
 	x2: 0, y2: 0,
-	r1: undefined, r2: undefined,
 	radius: 0,
 	start: 0, end: 360,
 	ccw: false,
