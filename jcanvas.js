@@ -18,15 +18,15 @@ var defaults, prefs, layers,
 
 // jCanvas function
 function jC(args, setDefaults) {
-	// Reset to defaults if nothing is passed
 	if (!args) {
+		// Reset to defaults if nothing is passed
 		prefs = extend({}, defaults);
-	// Merge arguments with defaults
 	} else if (setDefaults) {
+		// Merge arguments with defaults
 		defaults = extend({}, defaults, args);
 		prefs = extend({}, defaults);
-	// Merge arguments with preferences
 	} else {
+			// Merge arguments with preferences
 		prefs = extend({}, prefs, args);
 	}
 	return this;
@@ -50,6 +50,7 @@ defaults = {
 	x: 0, y: 0,
 	x1: 0, y1: 0,
 	x2: 0, y2: 0,
+	r1: undefined, r2: undefined,
 	radius: 0,
 	start: 0, end: 360,
 	ccw: false,
@@ -123,7 +124,7 @@ function rotate(ctx, params, width, height) {
 	}
 	
 	ctx.save();
-	// Don't rotate if not needed
+	// Rotate only if needed
 	if (params.angle) {
 		ctx.translate(params.x, params.y);
 		ctx.rotate(params.angle*toRad);
@@ -142,9 +143,9 @@ fn.loadCanvas = function(ctx) {
 
 // Draw on canvas manually
 fn.draw = function(callback) {
-	var e;
-	for (e=0; e<this.length; e+=1) {
-		callback.call(this[e], this[e].getContext('2d'));
+	var $elems = this, e;
+	for (e=0; e<$elems.length; e+=1) {
+		callback.call($elems[e], $elems[e].getContext('2d'));
 	}
 	return this;
 };
@@ -158,7 +159,7 @@ fn.gradient = function(args) {
 		i = 1;
 	
 	// Create radial gradient if chosen
-	if (params.r1 !== undefined && params.r2 !== undefined) {
+	if (params.r1 !== undefined || params.r2 !== undefined) {
 		gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
 	} else {
 		gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
@@ -172,7 +173,7 @@ fn.gradient = function(args) {
 		
 	// Calculate color stop percentages if absent
 	for (i=1; i<=stops; i+=1) {
-		percent = round((100 / (stops-1)) * (i-1)) / 100;
+		percent = round(100 / (stops-1) * (i-1)) / 100;
 		if (params['s' + i] === undefined) {
 			params['s' + i] = percent;
 		}
@@ -240,9 +241,7 @@ fn.clearCanvas = function(args) {
 
 // Save canvas
 fn.saveCanvas = function() {
-	var ctx, e;
-	
-	for (e=0; e<this.length; e+=1) {
+	for (var e=0; e<this.length; e+=1) {
 		this[e].getContext('2d').save();
 	}
 	return this;
@@ -250,9 +249,7 @@ fn.saveCanvas = function() {
 
 // Restore canvas
 fn.restoreCanvas = function() {
-	var ctx, e;
-	
-	for (e=0; e<this.length; e+=1) {
+	for (var e=0; e<this.length; e+=1) {
 		this[e].getContext('2d').restore();
 	}
 	return this;
@@ -605,7 +602,7 @@ fn.drawPolygon = function(args) {
 		x1, y1, x2, y2, i;
 	params.closed = true;
 	
-	if (params.sides >= 3) {
+	if (params.sides > 2) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
@@ -625,7 +622,7 @@ fn.drawPolygon = function(args) {
 				ctx.lineTo(x1, y1);
 			}
 			// Project sides if chosen
-			if (params.projection !== undefined) {
+			if (params.projection) {
 				ctx.lineTo(x2, y2);
 			}
 			theta += dtheta;
@@ -709,7 +706,6 @@ fn.drawLayers = function(clear) {
 // Normalize layerX/layerY for jQuery mouse events
 $.event.fix = function(event) {
 	event = fix.call($.event, event);
-	// Use offsetX/offsetY for Opera
 	if (event.layerX === undefined && event.layerY === undefined) {
 		event.layerX = event.offsetX;
 		event.layerY = event.offsetY;
@@ -727,7 +723,7 @@ function retrofit() {
 	return jC;
 }
 
-// Export jCanvas functions/objects
+// Export jCanvas functions
 jC.defaults = defaults;
 jC.prefs = prefs;
 jC.setGlobals = setGlobals;
