@@ -114,7 +114,7 @@ function convertAngles(params) {
 // Rotate individual shape
 function rotate(ctx, params, width, height) {
 	
-	var toRad = params.inDegrees ? pi/180 : 1;
+	var toRad = convertAngles(params);
 	
 	// Always rotate from center
 	if (!params.fromCenter) {
@@ -307,7 +307,7 @@ fn.drawRect = function(args) {
 		rotate(ctx, params, params.width, params.height);
 			
 		// Draw a rounded rectangle if chosen
-		if (params.cornerRadius > 0) {
+		if (params.cornerRadius) {
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
 			x2 = params.x + params.width/2;
