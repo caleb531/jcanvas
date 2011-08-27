@@ -2,7 +2,7 @@
 jCanvas v4.0
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
-http://bit.ly/onG8YJ
+http://bit.ly/nMsxhR
 */
 (function($, document, Math, Image, undefined) {
 
@@ -26,7 +26,7 @@ function jC(args, setDefaults) {
 		defaults = extend({}, defaults, args);
 		prefs = extend({}, defaults);
 	} else {
-			// Merge arguments with preferences
+		// Merge arguments with preferences
 		prefs = extend({}, prefs, args);
 	}
 	return this;
