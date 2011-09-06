@@ -1,5 +1,5 @@
 /*!
-jCanvas v4.0
+jCanvas v4.1
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 http://bit.ly/nMsxhR
@@ -115,14 +115,14 @@ function convertAngles(params) {
 function rotate(ctx, params, width, height) {
 	
 	var toRad = convertAngles(params);
-	
+	ctx.save();
+		
 	// Always rotate from center
 	if (!params.fromCenter) {
 		params.x += width/2;
 		params.y += height/2;
 	}
 	
-	ctx.save();
 	// Rotate only if needed
 	if (params.angle) {
 		ctx.translate(params.x, params.y);
@@ -677,9 +677,8 @@ layers = [];
 
 // Create layer
 function addLayer(args) {
-	var params = extend({}, prefs, args);
-	layers.push(params);
-	return params;
+	layers.push(args);
+	return args;
 }
 
 // Draw jCanvas layers
