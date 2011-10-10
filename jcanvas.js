@@ -1,5 +1,5 @@
 /*!
-jCanvas v4.1
+jCanvas v4.0.1b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 http://bit.ly/nMsxhR
@@ -49,7 +49,6 @@ defaults = {
 	mask: false,
 	x: 0, y: 0,
 	x1: 0, y1: 0,
-	x2: 0, y2: 0,
 	radius: 0,
 	start: 0, end: 360,
 	ccw: false,
@@ -123,7 +122,7 @@ function rotate(ctx, params, width, height) {
 		params.y += height/2;
 	}
 	
-	// Rotate only if needed
+	// Rotate only if specified
 	if (params.angle) {
 		ctx.translate(params.x, params.y);
 		ctx.rotate(params.angle*toRad);
@@ -369,7 +368,7 @@ fn.drawArc = function(args) {
 fn.drawEllipse = function(args) {
 	var ctx, e,
 		params = extend({}, prefs, args),
-		controlW = params.width * (4/3);
+		controlW = params.width * 4/3;
 		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
