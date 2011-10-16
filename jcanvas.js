@@ -400,16 +400,12 @@ fn.drawLine = function(args) {
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		while (1) {
+		do {
 			lx = params['x' + l];
 			ly = params['y' + l];
-			if (lx !== undefined && ly !== undefined) {
-				ctx.lineTo(lx, ly);
-			} else {
-				break;
-			}
+			ctx.lineTo(lx, ly);
 			l += 1;
-		}
+		} while (lx !== undefined && ly !== undefined)
 		// Close path if chosen
 		closePath(ctx, params);
 	}
@@ -431,18 +427,14 @@ fn.drawQuad = function(args) {
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		while (1) {
+		do {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			lcx = params['cx' + (l-1)];
 			lcy = params['cy' + (l-1)];
-			if (lx !== undefined && ly !== undefined && lcx !== undefined && lcy !== undefined) {
-				ctx.quadraticCurveTo(lcx, lcy, lx, ly);
-			} else {
-				break;
-			}
+			ctx.quadraticCurveTo(lcx, lcy, lx, ly);
 			l += 1;
-		}
+		} while (lx !== undefined && ly !== undefined && lcx !== undefined && lcy !== undefined)
 		// Close path if chosen
 		closePath(ctx, params);
 	}
@@ -465,21 +457,17 @@ fn.drawBezier = function(args) {
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		while (1) {
+		do {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			lcx1 = params['cx' + lc];
 			lcy1 = params['cy' + lc];
 			lcx2 = params['cx' + (lc+1)];
 			lcy2 = params['cy' + (lc+1)];
-			if (lx !== undefined && ly !== undefined && lcx1 !== undefined && lcy1 !== undefined && lcx2 !== undefined && lcy2 !== undefined) {
-				ctx.bezierCurveTo(lcx1, lcy1, lcx2, lcy2, lx, ly);
-			} else {
-				break;
-			}
+			ctx.bezierCurveTo(lcx1, lcy1, lcx2, lcy2, lx, ly);
 			l += 1;
 			lc += 2;
-		}
+		} while (lx !== undefined && ly !== undefined && lcx1 !== undefined && lcy1 !== undefined && lcx2 !== undefined && lcy2 !== undefined)
 		// Close path if chosen
 		closePath(ctx, params);
 	}
