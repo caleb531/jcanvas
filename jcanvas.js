@@ -1,8 +1,7 @@
 /*!
-jCanvas v4.0.1b
+jCanvas v4.2b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
-http://bit.ly/nMsxhR
 */
 (function($, document, Math, Image, undefined) {
 
@@ -17,7 +16,7 @@ var defaults, prefs, layers,
 	cos = Math.cos;
 
 // jCanvas function
-function jC(args, setDefaults) {
+function jCanvas(args, setDefaults) {
 	if (!args) {
 		// Reset to defaults if nothing is passed
 		prefs = extend({}, defaults);
@@ -132,7 +131,7 @@ function rotate(ctx, params, width, height) {
 }
 
 // Make jCanvas function "chainable"
-fn.jCanvas = jC;
+fn.jCanvas = jCanvas;
 
 // Load canvas
 fn.loadCanvas = function(ctx) {
@@ -352,7 +351,7 @@ fn.drawArc = function(args) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
-		toRad = rotate(ctx, params, params.radius, params.radius);
+		toRad = rotate(ctx, params, params.radius*2, params.radius*2);
 		
 		// Draw arc
 		ctx.beginPath();
@@ -700,36 +699,14 @@ fn.drawLayers = function(clear) {
 	return this;
 };
 
-// Normalize layerX/layerY for jQuery mouse events
-$.event.fix = function(event) {
-	event = fix.call($.event, event);
-	if (event.layerX === undefined && event.layerY === undefined) {
-		event.layerX = event.offsetX;
-		event.layerY = event.offsetY;
-	}
-	return event;
-};
-
-// Enable backward compatibility
-function retrofit() {
-	jC.retro = true;
-	jC.queue = layers;
-	jC.create = addLayer;
-	fn.drawQueue = fn.drawLayers;
-	jC.checkUnits = jC.convertAngles;
-	return jC;
-}
-
 // Export jCanvas functions
-jC.defaults = defaults;
-jC.prefs = prefs;
-jC.setGlobals = setGlobals;
-jC.convertAngles = convertAngles;
-jC.rotate = rotate;
-jC.layers = layers;
-jC.addLayer = addLayer;
-jC.retrofit = retrofit;
-jC.retro = false;
-$.jCanvas = jC;
+jCanvas.defaults = defaults;
+jCanvas.prefs = prefs;
+jCanvas.setGlobals = setGlobals;
+jCanvas.convertAngles = convertAngles;
+jCanvas.rotate = rotate;
+jCanvas.layers = layers;
+jCanvas.addLayer = addLayer;
+$.jCanvas = jCanvas;
 
 }(jQuery, document, Math, Image));
