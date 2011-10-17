@@ -8,7 +8,7 @@ Licensed under the MIT license
 // Define local variables for better compression
 var defaults, prefs, layers,
 	fn = $.fn,
-	extend = $.extend,
+	merge = $.extend,
 	fix = $.event.fix,
 	pi = Math.PI,
 	round = Math.round,
@@ -16,17 +16,13 @@ var defaults, prefs, layers,
 	cos = Math.cos;
 
 // jCanvas function
-function jCanvas(args, setDefaults) {
+function jCanvas(args) {
 	if (!args) {
 		// Reset to defaults if nothing is passed
-		prefs = extend({}, defaults);
-	} else if (setDefaults) {
-		// Merge arguments with defaults
-		defaults = extend({}, defaults, args);
-		prefs = extend({}, defaults);
+		prefs = merge({}, defaults);
 	} else {
 		// Merge arguments with preferences
-		prefs = extend({}, prefs, args);
+		prefs = merge({}, prefs, args);
 	}
 	return this;
 }
@@ -64,19 +60,39 @@ defaults = {
 	repeat: 'repeat'
 };
 // Merge defaults with preferences
-prefs = extend({}, defaults);
+prefs = merge({}, defaults);
+
+// Extend jCanvas
+function extend(plugin) {
+
+	defaults = merge(defaults, plugin.props || {});
+	prefs = merge({}, defaults);
+
+	$.fn[plugin.name] = function(args) {
+		var ctx, e, params = merge({}, prefs, args);
+		for (e=0; e<this.length; e+=1) {
+			ctx = this[e].getContext('2d');
+			setGlobals(ctx, params);
+			params.toRad = convertAngles(params);
+			plugin.fn.call(this[e], ctx, params);
+		}
+		return this;
+	}
+	return $.fn[plugin.name];
+};
 
 // Set global properties
 function setGlobals(ctx, params) {
 	ctx.fillStyle = params.fillStyle;
 	ctx.strokeStyle = params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
-	ctx.lineCap = params.strokeCap;
-	ctx.lineJoin = params.strokeJoin;
 	// Set rounded corners for paths
 	if (params.rounded) {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
+	} else {
+		ctx.lineCap = params.strokeCap;
+		ctx.lineJoin = params.strokeJoin;
 	}
 	ctx.shadowOffsetX = params.shadowX;
 	ctx.shadowOffsetY = params.shadowY;
@@ -112,7 +128,7 @@ function convertAngles(params) {
 // Rotate individual shape
 function rotate(ctx, params, width, height) {
 	
-	var toRad = convertAngles(params);
+	params.toRad = convertAngles(params);
 	ctx.save();
 		
 	// Always rotate from center
@@ -124,10 +140,9 @@ function rotate(ctx, params, width, height) {
 	// Rotate only if specified
 	if (params.angle) {
 		ctx.translate(params.x, params.y);
-		ctx.rotate(params.angle*toRad);
+		ctx.rotate(params.angle*params.toRad);
 		ctx.translate(-params.x, -params.y);
 	}
-	return toRad;
 }
 
 // Make jCanvas function "chainable"
@@ -150,7 +165,7 @@ fn.draw = function(callback) {
 // Create gradient
 fn.gradient = function(args) {
 	var ctx = this[0].getContext('2d'),
-		params = extend({}, prefs, args),
+		params = merge({}, prefs, args),
 		gradient, percent,
 		stops = 0,
 		i = 1;
@@ -182,7 +197,7 @@ fn.gradient = function(args) {
 // Create pattern
 fn.pattern = function(args) {
 	var ctx = this[0].getContext('2d'),
-		params = extend({}, prefs, args),
+		params = merge({}, prefs, args),
 		img = new Image(),
 		pattern;
 	img.src = params.source;
@@ -218,8 +233,7 @@ fn.pattern = function(args) {
 
 // Clear canvas
 fn.clearCanvas = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args);
+	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -254,8 +268,7 @@ fn.restoreCanvas = function() {
 
 // Scale canvas
 fn.scaleCanvas = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args);
+	var ctx, e, params = merge({}, prefs, args);
 		
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -270,8 +283,7 @@ fn.scaleCanvas = function(args) {
 
 // Translate canvas
 fn.translateCanvas = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args);
+	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -283,8 +295,7 @@ fn.translateCanvas = function(args) {
 
 // Rotate canvas
 fn.rotateCanvas = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args);
+	var ctx, e, params = merge({}, prefs, args);
 	
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -295,8 +306,7 @@ fn.rotateCanvas = function(args) {
 
 // Draw rectangle
 fn.drawRect = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args),
+	var ctx, e, params = merge({}, prefs, args),
 		x1, y1, x2, y2, r;
 
 	for (e=0; e<this.length; e+=1) {
@@ -340,8 +350,7 @@ fn.drawRect = function(args) {
 
 // Draw arc
 fn.drawArc = function(args) {
-	var ctx, e, toRad,
-		params = extend({}, prefs, args);
+	var ctx, e, params = merge({}, prefs, args);
 	
 	// Change default end angle to radians if needed
 	if (!params.inDegrees && params.end === 360) {
@@ -351,11 +360,11 @@ fn.drawArc = function(args) {
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
-		toRad = rotate(ctx, params, params.radius*2, params.radius*2);
+		rotate(ctx, params, params.radius*2, params.radius*2);
 		
 		// Draw arc
 		ctx.beginPath();
-		ctx.arc(params.x, params.y, params.radius, (params.start*toRad)-(pi/2), (params.end*toRad)-(pi/2), params.ccw);
+		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(pi/2), (params.end*params.toRad)-(pi/2), params.ccw);
 		// Close path if chosen
 		ctx.restore();
 		closePath(ctx, params);
@@ -365,8 +374,7 @@ fn.drawArc = function(args) {
 
 // Draw ellipse
 fn.drawEllipse = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args),
+	var ctx, e, params = merge({}, prefs, args),
 		controlW = params.width * 4/3;
 		
 	for (e=0; e<this.length; e+=1) {
@@ -389,8 +397,7 @@ fn.drawEllipse = function(args) {
 
 // Draw line
 fn.drawLine = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args),
+	var ctx, e, params = merge({}, prefs, args),
 		l = 2, lx, ly;
 
 	for (e=0; e<this.length; e+=1) {
@@ -414,8 +421,7 @@ fn.drawLine = function(args) {
 
 // Draw quadratic curve
 fn.drawQuad = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args),
+	var ctx, e, params = merge({}, prefs, args),
 		l = 2,
 		lx, ly,
 		lcx, lcy;
@@ -443,8 +449,7 @@ fn.drawQuad = function(args) {
 
 // Draw Bezier curve
 fn.drawBezier = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args),
+	var ctx, e, params = merge({}, prefs, args),
 		l = 2, lc = 1,
 		lx, ly,
 		lcx1, lcy1,
@@ -476,8 +481,7 @@ fn.drawBezier = function(args) {
 
 // Draw text
 fn.drawText = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args);
+	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
 		ctx = this[e].getContext('2d');
@@ -496,8 +500,7 @@ fn.drawText = function(args) {
 
 // Draw image
 fn.drawImage = function(args) {
-	var ctx, elem, e,
-		params = extend({}, prefs, args),
+	var ctx, elem, e, params = merge({}, prefs, args),
 		// Define image source
 		img = new Image(),
 		scaleFac;
@@ -578,8 +581,7 @@ fn.drawImage = function(args) {
 
 // Draw polygon
 fn.drawPolygon = function(args) {
-	var ctx, e,
-		params = extend({}, prefs, args),
+	var ctx, e, params = merge({}, prefs, args),
 		inner = pi / params.sides,
 		theta = (pi/2) + inner,
 		dtheta = (pi*2) / params.sides,
@@ -622,7 +624,7 @@ fn.drawPolygon = function(args) {
 // Get pixels on the canvas
 fn.setPixels = function(args) {
 	var ctx, elem, e, i,
-		params = extend({}, prefs, args),
+		params = merge({}, prefs, args),
 		imgData, data, len, px;
 	
 	for (e=0; e<this.length; e+=1) {
@@ -690,9 +692,7 @@ fn.drawLayers = function(clear) {
 // Export jCanvas functions
 jCanvas.defaults = defaults;
 jCanvas.prefs = prefs;
-jCanvas.setGlobals = setGlobals;
-jCanvas.convertAngles = convertAngles;
-jCanvas.rotate = rotate;
+jCanvas.extend = extend;
 jCanvas.layers = layers;
 jCanvas.addLayer = addLayer;
 $.jCanvas = jCanvas;
