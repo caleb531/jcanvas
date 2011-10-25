@@ -59,22 +59,25 @@ defaults = {
 	source: '',
 	repeat: 'repeat'
 };
-// Merge defaults with preferences
+// Merge preferences with defaults
 prefs = merge({}, defaults);
 
 // Extend jCanvas
 function extend(plugin) {
 
+	// Merge properties with defaults
 	defaults = merge(defaults, plugin.props || {});
 	prefs = merge({}, defaults);
 
+	// Create plugin
 	$.fn[plugin.name] = function(args) {
-		var ctx, e, params = merge({}, prefs, args);
-		for (e=0; e<this.length; e+=1) {
-			ctx = this[e].getContext('2d');
+		var $this = this,
+			ctx, e, params = merge({}, prefs, args);
+		for (e=0; e<$this.length; e+=1) {
+			ctx = $this[e].getContext('2d');
 			setGlobals(ctx, params);
 			params.toRad = convertAngles(params);
-			plugin.fn.call(this[e], ctx, params);
+			plugin.fn.call($this[e], ctx, params);
 		}
 		return this;
 	}
@@ -313,7 +316,8 @@ fn.drawRect = function(args) {
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 		rotate(ctx, params, params.width, params.height);
-			
+		ctx.beginPath();
+		
 		// Draw a rounded rectangle if chosen
 		if (params.cornerRadius) {
 			x1 = params.x - params.width/2;
@@ -328,7 +332,6 @@ fn.drawRect = function(args) {
 			if ((y2 - y1) - (2 * r) < 0) {
 				r = (y2 - y1) / 2;
 			}
-			ctx.beginPath();
 			ctx.moveTo(x1+r,y1);
 			ctx.lineTo(x2-r,y1);
 			ctx.arc(x2-r, y1+r, r, 3*pi/2, pi*2);
@@ -339,10 +342,9 @@ fn.drawRect = function(args) {
 			ctx.lineTo(x1,y1+r);
 			ctx.arc(x1+r, y1+r, r, pi, 3*pi/2);
 		} else {
-			ctx.beginPath();
 			ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
-			ctx.restore();
 		}
+		ctx.restore();
 		closePath(ctx, params);
 	}
 	return this;
