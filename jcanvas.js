@@ -408,13 +408,24 @@ fn.drawLine = function(args) {
 		
 		// Draw each point
 		ctx.beginPath();
-		ctx.moveTo(params.x1, params.y1);
-		do {
-			lx = params['x' + l];
-			ly = params['y' + l];
-			ctx.lineTo(lx, ly);
-			l += 1;
-		} while (lx !== undefined && ly !== undefined)
+		if(params['path'] === undefined){
+			console.log("regular");
+			//regular x1 y1, x2 y2 stuff
+			ctx.moveTo(params.x1, params.y1);
+			do {
+				lx = params['x' + l];
+				ly = params['y' + l];
+				ctx.lineTo(lx, ly);
+				l += 1;
+			} while (lx !== undefined && ly !== undefined)
+		} else {
+			console.log("new");
+			//use an array of {x,y} objects to draw line (eg [{x:10,y:10},{x:20,y:20},{x:30,y:30}] )
+			ctx.moveTo(params['path'][0].x, params['path'][0].y);
+			for(var i=1; i<params['path'].length; i++) {
+				ctx.lineTo(params['path'][i].x, params['path'][i].y);
+			}
+		}
 		// Close path if chosen
 		closePath(ctx, params);
 	}
