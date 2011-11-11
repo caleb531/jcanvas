@@ -135,14 +135,14 @@ function extend(plugin) {
 
 	// Create plugin
 	$.fn[plugin.name] = function(args) {
-		var $this = this,
+		var $elems = this,
 			ctx, e, params = merge({}, prefs, args);
-		for (e=0; e<$this.length; e+=1) {
+		for (e=0; e<$elems.length; e+=1) {
 			if (!this[e].getContext) {continue;}
-			ctx = $this[e].getContext('2d');
+			ctx = $elems[e].getContext('2d');
 			setGlobals(ctx, params);
 			params.toRad = convertAngles(params);
-			plugin.fn.call($this[e], ctx, params);
+			plugin.fn.call($elems[e], ctx, params);
 		}
 		return this;
 	};
@@ -154,8 +154,15 @@ fn.jCanvas = jCanvas;
 
 // Load canvas
 fn.loadCanvas = function(ctx) {
-	if (!this[e].getContext) {return null;}
+	if (!this[0].getContext) {return null;}
 	return this[0].getContext(ctx || '2d');
+};
+
+// Load canvas
+fn.getCanvasData = function(type) {
+	if (!this[0].getContext) {return null;}
+	if (type === undefined) {type = 'image/png';}
+	return this[0].toDataURL(type);
 };
 
 // Draw on canvas manually
@@ -696,23 +703,40 @@ function addLayer(args) {
 
 // Draw jCanvas layers
 fn.drawLayers = function(clear) {
-	var $this = this,
+	var $elems = this,
 		ctx, params, e, i;
-	for (e=0; e<$this.length; e+=1) {
-		if (!$this[e].getContext) {continue;}
-		ctx = $this[e].getContext('2d');
+	for (e=0; e<$elems.length; e+=1) {
+		if (!$elems[e].getContext) {continue;}
+		ctx = $elems[e].getContext('2d');
 		// Optionally clear canvas
 		if (clear) {
-			ctx.clearRect(0, 0, $this[e].width, $this[e].height);
+			ctx.clearRect(0, 0, $elems[e].width, $elems[e].height);
 		}
 		// Draw items on queue
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
 			if (params.fn) {
-				fn[params.fn].call($this.eq(e), params);
+				fn[params.fn].call($elems.eq(e), params);
 			}
 		}
 	}
+	return this;
+};
+
+// Animate jCanvas layer
+fn.animateLayer = function(index, obj, duration) {
+	// Setup
+	var $elems = this;
+	if (index === undefined) {index = 0;}
+	if (duration === undefined) {duration = 400;}
+	
+	// Animate
+	$($.jCanvas.layers[index]).animate(obj, {
+		duration: duration,
+		step: function() {
+			$elems.drawLayers(true);
+		}
+	});
 	return this;
 };
 
