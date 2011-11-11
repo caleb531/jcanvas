@@ -4,10 +4,9 @@ Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
 (function($, document, Math, Image, undefined) {
-'use strict';
 
 // Define local variables for better compression
-var defaults, prefs, layers,
+var defaults, prefs,
 	fn = $.fn,
 	merge = $.extend,
 	pi = Math.PI,
@@ -166,7 +165,7 @@ $.fn.getCanvasData = function(type) {
 	} else {
 		type = type
 			.replace(/^([a-z]+)$/gi, 'image/$1')
-			.replace(/jpg/gi, 'jpeg')
+			.replace(/jpg/gi, 'jpeg');
 	}
 	return this[0].toDataURL(type);
 };
@@ -473,7 +472,7 @@ $.fn.drawQuad = function(args) {
 			lcy = params['cy' + (l-1)];
 			ctx.quadraticCurveTo(lcx, lcy, lx, ly);
 			l += 1;
-		};
+		}
 		// Close path if chosen
 		closePath(ctx, params);
 	}
@@ -635,10 +634,8 @@ $.fn.drawPolygon = function(args) {
 		rotate(ctx, params, params.radius, params.radius);
 		ctx.beginPath();
 		for (i=0; i<params.sides; i+=1) {
-			x1 = params.x + (params.radius * cos(theta));
-			y1 = params.y + (params.radius * sin(theta));
-			x2 = params.x + ((apothem+apothem*params.projection) * cos(theta+inner));
-			y2 = params.y + ((apothem+apothem*params.projection) * sin(theta+inner));
+			x1 = params.x + round(params.radius * cos(theta));
+			y1 = params.y + round(params.radius * sin(theta));
 			// Draw path
 			if (i === 0) {
 				ctx.moveTo(x1, y1);
@@ -647,6 +644,8 @@ $.fn.drawPolygon = function(args) {
 			}
 			// Project sides if chosen
 			if (params.projection) {
+				x2 = params.x + round((apothem+apothem*params.projection) * cos(theta+inner));
+				y2 = params.y + round((apothem+apothem*params.projection) * sin(theta+inner));
 				ctx.lineTo(x2, y2);
 			}
 			theta += dtheta;
@@ -698,20 +697,11 @@ $.fn.setPixels = function(args) {
 	return this;
 };
 
-// Create jCanvas layers array
-layers = [];
-
-// Create layer
-function addLayer(args) {
-	layers.push(args);
-	return args;
-}
-
 // Get jCanvas layers
 $.fn.getLayers = function() {
-	var $elem = this.eq(0);
+	var $elem = this.eq(0), layers;
 	if (!$elem[0].getContext) {return [];}
-	var layers = $elem.data('layers');
+	layers = $elem.data('layers');
 	// Create layers array if none exists
 	if (layers === undefined) {
 		layers = [];
@@ -722,11 +712,10 @@ $.fn.getLayers = function() {
 
 // Add a new jCanvas layer
 $.fn.addLayer = function(args) {
-	var $elems = this,
-		$elem, layers, i;
-	for (i=0; i<$elems.length; i+=1) {
-		$elem = $elems.eq(i);
-		if (!$elem[0].getContext) {continue;}
+	var $elems = this, $elem, layers, e;
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $elems.eq(e);
+		if (!$elems[e].getContext) {continue;}
 		layers = $elem.getLayers();
 		layers.push(args);
 	}
@@ -736,7 +725,7 @@ $.fn.addLayer = function(args) {
 // Draw jCanvas layers
 $.fn.drawLayers = function(clear) {
 	var $elems = this,
-		ctx, params, e, i;
+		ctx, params, layers, e, i;
 	for (e=0; e<$elems.length; e+=1) {
 		if (!$elems[e].getContext) {continue;}
 		ctx = $elems[e].getContext('2d');
@@ -750,35 +739,36 @@ $.fn.drawLayers = function(clear) {
 			}
 		}
 	}
-	return this;
+	return $elems;
 };
 
 // Animate jCanvas layer
 $.fn.animateLayer = function(index, obj, duration) {
 	// Setup
 	var $elems = this, layers, i;
-	if (index === undefined) {index = 0;}
 	if (duration === undefined) {duration = 400;}
-	
+	// "Redraw" callback
+	function redraw() {
+		$elems
+			.eq(i)
+			.clearCanvas()
+			.drawLayers();
+	}
 	for (i=0; i<$elems.length; i+=1) {
 		layers = $elems.eq(i).getLayers();
-			// Animate
-			$(layers[index]).animate(obj, {
+		// Animate
+		$(layers[index]).animate(obj, {
 			duration: duration,
-			step: function() {
-				$elems.clearCanvas().drawLayers();
-			}
+			step: redraw
 		});
 	}
-	return this;
+	return $elems;
 };
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
 jCanvas.prefs = prefs;
 jCanvas.extend = extend;
-jCanvas.layers = layers;
-jCanvas.addLayer = addLayer;
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Math, Image));
