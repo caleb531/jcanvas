@@ -150,23 +150,29 @@ function extend(plugin) {
 }
 
 // Make jCanvas function "chainable"
-fn.jCanvas = jCanvas;
+$.fn.jCanvas = jCanvas;
 
 // Load canvas
-fn.loadCanvas = function(ctx) {
+$.fn.loadCanvas = function(ctx) {
 	if (!this[0].getContext) {return null;}
 	return this[0].getContext(ctx || '2d');
 };
 
 // Load canvas
-fn.getCanvasData = function(type) {
-	if (!this[0].getContext) {return null;}
-	if (type === undefined) {type = 'image/png';}
+$.fn.getCanvasData = function(type) {
+	if (!this[0].toDataURL) {return null;}
+	if (type === undefined) {
+		type = 'image/png';
+	} else {
+		type = type
+			.replace(/^([a-z]+)$/gi, 'image/$1')
+			.replace(/jpg/gi, 'jpeg')
+	}
 	return this[0].toDataURL(type);
 };
 
 // Draw on canvas manually
-fn.draw = function(callback) {
+$.fn.draw = function(callback) {
 	var $elems = this, e;
 	for (e=0; e<$elems.length; e+=1) {
 		if (!$elems[e].getContext) {continue;}
@@ -176,7 +182,7 @@ fn.draw = function(callback) {
 };
 
 // Create gradient
-fn.gradient = function(args) {
+$.fn.gradient = function(args) {
 	if (!this[0].getContext) {return null;}
 	var ctx = this[0].getContext('2d'),
 		params = merge({}, prefs, args),
@@ -209,7 +215,7 @@ fn.gradient = function(args) {
 };
 
 // Create pattern
-fn.pattern = function(args) {
+$.fn.pattern = function(args) {
 	if (!this[0].getContext) {return null;}
 	var ctx = this[0].getContext('2d'),
 		params = merge({}, prefs, args),
@@ -247,7 +253,7 @@ fn.pattern = function(args) {
 };
 
 // Clear canvas
-fn.clearCanvas = function(args) {
+$.fn.clearCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
@@ -257,7 +263,7 @@ fn.clearCanvas = function(args) {
 		rotate(ctx, params, params.width, params.height);
 		
 		// Clear entire canvas
-		if (!args) {
+		if (!params.width && !params.height) {
 			ctx.clearRect(0, 0, this[e].width, this[e].height);
 		} else {
 			ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
@@ -267,7 +273,7 @@ fn.clearCanvas = function(args) {
 };
 
 // Save canvas
-fn.saveCanvas = function() {
+$.fn.saveCanvas = function() {
 	var e;
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -277,7 +283,7 @@ fn.saveCanvas = function() {
 };
 
 // Restore canvas
-fn.restoreCanvas = function() {
+$.fn.restoreCanvas = function() {
 	var e;
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -287,7 +293,7 @@ fn.restoreCanvas = function() {
 };
 
 // Scale canvas
-fn.scaleCanvas = function(args) {
+$.fn.scaleCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 		
 	for (e=0; e<this.length; e+=1) {
@@ -303,7 +309,7 @@ fn.scaleCanvas = function(args) {
 };
 
 // Translate canvas
-fn.translateCanvas = function(args) {
+$.fn.translateCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
@@ -316,7 +322,7 @@ fn.translateCanvas = function(args) {
 };
 
 // Rotate canvas
-fn.rotateCanvas = function(args) {
+$.fn.rotateCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 	
 	for (e=0; e<this.length; e+=1) {
@@ -328,7 +334,7 @@ fn.rotateCanvas = function(args) {
 };
 
 // Draw rectangle
-fn.drawRect = function(args) {
+$.fn.drawRect = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		x1, y1, x2, y2, r;
 
@@ -372,7 +378,7 @@ fn.drawRect = function(args) {
 };
 
 // Draw arc
-fn.drawArc = function(args) {
+$.fn.drawArc = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 	
 	// Change default end angle to radians if needed
@@ -397,7 +403,7 @@ fn.drawArc = function(args) {
 };
 
 // Draw ellipse
-fn.drawEllipse = function(args) {
+$.fn.drawEllipse = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		controlW = params.width * 4/3;
 		
@@ -421,7 +427,7 @@ fn.drawEllipse = function(args) {
 };
 
 // Draw line
-fn.drawLine = function(args) {
+$.fn.drawLine = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		l = 2, lx=0, ly=0;
 
@@ -446,7 +452,7 @@ fn.drawLine = function(args) {
 };
 
 // Draw quadratic curve
-fn.drawQuad = function(args) {
+$.fn.drawQuad = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		l = 2,
 		lx=0, ly=0,
@@ -475,7 +481,7 @@ fn.drawQuad = function(args) {
 };
 
 // Draw Bezier curve
-fn.drawBezier = function(args) {
+$.fn.drawBezier = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		l = 2, lc = 1,
 		lx=0, ly=0,
@@ -508,7 +514,7 @@ fn.drawBezier = function(args) {
 };
 
 // Draw text
-fn.drawText = function(args) {
+$.fn.drawText = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
@@ -528,7 +534,7 @@ fn.drawText = function(args) {
 };
 
 // Draw image
-fn.drawImage = function(args) {
+$.fn.drawImage = function(args) {
 	var ctx, elem, e, params = merge({}, prefs, args),
 		// Define image source
 		img = new Image(),
@@ -610,7 +616,7 @@ fn.drawImage = function(args) {
 };
 
 // Draw polygon
-fn.drawPolygon = function(args) {
+$.fn.drawPolygon = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		inner = pi / params.sides,
 		theta = (pi/2) + inner,
@@ -653,7 +659,7 @@ fn.drawPolygon = function(args) {
 };
 
 // Get pixels on the canvas
-fn.setPixels = function(args) {
+$.fn.setPixels = function(args) {
 	var ctx, elem, e, i,
 		params = merge({}, prefs, args),
 		imgData, data, len, px;
@@ -701,17 +707,41 @@ function addLayer(args) {
 	return args;
 }
 
+// Get jCanvas layers
+$.fn.getLayers = function() {
+	var $elem = this.eq(0);
+	if (!$elem[0].getContext) {return [];}
+	var layers = $elem.data('layers');
+	// Create layers array if none exists
+	if (layers === undefined) {
+		layers = [];
+		$elem.data('layers', layers);
+	}
+	return layers;
+};
+
+// Add a new jCanvas layer
+$.fn.addLayer = function(args) {
+	var $elems = this,
+		$elem, layers, i;
+	for (i=0; i<$elems.length; i+=1) {
+		$elem = $elems.eq(i);
+		if (!$elem[0].getContext) {continue;}
+		layers = $elem.getLayers();
+		layers.push(args);
+	}
+	return $elems;
+};
+
 // Draw jCanvas layers
-fn.drawLayers = function(clear) {
+$.fn.drawLayers = function(clear) {
 	var $elems = this,
 		ctx, params, e, i;
 	for (e=0; e<$elems.length; e+=1) {
 		if (!$elems[e].getContext) {continue;}
 		ctx = $elems[e].getContext('2d');
+		layers = $elems.eq(e).data('layers') || [];
 		// Optionally clear canvas
-		if (clear) {
-			ctx.clearRect(0, 0, $elems[e].width, $elems[e].height);
-		}
 		// Draw items on queue
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
@@ -724,19 +754,22 @@ fn.drawLayers = function(clear) {
 };
 
 // Animate jCanvas layer
-fn.animateLayer = function(index, obj, duration) {
+$.fn.animateLayer = function(index, obj, duration) {
 	// Setup
-	var $elems = this;
+	var $elems = this, layers, i;
 	if (index === undefined) {index = 0;}
 	if (duration === undefined) {duration = 400;}
 	
-	// Animate
-	$($.jCanvas.layers[index]).animate(obj, {
-		duration: duration,
-		step: function() {
-			$elems.drawLayers(true);
-		}
-	});
+	for (i=0; i<$elems.length; i+=1) {
+		layers = $elems.eq(i).getLayers();
+			// Animate
+			$(layers[index]).animate(obj, {
+			duration: duration,
+			step: function() {
+				$elems.clearCanvas().drawLayers();
+			}
+		});
+	}
 	return this;
 };
 
