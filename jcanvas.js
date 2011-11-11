@@ -4,12 +4,12 @@ Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
 (function($, document, Math, Image, undefined) {
+'use strict';
 
 // Define local variables for better compression
 var defaults, prefs, layers,
 	fn = $.fn,
 	merge = $.extend,
-	fix = $.event.fix,
 	pi = Math.PI,
 	round = Math.round,
 	sin = Math.sin,
@@ -61,28 +61,6 @@ defaults = {
 };
 // Merge preferences with defaults
 prefs = merge({}, defaults);
-
-// Extend jCanvas
-function extend(plugin) {
-
-	// Merge properties with defaults
-	defaults = merge(defaults, plugin.props || {});
-	prefs = merge({}, defaults);
-
-	// Create plugin
-	$.fn[plugin.name] = function(args) {
-		var $this = this,
-			ctx, e, params = merge({}, prefs, args);
-		for (e=0; e<$this.length; e+=1) {
-			ctx = $this[e].getContext('2d');
-			setGlobals(ctx, params);
-			params.toRad = convertAngles(params);
-			plugin.fn.call($this[e], ctx, params);
-		}
-		return this;
-	}
-	return $.fn[plugin.name];
-};
 
 // Set global properties
 function setGlobals(ctx, params) {
@@ -148,11 +126,35 @@ function rotate(ctx, params, width, height) {
 	}
 }
 
+// Extend jCanvas
+function extend(plugin) {
+
+	// Merge properties with defaults
+	defaults = merge(defaults, plugin.props || {});
+	prefs = merge({}, defaults);
+
+	// Create plugin
+	$.fn[plugin.name] = function(args) {
+		var $this = this,
+			ctx, e, params = merge({}, prefs, args);
+		for (e=0; e<$this.length; e+=1) {
+			if (!this[e].getContext) {continue;}
+			ctx = $this[e].getContext('2d');
+			setGlobals(ctx, params);
+			params.toRad = convertAngles(params);
+			plugin.fn.call($this[e], ctx, params);
+		}
+		return this;
+	};
+	return $.fn[plugin.name];
+}
+
 // Make jCanvas function "chainable"
 fn.jCanvas = jCanvas;
 
 // Load canvas
 fn.loadCanvas = function(ctx) {
+	if (!this[e].getContext) {return null;}
 	return this[0].getContext(ctx || '2d');
 };
 
@@ -160,6 +162,7 @@ fn.loadCanvas = function(ctx) {
 fn.draw = function(callback) {
 	var $elems = this, e;
 	for (e=0; e<$elems.length; e+=1) {
+		if (!$elems[e].getContext) {continue;}
 		callback.call($elems[e], $elems[e].getContext('2d'));
 	}
 	return this;
@@ -167,6 +170,7 @@ fn.draw = function(callback) {
 
 // Create gradient
 fn.gradient = function(args) {
+	if (!this[0].getContext) {return null;}
 	var ctx = this[0].getContext('2d'),
 		params = merge({}, prefs, args),
 		gradient, percent,
@@ -199,6 +203,7 @@ fn.gradient = function(args) {
 
 // Create pattern
 fn.pattern = function(args) {
+	if (!this[0].getContext) {return null;}
 	var ctx = this[0].getContext('2d'),
 		params = merge({}, prefs, args),
 		img = new Image(),
@@ -239,6 +244,7 @@ fn.clearCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 
 		rotate(ctx, params, params.width, params.height);
@@ -255,7 +261,9 @@ fn.clearCanvas = function(args) {
 
 // Save canvas
 fn.saveCanvas = function() {
-	for (var e=0; e<this.length; e+=1) {
+	var e;
+	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		this[e].getContext('2d').save();
 	}
 	return this;
@@ -263,7 +271,9 @@ fn.saveCanvas = function() {
 
 // Restore canvas
 fn.restoreCanvas = function() {
-	for (var e=0; e<this.length; e+=1) {
+	var e;
+	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		this[e].getContext('2d').restore();
 	}
 	return this;
@@ -274,6 +284,7 @@ fn.scaleCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 		
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 
 		ctx.save();
@@ -289,6 +300,7 @@ fn.translateCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		ctx.save();
 		ctx.translate(params.x, params.y);
@@ -301,6 +313,7 @@ fn.rotateCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 	
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		rotate(ctx, params, 0, 0);
 	}
@@ -313,6 +326,7 @@ fn.drawRect = function(args) {
 		x1, y1, x2, y2, r;
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 		rotate(ctx, params, params.width, params.height);
@@ -360,6 +374,7 @@ fn.drawArc = function(args) {
 	}
 		
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 		rotate(ctx, params, params.radius*2, params.radius*2);
@@ -380,6 +395,7 @@ fn.drawEllipse = function(args) {
 		controlW = params.width * 4/3;
 		
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 		rotate(ctx, params, params.width, params.height);
@@ -400,21 +416,22 @@ fn.drawEllipse = function(args) {
 // Draw line
 fn.drawLine = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
-		l = 2, lx, ly;
+		l = 2, lx=0, ly=0;
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 		
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		do {
+		while (lx !== undefined && ly !== undefined) {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			ctx.lineTo(lx, ly);
 			l += 1;
-		} while (lx !== undefined && ly !== undefined)
+		}
 		// Close path if chosen
 		closePath(ctx, params);
 	}
@@ -425,24 +442,25 @@ fn.drawLine = function(args) {
 fn.drawQuad = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		l = 2,
-		lx, ly,
-		lcx, lcy;
+		lx=0, ly=0,
+		lcx=0, lcy=0;
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 			
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		do {
+		while (lx !== undefined && ly !== undefined && lcx !== undefined && lcy !== undefined) {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			lcx = params['cx' + (l-1)];
 			lcy = params['cy' + (l-1)];
 			ctx.quadraticCurveTo(lcx, lcy, lx, ly);
 			l += 1;
-		} while (lx !== undefined && ly !== undefined && lcx !== undefined && lcy !== undefined)
+		};
 		// Close path if chosen
 		closePath(ctx, params);
 	}
@@ -453,18 +471,19 @@ fn.drawQuad = function(args) {
 fn.drawBezier = function(args) {
 	var ctx, e, params = merge({}, prefs, args),
 		l = 2, lc = 1,
-		lx, ly,
-		lcx1, lcy1,
-		lcx2, lcy2;
+		lx=0, ly=0,
+		lcx1=0, lcy1=0,
+		lcx2=0, lcy2=0;
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 	
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		do {
+		while (lx !== undefined && ly !== undefined && lcx1 !== undefined && lcy1 !== undefined && lcx2 !== undefined && lcy2 !== undefined) {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			lcx1 = params['cx' + lc];
@@ -474,7 +493,7 @@ fn.drawBezier = function(args) {
 			ctx.bezierCurveTo(lcx1, lcy1, lcx2, lcy2, lx, ly);
 			l += 1;
 			lc += 2;
-		} while (lx !== undefined && ly !== undefined && lcx1 !== undefined && lcy1 !== undefined && lcx2 !== undefined && lcy2 !== undefined)
+		}
 		// Close path if chosen
 		closePath(ctx, params);
 	}
@@ -486,6 +505,7 @@ fn.drawText = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 	
@@ -565,6 +585,7 @@ fn.drawImage = function(args) {
 	// Draw image if already loaded
 	for (e=0; e<this.length; e+=1) {
 		elem = this[e];
+		if (!elem.getContext) {continue;}
 		ctx = elem.getContext('2d');
 		setGlobals(ctx, params);
 		
@@ -593,6 +614,7 @@ fn.drawPolygon = function(args) {
 	
 	if (params.sides > 2) {
 	for (e=0; e<this.length; e+=1) {
+		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 		setGlobals(ctx, params);
 		
@@ -631,6 +653,7 @@ fn.setPixels = function(args) {
 	
 	for (e=0; e<this.length; e+=1) {
 			elem = this[e];
+			if (!elem.getContext) {continue;}
 			ctx = elem.getContext('2d');
 			// Measure from center
 			if (!params.x && !params.y && !params.width && !params.height) {
@@ -673,18 +696,20 @@ function addLayer(args) {
 
 // Draw jCanvas layers
 fn.drawLayers = function(clear) {
-	var ctx, params, e, i;
-	for (e=0; e<this.length; e+=1) {
-		ctx = this[e].getContext('2d');
+	var $this = this,
+		ctx, params, e, i;
+	for (e=0; e<$this.length; e+=1) {
+		if (!$this[e].getContext) {continue;}
+		ctx = $this[e].getContext('2d');
 		// Optionally clear canvas
 		if (clear) {
-			ctx.clearRect(0, 0, this[e].width, this[e].height);
+			ctx.clearRect(0, 0, $this[e].width, $this[e].height);
 		}
 		// Draw items on queue
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
 			if (params.fn) {
-				fn[params.fn].call(this.eq(e), params);
+				fn[params.fn].call($this.eq(e), params);
 			}
 		}
 	}
