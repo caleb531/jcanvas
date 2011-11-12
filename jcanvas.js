@@ -3,7 +3,7 @@ jCanvas v4.1b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
-(function($, document, Math, Image, undefined) {
+(function($, document, Math, Array, Image, undefined) {
 
 // Define local variables for better compression
 var defaults, prefs,
@@ -43,7 +43,6 @@ defaults = {
 	mask: false,
 	x: 0, y: 0,
 	x1: 0, y1: 0,
-	radius: 0,
 	start: 0, end: 360,
 	ccw: false,
 	inDegrees: true,
@@ -754,32 +753,55 @@ $.fn.drawLayers = function(clear) {
 };
 
 // Animate jCanvas layer
-$.fn.animateLayer = function(index, obj, duration, callback) {
+$.fn.animateLayer = function() {
 	// Setup
-	var $elems = this, $elem, layers, e;
-	// If no duration is specified
-	if (duration === undefined) {
-		duration = undefined;
-		callback = function() {};
-	} else if (callback === undefined) {
-		callback = function() {};
-	// If callback is specified instead of duration
-	} else if (typeof duration === 'function') {
-		callback = duration;
-		duration = undefined;
+	var $elems = this,
+		args = Array.prototype.slice.call(arguments, 0),
+		$elem, layers, e;
+	
+	/* Deal with all cases of argument placement */
+	
+	// If index is ommitted
+	if (typeof args[0] === 'object') {
+		args.splice(0, 0, 0);
+	}
+	// If args end after props
+	if (args[2] === undefined) {
+		args.splice(2, 0, null);
+		args.splice(3, 0, null);
+		args.splice(4, 0, function() {});
+	// If callback comes after props
+	} else if (typeof args[2] === 'function') {
+		args.splice(2, 0, null);
+		args.splice(3, 0, null);
+	}
+	// If args end after duration
+	if (args[3] === undefined) {
+		args[3] = null;
+		args.splice(4, 0, function() {});
+	// If callback comes after duration
+	} else if (typeof args[3] === 'function') {
+		args.splice(3, 0, null);
+	}
+	// If callback is ommitted
+	if (args[4] === undefined) {
+		args[4] = function() {}
 	}
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		layers = $elem.getLayers();
+		// Merge properties so any property can be animated
+		layers[args[0]] = merge({}, prefs, layers[args[0]]);
 		// Animate layer
-		$(layers[index]).animate(obj, {
-			duration: duration,
+		$(layers[args[0]]).animate(args[1], {
+			duration: args[2],
+			easing: args[3],
 			queue: false,
 			// When animation completes
 			complete: (function($elem) {
 				return function() {
-					callback.call($elem[0]);
+					args[4].call($elem[0]);
 				};
 			}($elem)),
 			// Redraw for every frame
@@ -801,4 +823,4 @@ jCanvas.prefs = prefs;
 jCanvas.extend = extend;
 $.jCanvas = jCanvas;
 
-}(jQuery, document, Math, Image));
+}(jQuery, document, Math, Array, Image));
