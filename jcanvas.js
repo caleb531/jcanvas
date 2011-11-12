@@ -760,7 +760,9 @@ $.fn.animateLayer = function(index, obj, duration, callback) {
 	// If no duration is specified
 	if (duration === undefined) {
 		duration = undefined;
-		callback = function() {}
+		callback = function() {};
+	} else if (callback === undefined) {
+		callback = function() {};
 	// If callback is specified instead of duration
 	} else if (typeof duration === 'function') {
 		callback = duration;
