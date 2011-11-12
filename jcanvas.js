@@ -129,6 +129,7 @@ function rotate(ctx, params, width, height) {
 function extend(plugin) {
 
 	// Merge properties with defaults
+	plugin = plugin || {};
 	defaults = merge(defaults, plugin.props || {});
 	prefs = merge({}, defaults);
 
@@ -137,15 +138,15 @@ function extend(plugin) {
 		var $elems = this,
 			ctx, e, params = merge({}, prefs, args);
 		for (e=0; e<$elems.length; e+=1) {
-			if (!this[e].getContext) {continue;}
+			if (!$elems[e].getContext) {continue;}
 			ctx = $elems[e].getContext('2d');
 			setGlobals(ctx, params);
 			params.toRad = convertAngles(params);
 			plugin.fn.call($elems[e], ctx, params);
 		}
-		return this;
+		return $elems;
 	};
-	return $.fn[plugin.name];
+	return this;
 }
 
 // Make jCanvas function "chainable"
@@ -699,13 +700,13 @@ $.fn.setPixels = function(args) {
 
 // Get jCanvas layers
 $.fn.getLayers = function() {
-	var $elem = this.eq(0), layers;
-	if (!$elem[0].getContext) {return [];}
-	layers = $elem.data('layers');
+	var elem = this[0], layers;
+	if (!elem || !elem.getContext) {return [];}
+	layers = $.data(elem, 'layers');
 	// Create layers array if none exists
 	if (layers === undefined) {
 		layers = [];
-		$elem.data('layers', layers);
+		$.data(elem, 'layers', layers);
 	}
 	return layers;
 };
@@ -714,9 +715,13 @@ $.fn.getLayers = function() {
 $.fn.addLayer = function(args) {
 	var $elems = this, $elem, layers, e;
 	for (e=0; e<$elems.length; e+=1) {
-		$elem = $elems.eq(e);
+		$elem = $($elems[e]);
 		if (!$elems[e].getContext) {continue;}
 		layers = $elem.getLayers();
+		// If layer is a function
+		if (typeof args === 'function') {
+			args.fn = 'draw';
+		}
 		layers.push(args);
 	}
 	return $elems;
@@ -724,18 +729,24 @@ $.fn.addLayer = function(args) {
 
 // Draw jCanvas layers
 $.fn.drawLayers = function(clear) {
-	var $elems = this,
+	var $elems = this, $elem,
 		ctx, params, layers, e, i;
 	for (e=0; e<$elems.length; e+=1) {
-		if (!$elems[e].getContext) {continue;}
-		ctx = $elems[e].getContext('2d');
-		layers = $elems.eq(e).data('layers') || [];
-		// Optionally clear canvas
+		$elem = $($elems[e]);
+		
+		if (!$elem[0].getContext) {continue;}
+		ctx = $elem[0].getContext('2d');
+		layers = $elem.getLayers();
+		
 		// Draw items on queue
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
-			if (params.fn) {
-				fn[params.fn].call($elems.eq(e), params);
+			// If layer is a function
+			if (params.fn === 'draw') {
+				params.call($elem[0], ctx);
+			// If layer is an object
+			} else {
+				fn[params.fn].call($elem, params);
 			}
 		}
 	}
@@ -743,23 +754,40 @@ $.fn.drawLayers = function(clear) {
 };
 
 // Animate jCanvas layer
-$.fn.animateLayer = function(index, obj, duration) {
+$.fn.animateLayer = function(index, obj, duration, callback) {
 	// Setup
-	var $elems = this, layers, i;
-	if (duration === undefined) {duration = 400;}
-	// "Redraw" callback
-	function redraw() {
-		$elems
-			.eq(i)
-			.clearCanvas()
-			.drawLayers();
+	var $elems = this, $elem, layers, e;
+	// If no duration is specified
+	if (duration === undefined) {
+		duration = undefined;
+		callback = function() {}
+	// If callback is specified instead of duration
+	} else if (typeof duration === 'function') {
+		callback = duration;
+		duration = undefined;
 	}
-	for (i=0; i<$elems.length; i+=1) {
-		layers = $elems.eq(i).getLayers();
-		// Animate
+
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		layers = $elem.getLayers();
+		// Animate layer
 		$(layers[index]).animate(obj, {
 			duration: duration,
-			step: redraw
+			queue: false,
+			// When animation completes
+			complete: (function($elem) {
+				return function() {
+					callback.call($elem[0]);
+				};
+			}($elem)),
+			// Redraw for every frame
+			step: (function($elem) {
+				return function() {
+					$elem
+						.clearCanvas()
+						.drawLayers();
+				};
+			}($elem))
 		});
 	}
 	return $elems;
