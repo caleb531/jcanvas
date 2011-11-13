@@ -3,6 +3,7 @@ jCanvas v4.1b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
+
 (function($, document, Math, Array, Image, undefined) {
 
 // Define local variables for better compression
@@ -40,7 +41,6 @@ defaults = {
 	shadowColor: 'transparent',
 	opacity: 1,
 	compositing: 'source-over',
-	mask: false,
 	x: 0, y: 0,
 	x1: 0, y1: 0,
 	start: 0, end: 360,
@@ -133,18 +133,20 @@ function extend(plugin) {
 	prefs = merge({}, defaults);
 
 	// Create plugin
-	$.fn[plugin.name] = function(args) {
-		var $elems = this,
-			ctx, e, params = merge({}, prefs, args);
-		for (e=0; e<$elems.length; e+=1) {
-			if (!$elems[e].getContext) {continue;}
-			ctx = $elems[e].getContext('2d');
-			setGlobals(ctx, params);
-			params.toRad = convertAngles(params);
-			plugin.fn.call($elems[e], ctx, params);
-		}
-		return $elems;
-	};
+	if (plugin.name) {
+		$.fn[plugin.name] = function(args) {
+			var $elems = this,
+				ctx, e, params = merge({}, prefs, args);
+			for (e=0; e<$elems.length; e+=1) {
+				if (!$elems[e].getContext) {continue;}
+				ctx = $elems[e].getContext('2d');
+				setGlobals(ctx, params);
+				params.toRad = convertAngles(params);
+				plugin.fn.call($elems[e], ctx, params);
+			}
+			return $elems;
+		};
+	}
 	return this;
 }
 
@@ -727,7 +729,7 @@ $.fn.addLayer = function(args) {
 };
 
 // Draw jCanvas layers
-$.fn.drawLayers = function(clear) {
+$.fn.drawLayers = function() {
 	var $elems = this, $elem,
 		ctx, params, layers, e, i;
 	for (e=0; e<$elems.length; e+=1) {
@@ -736,7 +738,6 @@ $.fn.drawLayers = function(clear) {
 		if (!$elem[0].getContext) {continue;}
 		ctx = $elem[0].getContext('2d');
 		layers = $elem.getLayers();
-		
 		// Draw items on queue
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
@@ -745,7 +746,12 @@ $.fn.drawLayers = function(clear) {
 				params.call($elem[0], ctx);
 			// If layer is an object
 			} else {
-				fn[params.fn].call($elem, params);
+				params.width = params._width;
+				params.height = params._height;
+				params.opacity = params._opacity;
+				if (fn[params.fn]) {
+					fn[params.fn].call($elem, params);
+				}
 			}
 		}
 	}
@@ -757,25 +763,25 @@ $.fn.animateLayer = function() {
 	// Setup
 	var $elems = this,
 		args = Array.prototype.slice.call(arguments, 0),
-		$elem, layers, e;
+		$elem, layers, layer, e;
 	
-	/* Deal with all cases of argument placement */
+	// Deal with all cases of argument placement
 	
 	// If index is ommitted
 	if (typeof args[0] === 'object') {
 		args.splice(0, 0, 0);
 	}
-	// If args end after props
+	// If object is the last argument
 	if (args[2] === undefined) {
 		args.splice(2, 0, null);
 		args.splice(3, 0, null);
 		args.splice(4, 0, function() {});
-	// If callback comes after props
+	// If callback comes after object
 	} else if (typeof args[2] === 'function') {
 		args.splice(2, 0, null);
 		args.splice(3, 0, null);
 	}
-	// If args end after duration
+	// If duration is the last argument
 	if (args[3] === undefined) {
 		args[3] = null;
 		args.splice(4, 0, function() {});
@@ -791,10 +797,21 @@ $.fn.animateLayer = function() {
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		layers = $elem.getLayers();
+		layer = layers[args[0]];
 		// Merge properties so any property can be animated
-		layers[args[0]] = merge({}, prefs, layers[args[0]]);
+		if (layer === undefined || typeof layer === 'function') {
+			continue;
+		}
+		layer = merge({}, prefs, layer);
+		layers[args[0]] = layer;
+		layer._width = layer.width;
+		layer._height = layer.height;
+		layer._opacity = layer.opacity;
+		args[1]._width = args[1].width;
+		args[1]._height = args[1].height;
+		args[1]._opacity = args[1].opacity;
 		// Animate layer
-		$(layers[args[0]]).animate(args[1], {
+		$(layer).animate(args[1], {
 			duration: args[2],
 			easing: args[3],
 			queue: false,
