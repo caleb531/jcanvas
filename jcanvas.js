@@ -14,8 +14,8 @@ var defaults, prefs, colorNames,
 	round = Math.round,
 	sin = Math.sin,
 	cos = Math.cos,
-	cssProps = ['width', 'height', 'opacity'],
-	colorProps = ['backgroundColor', 'color', 'borderColor', 'borderTopColor', 'borderRightColor', 'borderBottomColor', 'borderLeftColor', 'fillStyle', 'strokeStyle', 'shadowColor'];
+	cssProps,
+	colorProps;
 
 // jCanvas function
 function jCanvas(args) {
@@ -350,6 +350,7 @@ $.fn.drawRect = function(args) {
 		
 		// Draw a rounded rectangle if chosen
 		if (params.cornerRadius) {
+			params.closed = true;
 			x1 = params.x - params.width/2;
 			y1 = params.y - params.height/2;
 			x2 = params.x + params.width/2;
@@ -371,7 +372,6 @@ $.fn.drawRect = function(args) {
 			ctx.arc(x1+r, y2-r, r, pi/2, pi, false);
 			ctx.lineTo(x1,y1+r);
 			ctx.arc(x1+r, y1+r, r, pi, 3*pi/2, false);
-			params.closed = true;
 		} else {
 			ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 		}
@@ -718,6 +718,23 @@ function hideProps(props, obj) {
 	}
 }
 
+cssProps = [
+	'width',
+	'height',
+	'opacity'
+];
+colorProps = [
+	'backgroundColor',
+	'color',
+	'borderColor',
+	'borderTopColor',
+	'borderRightColor',
+	'borderBottomColor',
+	'borderLeftColor',
+	'fillStyle',
+	'strokeStyle',
+	'shadowColor'
+];
 colorNames = {
 	aqua: '#0ff',
 	black: '#000',
@@ -739,14 +756,21 @@ colorNames = {
 
 // Convert a color value to RGBA
 function toRgba(color) {
-	var rgb = [],
+	var original,
+		rgb = [],
 		multiple = 1,
 		elem;
 	// Deal with color names
 	if (color.match(/^[a-z]+$/gi)) {
-		elem = document.createElement('div');
-		elem.style.color = color;
-		color = colorNames[color] || $.css(elem, 'color');
+		if (colorNames[color]) {
+			color = colorNames[color];
+		} else {
+			elem = document.body.parentNode;
+			original = elem.style.color;
+			elem.style.color = color;
+			color = $.css(elem, 'color');
+			elem.style.color = original;
+		}
 	}
 	// Deal with hexadecimal
 	if (color.match(/^\#/gi)) {
@@ -840,6 +864,7 @@ $.fn.addLayer = function(args) {
 		if (typeof args === 'function') {
 			args.fn = 'draw';
 		}
+		args = merge({}, prefs, args);
 		layers.push(args);
 	}
 	return $elems;
@@ -871,6 +896,9 @@ $.fn.drawLayers = function() {
 	}
 	return $elems;
 };
+
+arr = [];
+k = 0;
 
 // Animate jCanvas layer
 $.fn.animateLayer = function() {
@@ -916,14 +944,13 @@ $.fn.animateLayer = function() {
 		if (layer === undefined || typeof layer === 'function') {
 			continue;
 		}
-		layer = merge({}, prefs, layer);
-		layers[args[0]] = layer;
 		// Allow jQuery to animate CSS properties of regular objects
 		hideProps(cssProps, layer);
 		hideProps(cssProps, args[1]);
+		arr[k] = layer;
+		k += 1;
 		// Animate layer
 		$(layer).animate(args[1], {
-			queue: false,
 			duration: args[2],
 			easing: args[3],
 			// When animation completes
