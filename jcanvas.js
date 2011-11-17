@@ -735,94 +735,80 @@ colorProps = [
 	'strokeStyle',
 	'shadowColor'
 ];
-colorNames = {
-	aqua: '#0ff',
-	black: '#000',
-	blue: '#00f',
-	fuchsia: '#f0f',
-	gray: '#808080',
-	green: '#008000',
-	lime: '#0f0',
-	maroon: '#800000',
-	navy: '#000080',
-	olive: '808000',
-	purple: '#800080',
-	red: '#f00',
-	silver: '#c0c0c0',
-	teal: '#008080',
-	white: '#fff',
-	yellow: '#ff0'
-};
 
 // Convert a color value to RGBA
 function toRgba(color) {
-	var original,
+	var original, elem,
 		rgb = [],
-		multiple = 1,
-		elem;
-	// Deal with color names
-	if (color.match(/^[a-z]+$/gi)) {
-		if (colorNames[color]) {
-			color = colorNames[color];
-		} else {
+		multiple = 1;
+	
+	// If color is array already
+	if (typeof color === 'object') {
+		rgb = color;
+	} else {
+		
+		// Deal with color names
+		if (color.match(/^[a-z]+$/gi)) {
+			// Deal with complete transparency
+			if (color === 'transparent') {
+				color = 'rgba(255, 255, 255, 0)';
+			}
 			elem = document.body.parentNode;
 			original = elem.style.color;
 			elem.style.color = color;
 			color = $.css(elem, 'color');
 			elem.style.color = original;
 		}
-	}
-	// Deal with hexadecimal
-	if (color.match(/^\#/gi)) {
-		// Deal with shorthand hex
-		if (color.length === 4) {
-			color = color.replace(/(\w)/gi, '$1$1')
+		// Deal with hexadecimal
+		if (color.match(/^\#/gi)) {
+			// Deal with shorthand hex
+			if (color.length === 4) {
+				color = color.replace(/(\w)/gi, '$1$1')
+			}
+			rgb = color.match(/[0-9a-f]{2}/gi);
+			rgb[0] = parseInt(rgb[0], 16);
+			rgb[1] = parseInt(rgb[1], 16);
+			rgb[2] = parseInt(rgb[2], 16);
+		// Parse RGB string
+		} else if (color.match(/^rgb/gi)) {
+			rgb = color.match(/[0-9\.]+/gi);
+			// Deal with RGB percentages
+			if (color.match(/\%/gi)) {
+				multiple = 2.55;
+			}
+			rgb[0] = parseFloat(rgb[0]) * multiple;
+			rgb[1] = parseFloat(rgb[1]) * multiple;
+			rgb[2] = parseFloat(rgb[2]) * multiple;
 		}
-		rgb = color.match(/[0-9a-f]{2}/gi);
-		rgb[0] = parseInt(rgb[0], 16);
-		rgb[1] = parseInt(rgb[1], 16);
-		rgb[2] = parseInt(rgb[2], 16);
-	// Parse RGB string
-	} else if (color.match(/^rgb/gi)) {
-		rgb = color.match(/[0-9\.]+/gi);
-		// Deal with RGB percentages
-		if (color.match(/\%/gi)) {
-			multiple = 2.55;
+		// Add alpha
+		if (color.indexOf('rgba') !== -1) {
+			rgb[3] = parseFloat(rgb[3]);
+		} else {
+			rgb[3] = 1;
 		}
-		rgb[0] = parseFloat(rgb[0]) * multiple;
-		rgb[1] = parseFloat(rgb[1]) * multiple;
-		rgb[2] = parseFloat(rgb[2]) * multiple;
-	}
-	// Add alpha
-	if (color.indexOf('rgba') !== -1) {
-		rgb[3] = parseFloat(rgb[3]);
-	} else {
-		rgb[3] = 1;
 	}
 	return rgb;
 }
 
 // Get current frame value
-function getFrame(fx, start, end, i) {
-	fx.now[i] = start[i] + (end[i] - start[i]) * fx.pos;
+function getFrame(fx, i) {
+	fx.now[i] = fx.start[i] + (fx.end[i] - fx.start[i]) * fx.pos;
 	// Don't round opacity
 	if (i < 3) {fx.now[i] = round(fx.now[i]);}
 }
 
 // Animate a hex or RGB color
 function animateColor(fx) {
-	var start = toRgba(fx.start),
-		end = toRgba(fx.end);
-	if (!start || !end) {
-		fx.now = fx.end;
-	} else {
-		fx.now = [];
-		getFrame(fx, start, end, 0);
-		getFrame(fx, start, end, 1);
-		getFrame(fx, start, end, 2);
-		getFrame(fx, start, end, 3);
-		fx.now = 'rgba(' + fx.now.join(',') + ')';
+	if (fx.pos === 0) {
+		fx.start = toRgba(fx.start),
+		fx.end = toRgba(fx.end);
 	}
+	fx.now = [];
+	getFrame(fx, 0);
+	getFrame(fx, 1);
+	getFrame(fx, 2);
+	getFrame(fx, 3);
+	fx.now = 'rgba(' + fx.now.join(',') + ')';
 	if (fx.elem.style) {
 		fx.elem.style[fx.prop] = fx.now;
 	} else {
@@ -864,7 +850,7 @@ $.fn.addLayer = function(args) {
 		if (typeof args === 'function') {
 			args.fn = 'draw';
 		}
-		args = merge({}, prefs, args);
+		// args = merge({}, prefs, args);
 		layers.push(args);
 	}
 	return $elems;
@@ -896,9 +882,6 @@ $.fn.drawLayers = function() {
 	}
 	return $elems;
 };
-
-arr = [];
-k = 0;
 
 // Animate jCanvas layer
 $.fn.animateLayer = function() {
@@ -944,15 +927,14 @@ $.fn.animateLayer = function() {
 		if (layer === undefined || typeof layer === 'function') {
 			continue;
 		}
+		layer = $.extend(layer, prefs, $.extend({}, layer));
 		// Allow jQuery to animate CSS properties of regular objects
 		hideProps(cssProps, layer);
 		hideProps(cssProps, args[1]);
-		arr[k] = layer;
-		k += 1;
 		// Animate layer
 		$(layer).animate(args[1], {
 			duration: args[2],
-			easing: args[3],
+			easing: ($.easing[args[3]] && args[3]),
 			// When animation completes
 			complete: (function($elem) {
 				return function() {
