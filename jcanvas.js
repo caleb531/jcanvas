@@ -162,7 +162,7 @@ $.fn.loadCanvas = function(ctx) {
 };
 
 // Load canvas
-$.fn.getCanvasData = function(type) {
+$.fn.getCanvasImage = function(type) {
 	if (!this[0].toDataURL) {return null;}
 	if (type === undefined) {
 		type = 'image/png';
@@ -753,7 +753,7 @@ function toRgba(color) {
 			if (color === 'transparent') {
 				color = 'rgba(255, 255, 255, 0)';
 			}
-			elem = document.body.parentNode;
+			elem = document.documentElement;
 			original = elem.style.color;
 			elem.style.color = color;
 			color = $.css(elem, 'color');
@@ -927,10 +927,10 @@ $.fn.animateLayer = function() {
 		layers = $elem.getLayers();
 		layer = layers[args[0]];
 		// Merge properties so any property can be animated
-		if (layer === undefined || typeof layer === 'function') {
+		if (!layer || layer.fn === 'draw') {
 			continue;
 		}
-		layer = $.extend(layer, prefs, $.extend({}, layer));
+		layer = merge(layer, prefs, $.extend({}, layer));
 		// Allow jQuery to animate CSS properties of regular objects
 		hideProps(cssProps, layer);
 		hideProps(cssProps, args[1]);
