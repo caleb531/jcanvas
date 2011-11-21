@@ -857,15 +857,18 @@ $.fn.addLayer = function(args) {
 };
 
 // Draw jCanvas layers
-$.fn.drawLayers = function() {
+$.fn.drawLayers = function(clear) {
 	var $elems = this, $elem,
 		ctx, params, layers, e, i;
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		
 		if (!$elem[0].getContext) {continue;}
 		ctx = $elem[0].getContext('2d');
 		layers = $elem.getLayers();
+		// Clear canvas if chosen
+		if (clear) {
+			ctx.clearRect(0, 0, this[e].width, this[e].height);
+		}
 		// Draw items on queue
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
@@ -934,13 +937,11 @@ $.fn.animateLayer = function() {
 		// Animate layer
 		$(layer).animate(args[1], {
 			duration: args[2],
-			easing: ($.easing[args[3]] && args[3]),
+			easing: ($.easing[args[3]] ? args[3] : null),
 			// When animation completes
 			complete: (function($elem) {
 				return function() {
-					$elem
-						.clearCanvas()
-						.drawLayers();
+					$elem.drawLayers(true);
 					args[4].call($elem[0]);
 				};
 			}($elem)),
@@ -948,9 +949,7 @@ $.fn.animateLayer = function() {
 			step: (function($elem, layer) {
 				return function() {
 					showProps(cssProps, layer);
-					$elem
-						.clearCanvas()
-						.drawLayers();
+					$elem.drawLayers(true);
 				};
 			}($elem, layer))
 		});
