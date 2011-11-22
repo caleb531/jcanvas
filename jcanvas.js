@@ -45,6 +45,7 @@ defaults = {
 	compositing: 'source-over',
 	x: 0, y: 0,
 	x1: 0, y1: 0,
+	scaleX: 1, scaleY: 1,
 	start: 0, end: 360,
 	ccw: false,
 	inDegrees: true,
@@ -299,13 +300,16 @@ $.fn.restoreCanvas = function() {
 $.fn.scaleCanvas = function(args) {
 	var ctx, e, params = merge({}, prefs, args);
 		
+	params.width = params.width || 1;
+	params.height = params.height || 1;
+		
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
 		ctx = this[e].getContext('2d');
 
 		ctx.save();
 		ctx.translate(params.x, params.y);
-		ctx.scale(params.width, params.height);
+		ctx.scale(params.scaleX, params.scaleY);
 		ctx.translate(-params.x, -params.y);
 	}
 	return this;
