@@ -1,5 +1,5 @@
 /*!
-jCanvas v4.5b
+jCanvas v5.0b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
@@ -7,7 +7,7 @@ Licensed under the MIT license
 (function($, document, Math, Array, Image, parseFloat, parseInt, undefined) {
 
 // Define local variables for better compression
-var defaults, prefs, colorNames,
+var defaults, prefs,
 	fn = $.fn,
 	merge = $.extend,
 	pi = Math.PI,
@@ -552,7 +552,7 @@ $.fn.drawImage = function(args) {
 	// Draw image function
 	function draw(ctx) {
 		if (img.complete) {
-			scaleFac = img.width / img.height;
+			scaleFac = (img.width / img.height);
 			
 			// Crop image
 			if (params.sx === undefined) {
@@ -845,16 +845,21 @@ $.fn.getLayers = function() {
 
 // Add a new jCanvas layer
 $.fn.addLayer = function(args) {
-	var $elems = this, $elem, layers, e;
+	var $elems = this, $elem, layers, img, e;
+	console.time('merge');
+	args = merge(args, prefs, $.extend({}, args));
+	console.timeEnd('merge');
+	// Use the fn property if specified (for compatibility)
+	args.method = args.fn || args.method;
+	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		if (!$elems[e].getContext) {continue;}
 		layers = $elem.getLayers();
 		// If layer is a function
 		if (typeof args === 'function') {
-			args.fn = 'draw';
+			args.method = 'draw';
 		}
-		// args = merge({}, prefs, args);
 		layers.push(args);
 	}
 	return $elems;
@@ -877,12 +882,12 @@ $.fn.drawLayers = function(clear) {
 		for (i=0; i<layers.length; i+=1) {
 			params = layers[i];
 			// If layer is a function
-			if (params.fn === 'draw') {
+			if (params.method === 'draw') {
 				params.call($elem[0], ctx);
 			// If layer is an object
 			} else {
-				if (fn[params.fn]) {
-					fn[params.fn].call($elem, params);
+				if (fn[params.method]) {
+					fn[params.method].call($elem, params);
 				}
 			}
 		}
@@ -931,7 +936,7 @@ $.fn.animateLayer = function() {
 		layers = $elem.getLayers();
 		layer = layers[args[0]];
 		// Merge properties so any property can be animated
-		if (!layer || layer.fn === 'draw') {
+		if (!layer || layer.method === 'draw') {
 			continue;
 		}
 		layer = merge(layer, prefs, $.extend({}, layer));
@@ -945,6 +950,7 @@ $.fn.animateLayer = function() {
 			// When animation completes
 			complete: (function($elem) {
 				return function() {
+					showProps(cssProps, layer);
 					$elem.drawLayers(true);
 					args[4].call($elem[0]);
 				};
