@@ -1,5 +1,5 @@
 /*!
-jCanvas v5.0
+jCanvas v5.1b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
@@ -14,6 +14,7 @@ var defaults, prefs,
 	round = Math.round,
 	sin = Math.sin,
 	cos = Math.cos,
+	eventFix = fix = $.event.fix,
 	cssProps,
 	colorProps;
 
@@ -50,6 +51,7 @@ defaults = {
 	ccw: false,
 	inDegrees: true,
 	fromCenter: true,
+	sourceFromCenter: true,
 	closed: false,
 	sides: 3,
 	angle: 0,
@@ -555,15 +557,40 @@ $.fn.drawImage = function(args) {
 		if (img.complete) {
 			scaleFac = (img.width / img.height);
 			
-			// Crop image
+			// Show whole image if no cropping region is specified
+			params.sWidth = params.sWidth || img.width;
+			params.sHeight = params.sHeight || img.height;
+			// Ensure cropped region is not bigger than image
+			if (params.sWidth > img.width) {
+				params.sWidth = img.width
+			} else 
+			if (params.sWidth > img.width) {
+				params.sWidth = img.width
+			}
+			// Destination width/height should equal source unless specified
+			params.width = params.width || params.sWidth;
+			params.height = params.height || params.sHeight;
+			
+			// If no sx/sy specified, use center of image
 			if (params.sx === undefined) {
 				params.sx = img.width / 2;
 			}
 			if (params.sy === undefined) {
 				params.sy = img.height / 2;
 			}
-			params.sWidth = params.sWidth || img.width;
-			params.sHeight = params.sHeight || img.height;
+			// Ensure cropped region does not extend image boundary
+			if ((params.sx - params.sWidth/2) < 0) {
+				params.sx = params.sWidth/2;
+			}
+			if ((params.sx + params.sWidth/2) > img.width) {
+				params.sx = img.width - params.sWidth / 2;
+			}
+			if ((params.sy - params.sHeight/2) < 0) {
+				params.sy = params.sHeight / 2;
+			}
+			if ((params.sy + params.sHeight/2) > img.height) {
+				params.sy = img.height - params.sHeight / 2;
+			}
 			
 			// If only width is present
 			if (params.width && !params.height) {
@@ -768,7 +795,7 @@ function toRgba(color) {
 		if (color.match(/^\#/gi)) {
 			// Deal with shorthand hex
 			if (color.length === 4) {
-				color = color.replace(/(\w)/gi, '$1$1')
+				color = color.replace(/([0-9a-f])/gi, '$1$1')
 			}
 			rgb = color.match(/[0-9a-f]{2}/gi);
 			rgb[0] = parseInt(rgb[0], 16);
@@ -976,6 +1003,21 @@ $.fn.animateLayer = function() {
 	}
 	return $elems;
 };
+
+// Normalize offsetX and offsetY for all browsers
+$.event.fix = function(event) {
+	event = fix.call($.event, event);
+	// If offsetX and offsetY are not supported
+	if (event.offsetX == undefined && event.offsetY == undefined) {
+		var offset = $(event.target).offset();
+		event.offsetX = event.pageX - offset.left;
+		event.offsetY = event.pageY - offset.top;
+	}
+	return event;
+};
+
+// Check for canvas support with $.support
+$.support.canvas = (document.createElement('canvas').getContext != undefined);
 
 // Enable animation for color properties
 supportColorProps(colorProps);
