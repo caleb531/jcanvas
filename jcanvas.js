@@ -14,7 +14,7 @@ var defaults, prefs,
 	round = Math.round,
 	sin = Math.sin,
 	cos = Math.cos,
-	eventFix = fix = $.event.fix,
+	eventFix = $.event.fix,
 	cssProps,
 	colorProps;
 
@@ -22,10 +22,10 @@ var defaults, prefs,
 function jCanvas(args) {
 	if (!args) {
 		// Reset to defaults if nothing is passed
-		prefs = merge({}, defaults);
+		merge(prefs, defaults);
 	} else {
 		// Merge arguments with preferences
-		prefs = merge({}, prefs, args);
+		merge(prefs, args);
 	}
 	return this;
 }
@@ -46,6 +46,7 @@ defaults = {
 	compositing: 'source-over',
 	x: 0, y: 0,
 	x1: 0, y1: 0,
+	radius: 0,
 	scaleX: 1, scaleY: 1,
 	start: 0, end: 360,
 	ccw: false,
@@ -62,8 +63,10 @@ defaults = {
 	source: '',
 	repeat: 'repeat'
 };
-// Merge preferences with defaults
-prefs = merge({}, defaults);
+// Copy defaults over to preferences
+function Prefs() {}
+prefs = Prefs.prototype;
+jCanvas();
 
 // Set global properties
 function setGlobals(ctx, params) {
@@ -135,13 +138,13 @@ function extend(plugin) {
 	// Merge properties with defaults
 	plugin = plugin || {};
 	defaults = merge(defaults, plugin.props || {});
-	prefs = merge({}, defaults);
+	$.jCanvas();
 
 	// Create plugin
 	if (plugin.name) {
 		$.fn[plugin.name] = function(args) {
 			var $elems = this, elem,
-				ctx, e, params = merge({}, prefs, args);
+				ctx, e, params = merge(new Prefs(), args);
 			for (e=0; e<$elems.length; e+=1) {
 				elem = $elems[e];
 				if (!elem.getContext) {continue;}
@@ -192,7 +195,7 @@ $.fn.draw = function(callback) {
 $.fn.gradient = function(args) {
 	if (!this[0].getContext) {return null;}
 	var ctx = this[0].getContext('2d'),
-		params = merge({}, prefs, args),
+		params = merge(new Prefs(), args),
 		gradient, percent,
 		stops = 0,
 		i = 1;
@@ -225,7 +228,7 @@ $.fn.gradient = function(args) {
 $.fn.pattern = function(args) {
 	if (!this[0].getContext) {return null;}
 	var ctx = this[0].getContext('2d'),
-		params = merge({}, prefs, args),
+		params = merge(new Prefs(), args),
 		img = new Image(),
 		pattern;
 	img.src = params.source;
@@ -261,7 +264,7 @@ $.fn.pattern = function(args) {
 
 // Clear canvas
 $.fn.clearCanvas = function(args) {
-	var ctx, e, params = merge({}, prefs, args);
+	var ctx, e, params = merge(new Prefs(), args);
 
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -301,7 +304,7 @@ $.fn.restoreCanvas = function() {
 
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
-	var ctx, e, params = merge({}, prefs, args);
+	var ctx, e, params = merge(new Prefs(), args);
 		
 	params.width = params.width || 1;
 	params.height = params.height || 1;
@@ -320,7 +323,7 @@ $.fn.scaleCanvas = function(args) {
 
 // Translate canvas
 $.fn.translateCanvas = function(args) {
-	var ctx, e, params = merge({}, prefs, args);
+	var ctx, e, params = merge(new Prefs(), args);
 
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -333,7 +336,7 @@ $.fn.translateCanvas = function(args) {
 
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
-	var ctx, e, params = merge({}, prefs, args);
+	var ctx, e, params = merge(new Prefs(), args);
 	
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -345,7 +348,7 @@ $.fn.rotateCanvas = function(args) {
 
 // Draw rectangle
 $.fn.drawRect = function(args) {
-	var ctx, e, params = merge({}, prefs, args),
+	var ctx, e, params = merge(new Prefs(), args),
 		x1, y1, x2, y2, r;
 
 	for (e=0; e<this.length; e+=1) {
@@ -390,8 +393,8 @@ $.fn.drawRect = function(args) {
 
 // Draw arc
 $.fn.drawArc = function(args) {
-	var ctx, e, params = merge({}, prefs, args);
-	
+	var ctx, e, params = merge(new Prefs(), args);
+
 	// Change default end angle to radians if needed
 	if (!params.inDegrees && params.end === 360) {
 		params.end = pi * 2;
@@ -415,7 +418,7 @@ $.fn.drawArc = function(args) {
 
 // Draw ellipse
 $.fn.drawEllipse = function(args) {
-	var ctx, e, params = merge({}, prefs, args),
+	var ctx, e, params = merge(new Prefs(), args),
 		controlW = params.width * 4/3;
 		
 	for (e=0; e<this.length; e+=1) {
@@ -439,7 +442,7 @@ $.fn.drawEllipse = function(args) {
 
 // Draw line
 $.fn.drawLine = function(args) {
-	var ctx, e, params = merge({}, prefs, args),
+	var ctx, e, params = merge(new Prefs(), args),
 		l = 2, lx=0, ly=0;
 
 	for (e=0; e<this.length; e+=1) {
@@ -464,7 +467,7 @@ $.fn.drawLine = function(args) {
 
 // Draw quadratic curve
 $.fn.drawQuad = function(args) {
-	var ctx, e, params = merge({}, prefs, args),
+	var ctx, e, params = merge(new Prefs(), args),
 		l = 2,
 		lx=0, ly=0,
 		lcx=0, lcy=0;
@@ -493,7 +496,7 @@ $.fn.drawQuad = function(args) {
 
 // Draw Bezier curve
 $.fn.drawBezier = function(args) {
-	var ctx, e, params = merge({}, prefs, args),
+	var ctx, e, params = merge(new Prefs(), args),
 		l = 2, lc = 1,
 		lx=0, ly=0,
 		lcx1=0, lcy1=0,
@@ -526,7 +529,7 @@ $.fn.drawBezier = function(args) {
 
 // Draw text
 $.fn.drawText = function(args) {
-	var ctx, e, params = merge({}, prefs, args);
+	var ctx, e, params = merge(new Prefs(), args);
 
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -546,7 +549,7 @@ $.fn.drawText = function(args) {
 
 // Draw image
 $.fn.drawImage = function(args) {
-	var ctx, elem, e, params = merge({}, prefs, args),
+	var ctx, elem, e, params = merge(new Prefs(), args),
 		// Define image source
 		img = new Image(),
 		scaleFac;
@@ -653,7 +656,7 @@ $.fn.drawImage = function(args) {
 
 // Draw polygon
 $.fn.drawPolygon = function(args) {
-	var ctx, e, params = merge({}, prefs, args),
+	var ctx, e, params = merge(new Prefs(), args),
 		inner = pi / params.sides,
 		theta = (pi/2) + inner,
 		dtheta = (pi*2) / params.sides,
@@ -697,7 +700,7 @@ $.fn.drawPolygon = function(args) {
 // Get pixels on the canvas
 $.fn.setPixels = function(args) {
 	var ctx, elem, e, i,
-		params = merge({}, prefs, args),
+		params = merge(new Prefs(), args),
 		imgData, data, len, px;
 	
 	for (e=0; e<this.length; e+=1) {
@@ -880,10 +883,10 @@ $.fn.getLayer = function(index) {
 // Add a new jCanvas layer
 $.fn.addLayer = function(args) {
 	var $elems = this, $elem, layers, img, e;
-	args = merge(args, prefs, $.extend({}, args));
+	args = merge(args, new Prefs(), $.extend({}, args));
 	// Use the "fn" property if specified (for compatibility)
 	args.method = args.fn || args.method;
-	
+
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		if (!$elems[e].getContext) {continue;}
@@ -1006,7 +1009,7 @@ $.fn.animateLayer = function() {
 
 // Normalize offsetX and offsetY for all browsers
 $.event.fix = function(event) {
-	event = fix.call($.event, event);
+	event = eventFix.call($.event, event);
 	// If offsetX and offsetY are not supported
 	if (event.offsetX == undefined && event.offsetY == undefined) {
 		var offset = $(event.target).offset();
