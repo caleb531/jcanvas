@@ -549,11 +549,15 @@ $.fn.drawText = function(args) {
 
 // Draw image
 $.fn.drawImage = function(args) {
-	var ctx, elem, e, params = merge(new Prefs(), args),
-		// Define image source
-		img = new Image(),
-		scaleFac;
-	img.src = params.source;
+	var ctx, elem, e, params = merge(new Prefs(), args), img, scaleFac;
+
+       // Did we get an Image object or a (possibly data) url?
+       if(typeof params.source == 'string') {
+         img = new Image();
+         img.src = params.source;
+       } else {
+         img = params.source;
+       }
 
 	// Draw image function
 	function draw(ctx) {
