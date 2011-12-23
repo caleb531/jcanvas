@@ -31,37 +31,52 @@ function jCanvas(args) {
 }
 // Set jCanvas default properties
 defaults = {
-	width: 0, height: 0,
+	align: 'center',
+	angle: 0,
+	baseline: 'middle',
+	ccw: false,
+	closed: false,
+	compositing: 'source-over',
 	cornerRadius: 0,
+	cropFromCenter: true,
+	end: 360,
 	fillStyle: 'transparent',
-	strokeStyle: 'transparent',
-	strokeWidth: 1,
-	strokeCap: 'butt',
-	strokeJoin: 'miter',
+	font: 'normal 12pt sans-serif',
+	fromCenter: true,
+	height: 0,
+	inDegrees: true,
+	load: null,
+	mask: false,
+	opacity: 1,
+	projection: 0,
+	r1: null,
+	r2: null,
+	radius: 0,
+	repeat: 'repeat',
 	rounded: false,
-	shadowX: 0, shadowY: 0,
+	scaleX: 1,
+	scaleY: 1,
 	shadowBlur: 3,
 	shadowColor: 'transparent',
-	opacity: 1,
-	compositing: 'source-over',
-	x: 0, y: 0,
-	x1: 0, y1: 0,
-	radius: 0,
-	scaleX: 1, scaleY: 1,
-	start: 0, end: 360,
-	ccw: false,
-	inDegrees: true,
-	fromCenter: true,
-	sourceFromCenter: true,
-	closed: false,
+	shadowX: 0,
+	shadowY: 0,
+	sHeight: 0,
 	sides: 3,
-	angle: 0,
-	text: '',
-	font: 'normal 12pt sans-serif',
-	align: 'center',
-	baseline: 'middle',
 	source: '',
-	repeat: 'repeat'
+	start: 0,
+	strokeCap: 'butt',
+	strokeJoin: 'miter',
+	strokeStyle: 'transparent',
+	strokeWidth: 1,
+	sWidth: 0,
+	sx: null,
+	sy: null,
+	text: '',
+	width: 0,
+	x: 0,
+	x1: 0,
+	y: 0,
+	y1: 0,
 };
 // Copy defaults over to preferences
 function Prefs() {}
@@ -201,7 +216,7 @@ $.fn.gradient = function(args) {
 		i = 1;
 	
 	// Create radial gradient if chosen
-	if (params.r1 !== undefined || params.r2 !== undefined) {
+	if (params.r1 != null || params.r2 != null) {
 		gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
 	} else {
 		gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
@@ -231,7 +246,12 @@ $.fn.pattern = function(args) {
 		params = merge(new Prefs(), args),
 		img = new Image(),
 		pattern;
-	img.src = params.source;
+	// Use specified element, if not, a source URL
+	if (params.source.src) {
+		img = params.source;
+	} else if (params.source) {
+		img.src = params.source;
+	}	
 	
 	// Create pattern
 	function create() {
@@ -242,21 +262,27 @@ $.fn.pattern = function(args) {
 		} else {
 			return false;
 		}
+		
 	}
-	function onload() {
-		create();
-		// Run callback function
+	// Run callback function
+	function callback() {
 		if (params.load) {
 			params.load.call(this[0], pattern);
 		}
 	}
+	function onload() {
+		create();
+		callback();
+	}
 	// Draw when image is loaded (if chosen)
-	if (params.load) {
+	if (!img.complete && params.load) {
 		img.onload = onload;
 	} else {
 		// Draw image if loaded
 		if (!create()) {
 			img.onload = onload;
+		} else {
+			callback();
 		}
 	}
 	return pattern;
@@ -305,9 +331,6 @@ $.fn.restoreCanvas = function() {
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
 	var ctx, e, params = merge(new Prefs(), args);
-		
-	params.width = params.width || 1;
-	params.height = params.height || 1;
 		
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -553,8 +576,13 @@ $.fn.drawImage = function(args) {
 		// Define image source
 		img = new Image(),
 		scaleFac;
-	img.src = params.source;
-
+	// Use specified element, if not, a source URL
+	if (params.source.src) {
+		img = params.source;
+	} else if (params.source) {
+		img.src = params.source;
+	}
+	
 	// Draw image function
 	function draw(ctx) {
 		if (img.complete) {
@@ -565,22 +593,41 @@ $.fn.drawImage = function(args) {
 			params.sHeight = params.sHeight || img.height;
 			// Ensure cropped region is not bigger than image
 			if (params.sWidth > img.width) {
-				params.sWidth = img.width
-			} else 
-			if (params.sWidth > img.width) {
-				params.sWidth = img.width
+				params.sWidth = img.width;
+			}
+			if (params.sHeight > img.height) {
+				params.sHeight = img.height;
 			}
 			// Destination width/height should equal source unless specified
-			params.width = params.width || params.sWidth;
-			params.height = params.height || params.sHeight;
+			if (params.width === 0 && params.sWidth !== img.width) {
+				params.width = params.sWidth;
+			}
+			if (params.height === 0 && params.sHeight !== img.height) {
+				params.height = params.sHeight;
+			}
 			
-			// If no sx/sy specified, use center of image
-			if (params.sx === undefined) {
-				params.sx = img.width / 2;
+			// If no sx/sy specified, use center of image (or top-left corner if cropFromCenter is false)
+			if (params.sx === null) {
+				if (params.cropFromCenter) {
+					params.sx = img.width / 2;
+				} else {
+					params.sx = 0;
+				}
 			}
-			if (params.sy === undefined) {
-				params.sy = img.height / 2;
+			if (params.sy === null) {
+				if (params.cropFromCenter) {
+					params.sy = img.height / 2;
+				} else {
+					params.sy = 0;
+				}
 			}
+			
+			// Crop from top-left corner if specified (rather than center)
+			if (!params.cropFromCenter) {
+				params.sx += params.sWidth/2;
+				params.sy += params.sHeight/2;
+			}
+			
 			// Ensure cropped region does not extend image boundary
 			if ((params.sx - params.sWidth/2) < 0) {
 				params.sx = params.sWidth/2;
@@ -626,13 +673,16 @@ $.fn.drawImage = function(args) {
 			return false;
 		}
 	}
-	// On load function
-	function onload() {
-		draw(ctx);
-		// Run callback function
+	// Run callback function
+	function callback() {
 		if (params.load) {
 			params.load.call(elem);
 		}
+	}
+	// On load function
+	function onload() {
+		draw(ctx);
+		callback();
 	}
 	// Draw image if already loaded
 	for (e=0; e<this.length; e+=1) {
@@ -642,12 +692,14 @@ $.fn.drawImage = function(args) {
 		setGlobals(ctx, params);
 		
 		// Draw when image is loaded (if chosen)
-		if (params.load) {
+		if (!img.complete && params.load) {
 			img.onload = onload;
 		} else {
 			// Draw image if loaded
 			if (!draw(ctx)) {
 				img.onload = onload;
+			} else {
+				callback();
 			}
 		}
 	}
@@ -753,6 +805,7 @@ function hideProps(props, obj) {
 	}
 }
 
+// Define properties
 cssProps = [
 	'width',
 	'height',
@@ -798,7 +851,7 @@ function toRgba(color) {
 		if (color.match(/^\#/gi)) {
 			// Deal with shorthand hex
 			if (color.length === 4) {
-				color = color.replace(/([0-9a-f])/gi, '$1$1')
+				color = color.replace(/([0-9a-f])/gi, '$1$1');
 			}
 			rgb = color.match(/[0-9a-f]{2}/gi);
 			rgb[0] = parseInt(rgb[0], 16);
@@ -835,7 +888,7 @@ function getFrame(fx, i) {
 // Animate a hex or RGB color
 function animateColor(fx) {
 	if (fx.pos === 0) {
-		fx.start = toRgba(fx.start),
+		fx.start = toRgba(fx.start);
 		fx.end = toRgba(fx.end);
 	}
 	fx.now = [];
@@ -849,7 +902,7 @@ function animateColor(fx) {
 	} else {
 		fx.elem[fx.prop] = fx.now;
 	}
-};
+}
 
 // Enable animation for color properties
 function supportColorProps(props) {
@@ -968,7 +1021,7 @@ $.fn.animateLayer = function() {
 	}
 	// If callback is ommitted
 	if (args[4] === undefined) {
-		args[4] = function() {}
+		args[4] = function() {};
 	}
 
 	for (e=0; e<$elems.length; e+=1) {
@@ -1020,7 +1073,7 @@ $.event.fix = function(event) {
 };
 
 // Check for canvas support with $.support
-$.support.canvas = (document.createElement('canvas').getContext != undefined);
+$.support.canvas = (document.createElement('canvas').getContext != null);
 
 // Enable animation for color properties
 supportColorProps(colorProps);
