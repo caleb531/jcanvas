@@ -753,7 +753,7 @@ $.fn.drawPolygon = function(args) {
 $.fn.setPixels = function(args) {
 	var ctx, elem, e, i,
 		params = merge(new Prefs(), args),
-		imgData, data, len, px;
+		imgData, data, len, px = {};
 	
 	for (e=0; e<this.length; e+=1) {
 			elem = this[e];
@@ -775,11 +775,16 @@ $.fn.setPixels = function(args) {
 			// Loop through pixels with "each" method
 			if (params.each !== undefined) {
 				for (i=0; i<len; i+=4) {
-					px = params.each.call(elem, data[i], data[i+1], data[i+2], data[i+3]);
-					data[i] = px[0];
-					data[i+1] = px[1];
-					data[i+2] = px[2];
-					data[i+3] = px[3];
+					px.index = i/4;
+					px.r = data[i];
+					px.g = data[i+1];
+					px.b = data[i+2];
+					px.a = data[i+3];
+					params.each.call(elem, px);
+					data[i] = px.r;
+					data[i+1] = px.g;
+					data[i+2] = px.b;
+					data[i+3] = px.a;
 				}
 			}
 			// Put pixels on canvas
