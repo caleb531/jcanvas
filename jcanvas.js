@@ -22,7 +22,8 @@ var defaults, prefs,
 function jCanvas(args) {
 	if (!args) {
 		// Reset to defaults if nothing is passed
-		merge(prefs, defaults);
+		Prefs.prototype = merge({}, defaults);
+		prefs = Prefs.prototype;
 	} else {
 		// Merge arguments with preferences
 		merge(prefs, args);
@@ -75,8 +76,10 @@ defaults = {
 	width: 0,
 	x: 0,
 	x1: 0,
+	x2: 0,
 	y: 0,
 	y1: 0,
+	y2: 0
 };
 // Copy defaults over to preferences
 function Prefs() {}
@@ -944,6 +947,7 @@ $.fn.addLayer = function(args) {
 	args = merge(args, new Prefs(), $.extend({}, args));
 	// Use the "fn" property if specified (for compatibility)
 	args.method = args.fn || args.method;
+	args.layer = true;
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
@@ -999,11 +1003,11 @@ $.fn.animateLayer = function() {
 	var $elems = this,
 		args = Array.prototype.slice.call(arguments, 0),
 		$elem, layers, layer, e;
-	
+		
 	// Deal with all cases of argument placement
 	
-	// If index is ommitted
-	if (typeof args[0] === 'object') {
+	// If index is omitted
+	if (typeof args[0] === 'object' && !args[0].method) {
 		args.unshift(0);
 	}
 	// If object is the last argument
@@ -1031,12 +1035,16 @@ $.fn.animateLayer = function() {
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		layers = $elem.getLayers();
-		layer = layers[args[0]];
-		// Merge properties so any property can be animated
+		// If a layer object was passed, use it as a reference
+		if (args[0].layer) {		
+			layer = args[0]
+		} else {
+			layer = $elem.getLayers()[args[0]];
+		}
 		if (!layer || layer.method === 'draw') {
 			continue;
 		}
+		// Merge properties so any property can be animated
 		layer = merge(layer, prefs, $.extend({}, layer));
 		// Allow jQuery to animate CSS properties of regular objects
 		hideProps(cssProps, layer);
