@@ -22,8 +22,7 @@ var defaults, prefs,
 function jCanvas(args) {
 	if (!args) {
 		// Reset to defaults if nothing is passed
-		Prefs.prototype = merge({}, defaults);
-		prefs = Prefs.prototype;
+		prefs = Prefs.prototype = merge({}, defaults);
 	} else {
 		// Merge arguments with preferences
 		merge(prefs, args);
@@ -469,7 +468,7 @@ $.fn.drawEllipse = function(args) {
 // Draw line
 $.fn.drawLine = function(args) {
 	var ctx, e, params = merge(new Prefs(), args),
-		l = 2, lx=0, ly=0;
+		l=2, lx=0, ly=0;
 
 	for (e=0; e<this.length; e+=1) {
 		if (!this[e].getContext) {continue;}
@@ -479,11 +478,15 @@ $.fn.drawLine = function(args) {
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		while (lx !== undefined && ly !== undefined) {
+		while (true) {
 			lx = params['x' + l];
 			ly = params['y' + l];
-			ctx.lineTo(lx, ly);
-			l += 1;
+			if (lx !== undefined && ly !== undefined) {
+				ctx.lineTo(lx, ly);
+				l += 1;
+			} else {
+				break;
+			}
 		}
 		// Close path if chosen
 		closePath(ctx, params);
@@ -506,13 +509,17 @@ $.fn.drawQuad = function(args) {
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		while (lx !== undefined && ly !== undefined && lcx !== undefined && lcy !== undefined) {
+		while (true) {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			lcx = params['cx' + (l-1)];
 			lcy = params['cy' + (l-1)];
-			ctx.quadraticCurveTo(lcx, lcy, lx, ly);
-			l += 1;
+			if (lx !== undefined && ly !== undefined && lcx !== undefined && lcy !== undefined) {
+				ctx.quadraticCurveTo(lcx, lcy, lx, ly);
+				l += 1;
+			} else {
+				break;
+			}
 		}
 		// Close path if chosen
 		closePath(ctx, params);
@@ -536,16 +543,20 @@ $.fn.drawBezier = function(args) {
 		// Draw each point
 		ctx.beginPath();
 		ctx.moveTo(params.x1, params.y1);
-		while (lx !== undefined && ly !== undefined && lcx1 !== undefined && lcy1 !== undefined && lcx2 !== undefined && lcy2 !== undefined) {
+		while (true) {
 			lx = params['x' + l];
 			ly = params['y' + l];
 			lcx1 = params['cx' + lc];
 			lcy1 = params['cy' + lc];
 			lcx2 = params['cx' + (lc+1)];
 			lcy2 = params['cy' + (lc+1)];
-			ctx.bezierCurveTo(lcx1, lcy1, lcx2, lcy2, lx, ly);
-			l += 1;
-			lc += 2;
+			if (lx !== undefined && ly !== undefined && lcx1 !== undefined && lcy1 !== undefined && lcx2 !== undefined && lcy2 !== undefined) {
+				ctx.bezierCurveTo(lcx1, lcy1, lcx2, lcy2, lx, ly);
+				l += 1;
+				lc += 2;
+			} else {
+				break;
+			}
 		}
 		// Close path if chosen
 		closePath(ctx, params);
@@ -872,9 +883,9 @@ function toRgba(color) {
 			if (color.match(/\%/gi)) {
 				multiple = 2.55;
 			}
-			rgb[0] = parseFloat(rgb[0]) * multiple;
-			rgb[1] = parseFloat(rgb[1]) * multiple;
-			rgb[2] = parseFloat(rgb[2]) * multiple;
+			rgb[0] = rgb[0] * multiple;
+			rgb[1] = rgb[1] * multiple;
+			rgb[2] = rgb[2] * multiple;
 		}
 		// Add alpha
 		if (color.indexOf('rgba') !== -1) {
@@ -1046,6 +1057,7 @@ $.fn.animateLayer = function() {
 		}
 		// Merge properties so any property can be animated
 		layer = merge(layer, prefs, $.extend({}, layer));
+		console.log(layer);
 		// Allow jQuery to animate CSS properties of regular objects
 		hideProps(cssProps, layer);
 		hideProps(cssProps, args[1]);
