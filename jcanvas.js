@@ -1,5 +1,5 @@
 /*!
-jCanvas v5.1
+jCanvas v5.1b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
@@ -29,7 +29,6 @@ function jCanvas(args) {
 	}
 	return this;
 }
-jCanvas.version = '5.1';
 // Set jCanvas default properties
 defaults = {
 	align: 'center',
@@ -907,7 +906,7 @@ function getFrame(fx, i) {
 
 // Animate a hex or RGB color
 function animateColor(fx) {
-	if (typeof fx.start !== 'object') {
+	if (fx.pos === 0) {
 		fx.start = toRgba(fx.start);
 		fx.end = toRgba(fx.end);
 	}
@@ -955,21 +954,21 @@ $.fn.getLayer = function(index) {
 
 // Add a new jCanvas layer
 $.fn.addLayer = function(args) {
-	var $elems = this, $elem, layers, img, e,
-	params = merge(args, new Prefs(), $.extend({}, args));
+	var $elems = this, $elem, layers, img, e;
+	args = merge(args, new Prefs(), $.extend({}, args));
 	// Use the "fn" property if specified (for compatibility)
-	params.method = params.fn || params.method;
-	params.layer = true;
+	args.method = args.fn || args.method;
+	args.layer = true;
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		if (!$elems[e].getContext) {continue;}
 		layers = $elem.getLayers();
 		// If layer is a function
-		if (typeof params === 'function') {
-			params.method = 'draw';
+		if (typeof args === 'function') {
+			args.method = 'draw';
 		}
-		layers.push(params);
+		layers.push(args);
 	}
 	return $elems;
 };
@@ -1049,22 +1048,16 @@ $.fn.animateLayer = function() {
 		$elem = $($elems[e]);
 		// If a layer object was passed, use it as a reference
 		if (args[0].layer) {		
-			layer = args[0];
+			layer = args[0]
 		} else {
 			layer = $elem.getLayers()[args[0]];
 		}
 		if (!layer || layer.method === 'draw') {
 			continue;
 		}
-		// Trick drawImage() to not fill in width/height if either is 0
-		if (layer.method === 'drawImage') {
-			args[1].width = args[1].width || 1e-10;
-			args[1].height = args[1].height || 1e-10;
-			layer.width = layer.width || 1e-10;
-			layer.height = layer.height || 1e-10;
-		}
 		// Merge properties so any property can be animated
 		layer = merge(layer, prefs, $.extend({}, layer));
+		console.log(layer);
 		// Allow jQuery to animate CSS properties of regular objects
 		hideProps(cssProps, layer);
 		hideProps(cssProps, args[1]);
@@ -1096,7 +1089,7 @@ $.fn.animateLayer = function() {
 $.event.fix = function(event) {
 	event = eventFix.call($.event, event);
 	// If offsetX and offsetY are not supported
-	if (event.offsetX == null && event.offsetY == null) {
+	if (event.offsetX == undefined && event.offsetY == undefined) {
 		var offset = $(event.target).offset();
 		event.offsetX = event.pageX - offset.left;
 		event.offsetY = event.pageY - offset.top;
