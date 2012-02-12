@@ -1,5 +1,5 @@
 /*!
-jCanvas v5.1
+jCanvas v5.2b
 Copyright 2011, Caleb Evans
 Licensed under the MIT license
 */
@@ -1096,7 +1096,7 @@ $.fn.animateLayer = function() {
 $.event.fix = function(event) {
 	event = eventFix.call($.event, event);
 	// If offsetX and offsetY are not supported
-	if (event.offsetX == null && event.offsetY == null) {
+	if (event.pageX != null && event.pageY != null && event.offsetX == null && event.offsetY == null) {
 		var offset = $(event.target).offset();
 		event.offsetX = event.pageX - offset.left;
 		event.offsetY = event.pageY - offset.top;
