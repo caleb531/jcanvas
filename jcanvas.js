@@ -1109,7 +1109,6 @@ $.event.fix = function(event) {
 	event = eventFix.call($.event, event);
 	// If offsetX and offsetY are not supported
 	if (event.pageX != NULL && event.offsetX == NULL) {
-		alert(1);
 		var offset = $(event.target).offset();
 		event.offsetX = event.pageX - offset.left;
 		event.offsetY = event.pageY - offset.top;
