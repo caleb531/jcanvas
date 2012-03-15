@@ -32,6 +32,9 @@ function jCanvas(args) {
 	return this;
 }
 jCanvas.version = '5.2b';
+jCanvas.events = {};
+// Make jCanvas function "chainable"
+$.fn.jCanvas = jCanvas;
 
 // Set jCanvas default properties
 defaults = {
@@ -109,8 +112,6 @@ function setGlobals(ctx, params) {
 	ctx.globalCompositeOperation = params.compositing;
 }
 
-jCanvas.events = {};
-
 // Populate jCanvas events object with a few standard jQuery events
 function createEvent(name) {
 	jCanvas.events[name] = function($elem) {
@@ -128,7 +129,7 @@ createEvent('mousedown');
 createEvent('mouseup');
 createEvent('mousemove');
 
-// Check if event fires as a drawing is drawn
+// Check if event fires when a drawing is drawn
 function checkEvents(ctx, params) {
 	var callback = params[_event.type];
 	if (callback && ctx.isPointInPath(_event.x, _event.y) === true) {
@@ -144,13 +145,14 @@ function loadCanvas(elem) {
 	return elem.getContext ? elem.getContext('2d') : NULL;
 }
 
-// Close path if chosen
+// Close path (used internally)
 function closePath(ctx, params) {
 	// Mask shape/path if chosen
 	if (params.mask) {
 		ctx.save();
 		ctx.clip();
 	}
+	// Close path if chosen
 	if (params.closed) {
 		ctx.closePath();
 		ctx.fill();
@@ -203,7 +205,9 @@ function extend(plugin) {
 			
 			for (e=0; e<$elems.length; e+=1) {
 				elem = $elems[e];
-				if (!(ctx = loadCanvas(elem))) {continue;}
+				ctx = loadCanvas(elem);
+				if (!ctx) {continue;}
+				
 				setGlobals(ctx, params);
 				params.toRad = convertAngles(params);
 				plugin.fn.call(elem, ctx, params);
@@ -213,9 +217,6 @@ function extend(plugin) {
 	}
 	return $.fn[plugin.name];
 }
-
-// Make jCanvas function "chainable"
-$.fn.jCanvas = jCanvas;
 
 // Load canvas
 $.fn.loadCanvas = function() {
@@ -236,11 +237,16 @@ $.fn.getCanvasImage = function(type) {
 	return elem.toDataURL(type);
 };
 
+
+
 // Draw on canvas manually
 $.fn.draw = function(callback) {
 	var $elems = this, ctx, e;
+	
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		callback.call($elems[e], ctx);
 	}
 	return $elems;
@@ -254,7 +260,8 @@ $.fn.gradient = function(args) {
 		stops = 0,
 		i = 1;
 	
-	if (!(ctx = loadCanvas($elems[0]))) {return NULL;}
+	ctx = loadCanvas($elems[0]);
+	if (!ctx) {return NULL;}
 	
 	// Create radial gradient if chosen
 	if (params.r1 !== NULL || params.r2 !== NULL) {
@@ -286,7 +293,8 @@ $.fn.pattern = function(args) {
 		ctx, params = merge(new Prefs(), args),
 		img, pattern;
 	
-	if (!(ctx = loadCanvas($elems[0]))) {return NULL;}
+	ctx = loadCanvas($elems[0]);
+	if (!ctx) {return NULL;}
 	img = new Image();
 
 	// Use defined element, if not, a source URL
@@ -337,7 +345,9 @@ $.fn.clearCanvas = function(args) {
 		ctx, e, params = merge(new Prefs(), args);
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 
 		positionShape(ctx, params, params.width, params.height);
 		
@@ -355,7 +365,9 @@ $.fn.clearCanvas = function(args) {
 $.fn.saveCanvas = function() {
 	var $elems = this, ctx, e;
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		ctx.save();
 	}
 	return $elems;
@@ -365,7 +377,9 @@ $.fn.saveCanvas = function() {
 $.fn.restoreCanvas = function() {
 	var $elems = this, ctx, e;
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		ctx.restore();
 	}
 	return $elems;
@@ -377,8 +391,9 @@ $.fn.scaleCanvas = function(args) {
 		ctx, e, params = merge(new Prefs(), args);
 		
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
-
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		ctx.save();
 		ctx.translate(params.x, params.y);
 		ctx.scale(params.scaleX, params.scaleY);
@@ -393,7 +408,9 @@ $.fn.translateCanvas = function(args) {
 		ctx, e, params = merge(new Prefs(), args);
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		ctx.save();
 		ctx.translate(params.x, params.y);
 	}
@@ -406,7 +423,9 @@ $.fn.rotateCanvas = function(args) {
 		ctx, e, params = merge(new Prefs(), args);
 	
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		positionShape(ctx, params, 0, 0);
 	}
 	return $elems;
@@ -419,7 +438,9 @@ $.fn.drawRect = function(args) {
 		x1, y1, x2, y2, r;
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 		positionShape(ctx, params, params.width, params.height);
 		
@@ -469,7 +490,8 @@ $.fn.drawArc = function(args) {
 	}
 		
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
 		
 		setGlobals(ctx, params);
 		positionShape(ctx, params, params.radius*2, params.radius*2);
@@ -492,7 +514,9 @@ $.fn.drawEllipse = function(args) {
 		controlW = params.width * 4/3;
 		
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 		positionShape(ctx, params, params.width, params.height);
 		
@@ -517,7 +541,9 @@ $.fn.drawLine = function(args) {
 		l=2, lx=0, ly=0;
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 		
 		// Draw each point
@@ -547,7 +573,9 @@ $.fn.drawQuad = function(args) {
 		l=2, lx=0, ly=0, lcx=0, lcy=0;
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 			
 		// Draw each point
@@ -582,7 +610,9 @@ $.fn.drawBezier = function(args) {
 		lcx2=0, lcy2=0;
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 	
 		// Draw each point
@@ -616,7 +646,9 @@ $.fn.drawText = function(args) {
 		ctx, e, params = merge(new Prefs(), args);
 
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 	
 		// Set text-specific properties
@@ -634,19 +666,18 @@ $.fn.drawText = function(args) {
 $.fn.drawImage = function(args) {
 	var $elems = this,
 		ctx, elem, e, params = merge(new Prefs(), args),
-		// Define image source
-		img = new Image(),
-		scaleFac;
+		img, scaleFac;
 	// Use defined element, if not, a source URL
 	if (params.source.src) {
 		img = params.source;
 	} else if (params.source) {
+		img = new Image();
 		img.src = params.source;
 	}
 	
 	// Draw image function
 	function draw(ctx) {
-		if (img.complete) {
+		if (img.complete === UNDEFINED || img.complete === TRUE) {
 			scaleFac = img.width / img.height;
 			
 			// Show whole image if no cropping region is defined
@@ -743,8 +774,6 @@ $.fn.drawImage = function(args) {
 			);
 			ctx.restore();
 			return TRUE;
-		} else {
-			return FALSE;
 		}
 	}
 	// Run callback function
@@ -761,7 +790,9 @@ $.fn.drawImage = function(args) {
 	// Draw image if already loaded
 	for (e=0; e<$elems.length; e+=1) {
 		elem = $elems[e];
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 		
 		// Draw when image is loaded (if chosen)
@@ -792,7 +823,9 @@ $.fn.drawPolygon = function(args) {
 	
 	if (params.sides > 2) {
 	for (e=0; e<$elems.length; e+=1) {
-		if (!(ctx = loadCanvas($elems[e]))) {continue;}
+		ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 		setGlobals(ctx, params);
 		
 		// Calculate points and draw
@@ -832,7 +865,9 @@ $.fn.setPixels = function(args) {
 	
 	for (e=0; e<$elems.length; e+=1) {
 			elem = $elems[e];
-			if (!(ctx = loadCanvas($elems[e]))) {continue;}
+			ctx = loadCanvas($elems[e]);
+		if (!ctx) {continue;}
+		
 			// Measure (x, y) from center of region
 			if (!params.x && !params.y && !params.width && !params.height) {
 				params.width = elem.width;
@@ -868,7 +903,7 @@ $.fn.setPixels = function(args) {
 	return $elems;
 };
 
-// Show object properties so they can be animated
+// Show object's CSS properties so they can be animated
 function showProps(props, obj) {
 	var i;
 	for (i=0; i<props.length; i+=1) {
@@ -876,7 +911,7 @@ function showProps(props, obj) {
 	}
 }
 
-// Hide object properties so they can be animated
+// Hide object's CSS properties so they can be animated
 function hideProps(props, obj) {
 	var i;
 	for (i=0; i<props.length; i+=1) {
@@ -1010,8 +1045,23 @@ $.fn.getLayers = function() {
 
 // Get a single jCanvas layer
 $.fn.getLayer = function(index) {
-	index = index || 0;
-	return this.getLayers()[index];
+	var type = typeof index,
+		layers = this.getLayers(),
+		layer, i;
+	if (type === 'number') {
+		index = index || 0;
+		layer = layers[index];
+	} else if (type === 'string') {
+		for (i=0; i<layers.length; i+=1) {
+			if (layers[i].name === index) {
+				layer = layers[i];
+				break;
+			}
+		}
+	} else {
+		layer = NULL;
+	}
+	return layer;
 };
 
 // Add a new jCanvas layer
@@ -1056,7 +1106,8 @@ $.fn.drawLayers = function() {
 	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		if (!(ctx = loadCanvas($elem[0]))) {continue;}
+		ctx = loadCanvas($elem[0]);
+		if (!ctx) {continue;}
 		layers = $elem.getLayers();
 		// Clear canvas first
 		ctx.clearRect(0, 0, $elem[0].width, $elem[0].height);
@@ -1086,7 +1137,7 @@ $.fn.animateLayer = function() {
 	// Deal with all cases of argument placement
 	
 	// If index is omitted
-	if (typeof args[0] === 'object' && !args[0].method) {
+	if (typeof args[0] === 'object' && !args[0].layer) {
 		args.unshift(0);
 	}
 	// If object is the last argument
@@ -1133,7 +1184,7 @@ $.fn.animateLayer = function() {
 		if (args[0].layer) {
 			layer = args[0];
 		} else {
-			layer = $elem.getLayers()[args[0]];
+			layer = $elem.getLayer(args[0]);
 		}
 		// Ignore layers that are functions
 		if (!layer || layer.method === 'draw') {
