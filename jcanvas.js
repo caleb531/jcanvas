@@ -1098,8 +1098,10 @@ $.event.fix = function(event) {
 	// If offsetX and offsetY are not supported
 	if (event.offsetX == null && event.offsetY == null) {
 		var offset = $(event.target).offset();
-		event.offsetX = event.pageX - offset.left;
-		event.offsetY = event.pageY - offset.top;
+		if (offset != null) { // check for null, because Document or Window doesn't have offset
+			event.offsetX = event.pageX - offset.left;
+			event.offsetY = event.pageY - offset.top;
+		}
 	}
 	return event;
 };
