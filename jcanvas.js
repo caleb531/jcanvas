@@ -52,7 +52,7 @@ defaults = {
 	fillStyle: 'transparent',
 	font: '12pt sans-serif',
 	fromCenter: TRUE,
-	height: 0,
+	height: null,
 	inDegrees: TRUE,
 	load: NULL,
 	mask: FALSE,
@@ -81,7 +81,7 @@ defaults = {
 	sx: NULL,
 	sy: NULL,
 	text: '',
-	width: 0,
+	width: null,
 	x: 0,
 	x1: 0,
 	x2: 0,
@@ -501,7 +501,7 @@ $.fn.drawArc = function(args) {
 		
 		setGlobals(ctx, params);
 		positionShape(ctx, params, params.radius*2, params.radius*2);
-		
+
 		// Draw arc
 		ctx.beginPath();
 		ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(PI/2), (params.end*params.toRad)-(PI/2), params.ccw);
@@ -698,10 +698,10 @@ $.fn.drawImage = function(args) {
 				params.sHeight = img.height;
 			}
 			// Destination width/height should equal source unless otherwise defined
-			if (params.width === 0 && params.sWidth !== img.width) {
+			if (params.width === NULL && params.sWidth !== img.width) {
 				params.width = params.sWidth;
 			}
-			if (params.height === 0 && params.sHeight !== img.height) {
+			if (params.height === NULL && params.sHeight !== img.height) {
 				params.height = params.sHeight;
 			}
 			
@@ -742,31 +742,18 @@ $.fn.drawImage = function(args) {
 			}
 			
 			// If only width is present
-			if (params.width && !params.height) {
-				params.height = params.width / scaleFac;
+			if (params.width !== NULL && params.height === NULL) {
+				args.height = params.height = params.width / scaleFac;
 			// If only height is present
-			} else if (!params.width && params.height) {
-				params.width = params.height * scaleFac;
+			} else if (params.width === NULL && params.height !== NULL) {
+				args.width = params.width = params.height * scaleFac;
 			// If width and height are both absent
-			} else if (!params.width && !params.height) {
-				params.width = img.width;
-				params.height = img.height;
+			} else if (params.width === NULL && params.height === NULL) {
+				args.width = params.width = img.width;
+				args.height = params.height = img.height;
 			}
-			
 			// Position image
 			positionShape(ctx, params, params.width, params.height);
-			// Draw rectangle to allow for events
-			if (params.event) {
-				ctx.beginPath();
-				ctx.rect(
-					params.x - params.width / 2,
-					params.y - params.height / 2,
-					params.width,
-					params.height
-				);
-				if (params.event) {checkEvents.call($elems[e], ctx, args);}
-				ctx.closePath();
-			}
 			// Draw image
 			ctx.drawImage(
 				img,
@@ -779,7 +766,22 @@ $.fn.drawImage = function(args) {
 				params.width,
 				params.height
 			);
-			ctx.restore();
+			// Draw rectangle to allow for events
+			if (params.event) {
+				ctx.fillStyle = '#000';
+				ctx.beginPath();
+				ctx.rect(
+					params.x - params.width / 2,
+					params.y - params.height / 2,
+					params.width,
+					params.height
+				);
+				ctx.restore();
+				checkEvents.call($elems[e], ctx, args);
+				ctx.closePath();
+			} else {
+				ctx.restore();
+			}
 			return TRUE;
 		}
 	}
@@ -1094,6 +1096,7 @@ $.fn.addLayer = function(args) {
 			}
 		}
 	}
+	$elems.drawLayers();
 	return $elems;
 };
 
@@ -1220,13 +1223,6 @@ $.fn.animateLayer = function() {
 		// Ignore layers that are functions
 		if (!layer || layer.method === 'draw') {
 			continue;
-		}
-		// Trick drawImage() to not guess width/height if either is 0
-		if (layer.method === 'drawImage') {
-			args[1].width = args[1].width || 1e-10;
-			args[1].height = args[1].height || 1e-10;
-			layer.width = layer.width || 1e-10;
-			layer.height = layer.height || 1e-10;
 		}
 		// Merge properties so any property can be animated
 		layer = merge(layer, prefs, $.extend({}, layer));
