@@ -1045,7 +1045,7 @@ $.fn.getLayers = function() {
 	if (!elem || !elem.getContext) {return NULL;}
 	layers = $.data(elem, 'layers');
 	// Create layers array if none exists
-	if (layers === UNDEFINED) {
+	if (!layers) {
 		layers = [];
 		$.data(elem, 'layers', layers);
 	}
