@@ -1,4 +1,4 @@
-Copyright (c) 2011 Caleb Evans, http://calebevans.me/projects/jcanvas/
+Copyright 2012 Caleb Evans, http://calebevans.me/projects/jcanvas/
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
