@@ -261,9 +261,8 @@ $.fn.gradient = function(args) {
 		gradient,
 		stops = [], nstops = 0,
 		start = 0, end = 1,
-		i = 1, n = 0, p = 0,
-		last;
-	
+		i, a, n, p;
+		
 	ctx = loadCanvas($elems[0]);
 	if (ctx) {
 	
@@ -280,18 +279,16 @@ $.fn.gradient = function(args) {
 		} else {
 			
 			// Count number of color stops
-			i = 1;
-			while (params['c' + i] !== UNDEFINED) {
+			for (i=1; params['c' + i] !== UNDEFINED; i+=1) {
 				if (params['s' + i] !== UNDEFINED) {
 					stops.push(params['s' + i]);
 				} else {
 					stops.push(NULL);
 				}
-				i += 1;
 			}
 			nstops = stops.length;
 
-			// Define start and end points if not already defined
+			// Define start and end stops if not already defined
 			if (stops[0] === NULL) {
 				stops[0] = 0;
 			}
@@ -304,25 +301,27 @@ $.fn.gradient = function(args) {
 				
 				// If stop is a number, start a new progression
 				if (stops[i] !== NULL && stops[i] !== 1) {
+					// Lookahead iterator
 					a = i + 1;
+					// Number of stops in current progression
 					n = 1;
+					// Current iteration in current progression
 					p = 0;
 					start = stops[i];
 
-					// Look ahead to find end position
-					while (a < nstops) {
-						// If this future stop is a number, make it the end position for this progression
+					// Look ahead to find end stop
+					for (a=i+1; a<nstops; a+=1) {
+						// If this future stop is a number, make it the end stop for this progression
 						if (stops[a] !== NULL) {
 							end = stops[a];
 							break;
 						} else {
 							// Otherwise, keep looking ahead
-							a += 1;
 							n += 1;
 						}
 					}
 					
-					// Ensure start position is not greater than the end position
+					// Ensure start stop is not greater than the end stop
 					if (start > end) {
 						stops[a] = stops[i];
 					}
