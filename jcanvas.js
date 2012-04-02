@@ -259,9 +259,10 @@ $.fn.gradient = function(args) {
 	var $elems = this,
 		ctx, params = merge(new Prefs(), args),
 		gradient,
-		stops = 0,
-		start = 0, end = 100,
-		i = 1, last;
+		stops = [], nstops = 0,
+		start = 0, end = 1,
+		i = 1, n = 0, p = 0,
+		last;
 	
 	ctx = loadCanvas($elems[0]);
 	if (ctx) {
@@ -272,34 +273,61 @@ $.fn.gradient = function(args) {
 		} else {
 			gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
 		}
-		
-		// Count number of color stops
-		while (params['c' + i] !== UNDEFINED) {
-			stops += 1;
-			i += 1;
-		}
-		
+				
 		// Don't calculate gradient if only one color is defined
-		if (stops === 1) {
-			gradient = params['c1'];
+		if (nstops === 1) {
+			gradient = params.c1;
 		} else {
 			
-			// Constrain gradient to last color stop
-			last = params['s' + stops];
-			if (last !== UNDEFINED) {
-				end = last * 100;
-			}
-				
-			// Calculate color stop percentages if absent
-			for (i=1; i<=stops; i+=1) {
-				if (params['s' + i] === UNDEFINED) {
-					params['s' + i] = (start + ((end - start) / (stops - 1)) * (i - 1)) / 100;
+			// Count number of color stops
+			i = 1;
+			while (params['c' + i] !== UNDEFINED) {
+				if (params['s' + i] !== UNDEFINED) {
+					stops.push(params['s' + i]);
 				} else {
-					start = params['s' + i] * 100;
+					stops.push(NULL);
 				}
-				gradient.addColorStop(params['s' + i], params['c' + i]);
+				i += 1;
 			}
-		}		
+			nstops = stops.length;
+
+			if (stops[0] === NULL) {
+				stops[0] = 0;
+			}
+			if (stops[nstops-1] === NULL) {
+				stops[nstops-1] = 1;
+			}
+
+			// Loop through color stops to fill in the blanks
+			for (i=0; i<nstops; i+=1) {
+				
+				// If stop is a number, start a new progression
+				if (stops[i] !== NULL && stops[i] !== 1) {
+					a = i + 1;
+					n = 1;
+					p = 0;
+					start = stops[i];
+
+					// Look ahead to find end point
+					while (a < nstops) {
+						// If this future stop is a number, make it the end point for this progression
+						if (stops[a] !== NULL) {
+							end = stops[a];
+							break;
+						} else {
+							// Otherwise, keep looking ahead
+							a += 1;
+							n += 1;
+						}
+					}
+				} else if (stops[i] === NULL) {
+					p += 1;
+					stops[i] = start + ((end - start) / n) * p;
+				}
+				gradient.addColorStop(stops[i], params['c' + (i+1)]);
+			}
+
+		}
 	} else {
 		gradient = NULL;
 	}
