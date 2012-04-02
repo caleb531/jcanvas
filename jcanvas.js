@@ -291,6 +291,7 @@ $.fn.gradient = function(args) {
 			}
 			nstops = stops.length;
 
+			// Define start and end points if not already defined
 			if (stops[0] === NULL) {
 				stops[0] = 0;
 			}
@@ -308,9 +309,9 @@ $.fn.gradient = function(args) {
 					p = 0;
 					start = stops[i];
 
-					// Look ahead to find end point
+					// Look ahead to find end position
 					while (a < nstops) {
-						// If this future stop is a number, make it the end point for this progression
+						// If this future stop is a number, make it the end position for this progression
 						if (stops[a] !== NULL) {
 							end = stops[a];
 							break;
@@ -320,6 +321,12 @@ $.fn.gradient = function(args) {
 							n += 1;
 						}
 					}
+					
+					// Ensure start position is not greater than the end position
+					if (start > end) {
+						stops[a] = stops[i];
+					}
+					
 				} else if (stops[i] === NULL) {
 					p += 1;
 					stops[i] = start + ((end - start) / n) * p;
