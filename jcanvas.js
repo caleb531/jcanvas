@@ -1161,7 +1161,7 @@ $.fn.addLayer = function(args) {
 				// Ensure width/height of shapes (other than images) can be animated without specifying those properties
 				if (params.method !== 'drawImage') {
 					params.width = params.width || 0;
-					params.height = params.width || 0;
+					params.height = params.height || 0;
 				}
 				// Check for any associated jCanvas events and enable them
 				for (event in jCanvas.events) {
