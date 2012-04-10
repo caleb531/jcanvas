@@ -1,5 +1,5 @@
 /*!
-jCanvas v5.2b
+jCanvas v5.2
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -33,7 +33,7 @@ function jCanvas(args) {
 	}
 	return this;
 }
-jCanvas.version = '5.2b';
+jCanvas.version = '5.2';
 jCanvas.events = {};
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
@@ -96,6 +96,7 @@ jCanvas();
 
 // Set global properties
 function setGlobals(ctx, params) {
+	// Fill/stroke styles
 	ctx.fillStyle = params.fillStyle;
 	ctx.strokeStyle = params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
@@ -107,10 +108,12 @@ function setGlobals(ctx, params) {
 		ctx.lineCap = params.strokeCap;
 		ctx.lineJoin = params.strokeJoin;
 	}
+	// Drop shadow
 	ctx.shadowOffsetX = params.shadowX;
 	ctx.shadowOffsetY = params.shadowY;
 	ctx.shadowBlur = params.shadowBlur;
 	ctx.shadowColor = params.shadowColor;
+	// Opacity and composite operation
 	ctx.globalAlpha = params.opacity;
 	ctx.globalCompositeOperation = params.compositing;
 }
@@ -134,15 +137,19 @@ createEvent('mouseup');
 createEvent('mousemove');
 
 // Check if event fires when a drawing is drawn
-function checkEvents(ctx, params) {
+function checkEvents(elem, ctx, params) {
 	var callback = params[eventCache.type];
-	if (eventCache.type && callback && ctx.isPointInPath(eventCache.x, eventCache.y)) {
+
+	if (callback && ctx.isPointInPath(eventCache.x, eventCache.y)) {
 		params.mouseX = eventCache.x;
 		params.mouseY = eventCache.y;
 		eventCache.x = UNDEFINED;
 		eventCache.y = UNDEFINED;
-		callback.call(this, params);
+		callback.call(elem, params);
 		setGlobals(ctx, params);
+	} else {
+		eventCache.x = UNDEFINED;
+		eventCache.y = UNDEFINED;
 	}
 }
 
@@ -256,28 +263,28 @@ $.fn.draw = function(callback) {
 
 // Create gradient
 $.fn.gradient = function(args) {
-	var $elems = this,
-		ctx, params = merge(new Prefs(), args),
+	var $elems = this, ctx,
+		params = merge(new Prefs(), args),
 		gradient,
-		stops = [], nstops = 0,
-		start = 0, end = 1,
+		stops = [], nstops,
+		start, end,
 		i, a, n, p;
 		
 	ctx = loadCanvas($elems[0]);
 	if (ctx) {
-	
-		// Create radial gradient if chosen
-		if (params.r1 !== NULL || params.r2 !== NULL) {
-			gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
-		} else {
-			gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
-		}
 				
 		// Don't calculate gradient if only one color is defined
-		if (nstops === 1) {
+		if (params.c2 === UNDEFINED) {
 			gradient = params.c1;
 		} else {
-			
+
+			// Create radial gradient if chosen
+			if (params.r1 !== NULL || params.r2 !== NULL) {
+				gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
+			} else {
+				gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
+			}
+
 			// Count number of color stops
 			for (i=1; params['c' + i] !== UNDEFINED; i+=1) {
 				if (params['s' + i] !== UNDEFINED) {
@@ -310,7 +317,7 @@ $.fn.gradient = function(args) {
 					start = stops[i];
 
 					// Look ahead to find end stop
-					for (a=i+1; a<nstops; a+=1) {
+					for (a=(i+1); a<nstops; a+=1) {
 						// If this future stop is a number, make it the end stop for this progression
 						if (stops[a] !== NULL) {
 							end = stops[a];
@@ -325,10 +332,11 @@ $.fn.gradient = function(args) {
 					if (start > end) {
 						stops[a] = stops[i];
 					}
-					
+				
+				// If stop must be calculated
 				} else if (stops[i] === NULL) {
 					p += 1;
-					stops[i] = start + ((end - start) / n) * p;
+					stops[i] = start + (p * ((end - start) / n));
 				}
 				gradient.addColorStop(stops[i], params['c' + (i+1)]);
 			}
@@ -397,7 +405,7 @@ $.fn.pattern = function(args) {
 
 // Clear canvas
 $.fn.clearCanvas = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
 
 	for (e=0; e<$elems.length; e+=1) {
@@ -448,7 +456,7 @@ $.fn.restoreCanvas = function() {
 
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
 		
 	for (e=0; e<$elems.length; e+=1) {
@@ -465,7 +473,7 @@ $.fn.scaleCanvas = function(args) {
 
 // Translate canvas
 $.fn.translateCanvas = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
 
 	for (e=0; e<$elems.length; e+=1) {
@@ -480,7 +488,7 @@ $.fn.translateCanvas = function(args) {
 
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
 	
 	for (e=0; e<$elems.length; e+=1) {
@@ -494,7 +502,7 @@ $.fn.rotateCanvas = function(args) {
 
 // Draw rectangle
 $.fn.drawRect = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		x1, y1, x2, y2, r;
 
@@ -534,7 +542,7 @@ $.fn.drawRect = function(args) {
 				ctx.rect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			}
 			ctx.restore();
-			if (params.event) {checkEvents.call($elems[e], ctx, args);}
+			if (params.event) {checkEvents($elems[e], ctx, args);}
 			closePath(ctx, params);
 			
 		}
@@ -544,7 +552,7 @@ $.fn.drawRect = function(args) {
 
 // Draw arc
 $.fn.drawArc = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
 
 	// Change default end angle to radians if needed
@@ -564,7 +572,7 @@ $.fn.drawArc = function(args) {
 			ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(PI/2), (params.end*params.toRad)-(PI/2), params.ccw);
 			// Close path if chosen
 			ctx.restore();
-			if (params.event) {checkEvents.call($elems[e], ctx, args);}
+			if (params.event) {checkEvents($elems[e], ctx, args);}
 			closePath(ctx, params);
 		
 		}
@@ -574,7 +582,7 @@ $.fn.drawArc = function(args) {
 
 // Draw ellipse
 $.fn.drawEllipse = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		controlW = params.width * 4/3;
 		
@@ -593,7 +601,7 @@ $.fn.drawEllipse = function(args) {
 			// Right side
 			ctx.bezierCurveTo(params.x+controlW/2, params.y+params.height/2, params.x+controlW/2, params.y-params.height/2, params.x, params.y-params.height/2);
 			ctx.restore();
-			if (params.event) {checkEvents.call($elems[e], ctx, args);}
+			if (params.event) {checkEvents($elems[e], ctx, args);}
 			closePath(ctx, params);
 		
 		}
@@ -603,7 +611,7 @@ $.fn.drawEllipse = function(args) {
 
 // Draw line
 $.fn.drawLine = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l=2, lx=0, ly=0;
 
@@ -626,7 +634,7 @@ $.fn.drawLine = function(args) {
 					break;
 				}
 			}
-			if (params.event) {checkEvents.call($elems[e], ctx, args);}
+			if (params.event) {checkEvents($elems[e], ctx, args);}
 			// Close path if chosen
 			closePath(ctx, params);
 		
@@ -637,7 +645,7 @@ $.fn.drawLine = function(args) {
 
 // Draw quadratic curve
 $.fn.drawQuad = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l=2, lx=0, ly=0, lcx=0, lcy=0;
 
@@ -662,7 +670,7 @@ $.fn.drawQuad = function(args) {
 					break;
 				}
 			}
-			if (params.event) {checkEvents.call($elems[e], ctx, args);}
+			if (params.event) {checkEvents($elems[e], ctx, args);}
 			// Close path if chosen
 			closePath(ctx, params);
 		
@@ -673,7 +681,7 @@ $.fn.drawQuad = function(args) {
 
 // Draw Bezier curve
 $.fn.drawBezier = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l = 2, lc = 1,
 		lx=0, ly=0,
@@ -704,7 +712,7 @@ $.fn.drawBezier = function(args) {
 					break;
 				}
 			}
-			if (params.event) {checkEvents.call($elems[e], ctx, args);}
+			if (params.event) {checkEvents($elems[e], ctx, args);}
 			// Close path if chosen
 			closePath(ctx, params);
 		
@@ -715,11 +723,12 @@ $.fn.drawBezier = function(args) {
 
 // Draw text
 $.fn.drawText = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, $elem, e, ctx,
 		params = merge(new Prefs(), args);
 
 	for (e=0; e<$elems.length; e+=1) {
-		ctx = loadCanvas($elems[e]);
+		$elem = $($elems[e]);
+		ctx = loadCanvas($elem[0]);
 		if (ctx) {
 			
 			setGlobals(ctx, params);
@@ -728,7 +737,7 @@ $.fn.drawText = function(args) {
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
 			ctx.font = params.font;
-			
+						
 			ctx.strokeText(params.text, params.x, params.y);
 			ctx.fillText(params.text, params.x, params.y);
 		
@@ -790,7 +799,7 @@ $.fn.drawImage = function(args) {
 				}
 			}
 			
-			// Crop from top-left corner if cropFromCenter is TRUE
+			// Crop from top-left corner if cropFromCenter is FALSE
 			if (!params.cropFromCenter) {
 				params.sx += params.sWidth/2;
 				params.sy += params.sHeight/2;
@@ -823,6 +832,7 @@ $.fn.drawImage = function(args) {
 			}
 			// Position image
 			positionShape(ctx, params, params.width, params.height);
+			
 			// Draw image
 			ctx.drawImage(
 				img,
@@ -835,7 +845,7 @@ $.fn.drawImage = function(args) {
 				params.width,
 				params.height
 			);
-			// Draw rectangle to allow for events
+			// Draw invisible rectangle to allow for events
 			if (params.event) {
 				ctx.fillStyle = '#000';
 				ctx.beginPath();
@@ -846,7 +856,7 @@ $.fn.drawImage = function(args) {
 					params.height
 				);
 				ctx.restore();
-				checkEvents.call($elems[e], ctx, args);
+				checkEvents($elems[e], ctx, args);
 				ctx.closePath();
 			} else {
 				ctx.restore();
@@ -892,7 +902,7 @@ $.fn.drawImage = function(args) {
 
 // Draw equiangular (regular) polygon
 $.fn.drawPolygon = function(args) {
-	var $elems = this, ctx, e,
+	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		inner = PI / params.sides,
 		theta = (PI/2) + inner,
@@ -929,7 +939,7 @@ $.fn.drawPolygon = function(args) {
 					theta += dtheta;
 				}
 				ctx.restore();
-				if (params.event) {checkEvents.call($elems[e], ctx, args);}
+				if (params.event) {checkEvents($elems[e], ctx, args);}
 				closePath(ctx, params);
 				
 			}
@@ -1025,7 +1035,7 @@ colorProps = [
 
 // Convert a color value to RGBA
 function toRgba(color) {
-	var original, elem,
+	var oldColor, elem,
 		rgb = [],
 		multiple = 1;
 	
@@ -1041,10 +1051,10 @@ function toRgba(color) {
 				color = 'rgba(255,255,255,0)';
 			}
 			elem = document.documentElement;
-			original = elem.style.color;
+			oldColor = elem.style.color;
 			elem.style.color = color;
 			color = $.css(elem, 'color');
-			elem.style.color = original;
+			elem.style.color = oldColor;
 		}
 		// Deal with hexadecimal
 		if (color.match(/^\#/gi)) {
