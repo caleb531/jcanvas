@@ -1,5 +1,5 @@
 /*!
-jCanvas v5.2.1
+jCanvas v5.3b
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -33,7 +33,7 @@ function jCanvas(args) {
 	}
 	return this;
 }
-jCanvas.version = '5.2.1';
+jCanvas.version = '5.3b';
 jCanvas.events = {};
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
@@ -100,7 +100,7 @@ function setGlobals(ctx, params) {
 	ctx.fillStyle = params.fillStyle;
 	ctx.strokeStyle = params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
-	// Set rounded corners for paths
+	// Set rounded corners for paths if chosen
 	if (params.rounded) {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
@@ -118,13 +118,19 @@ function setGlobals(ctx, params) {
 	ctx.globalCompositeOperation = params.compositing;
 }
 
+// Set event cache properties
+eventCache.fired = FALSE;
+eventCache.x = [];
+eventCache.y = [];
 
 // Populate jCanvas events object with a few standard jQuery events
 function createEvent(name) {
 	jCanvas.events[name] = function($elem) {
-		$elem.unbind(name + '.jCanvas').bind(name + '.jCanvas', function(event) {
-			eventCache.x = event.offsetX;
-			eventCache.y = event.offsetY;
+		$elem
+		.unbind(name + '.jCanvas')
+		.bind(name + '.jCanvas', function(event) {
+			eventCache.x[0] = event.offsetX;
+			eventCache.y[0] = event.offsetY;
 			eventCache.type = event.type;
 			$elem.drawLayers();
 		});
@@ -136,14 +142,50 @@ createEvent('mousedown');
 createEvent('mouseup');
 createEvent('mousemove');
 
+// Detect "mouseover" and "mouseout" events with one "hover" event
+jCanvas.events.mouseover = jCanvas.events.mouseout = function($elem) {
+	$elem.unbind('mousemove.hover').bind('mousemove.hover', function() {
+		eventCache.x[1] = eventCache.x[0];
+		eventCache.y[1] = eventCache.y[0];
+		eventCache.x[0] = event.offsetX;
+		eventCache.y[0] = event.offsetY;
+		eventCache.type = 'hover';
+		$elem.drawLayers();
+	});
+};
+
+// Update event cache with new coordinates
+function updateEventCache(params) {
+	params.mouseX = eventCache.x[0];
+	params.mouseY = eventCache.y[0];
+	eventCache.x[0] = UNDEFINED;
+	eventCache.y[0] = UNDEFINED;
+}
+
 // Check if event fires when a drawing is drawn
 function checkEvents(elem, ctx, params) {
-	var callback = params[eventCache.type];
-	if (callback && ctx.isPointInPath(eventCache.x, eventCache.y)) {
-		params.mouseX = eventCache.x;
-		params.mouseY = eventCache.y;
-		eventCache.x = UNDEFINED;
-		eventCache.y = UNDEFINED;
+	var callback = params[eventCache.type],
+		over = ctx.isPointInPath(eventCache.x[0], eventCache.y[0]),
+		out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
+
+	if (eventCache.type === 'hover' && out && !eventCache.fired) {
+		eventCache.fired = TRUE;
+		updateEventCache(params);
+		if (params.mouseover) {
+			params.mouseover.call(elem, params);
+			setGlobals(ctx, params);
+		}
+		
+	} else if (eventCache.type === 'hover' && !over && out) {
+		eventCache.fired = FALSE;
+		updateEventCache(params);
+		if (params.mouseout) {
+			params.mouseout.call(elem, params);
+			setGlobals(ctx, params);
+		}
+
+	} else if (callback && eventCache.type !== 'hover' && over) {
+		updateEventCache(params);
 		callback.call(elem, params);
 		setGlobals(ctx, params);
 	}
@@ -205,8 +247,8 @@ function extend(plugin) {
 	// Create plugin
 	if (plugin.name) {
 		$.fn[plugin.name] = function(args) {
-			var $elems = this, elem,
-				ctx, e, params = merge(new Prefs(), args);
+			var $elems = this, elem, e, ctx,
+				params = merge(new Prefs(), args);
 			
 			for (e=0; e<$elems.length; e+=1) {
 				elem = $elems[e];
@@ -236,8 +278,8 @@ $.fn.getCanvasImage = function(type) {
 		type = 'image/png';
 	} else {
 		type = type
-			.replace(/^([a-z]+)$/gi, 'image/$1')
-			.replace(/jpg/gi, 'jpeg');
+		.replace(/^([a-z]+)$/gi, 'image/$1')
+		.replace(/jpg/gi, 'jpeg');
 	}
 	return elem.toDataURL(type);
 };
@@ -1260,9 +1302,9 @@ $.fn.drawLayers = function() {
 
 // Animate jCanvas layer
 $.fn.animateLayer = function() {
-	var $elems = this, $elem,
+	var $elems = this, $elem, e,
 		args = ([]).slice.call(arguments, 0),
-		layer, e;
+		layer;
 		
 	// Deal with all cases of argument placement
 	
@@ -1319,6 +1361,10 @@ $.fn.animateLayer = function() {
 			}
 			// Ignore layers that are functions
 			if (layer && layer.method !== 'draw') {
+			
+				// Ensure events don't accidentally fire when animation starts
+				eventCache.x = [];
+				eventCache.y = [];
 	
 				// Allow jQuery to animate jCanvas CSS-named properties (width, opacity, etc.)
 				hideProps(cssProps, layer);
