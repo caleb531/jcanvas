@@ -144,7 +144,7 @@ createEvent('mousemove');
 
 // Detect "mouseover" and "mouseout" events with one "hover" event
 jCanvas.events.mouseover = jCanvas.events.mouseout = function($elem) {
-	$elem.unbind('mousemove.hover').bind('mousemove.hover', function() {
+	$elem.unbind('mousemove.jCanvasHover').bind('mousemove.jCanvasHover', function(event) {
 		eventCache.x[1] = eventCache.x[0];
 		eventCache.y[1] = eventCache.y[0];
 		eventCache.x[0] = event.offsetX;
@@ -168,15 +168,17 @@ function checkEvents(elem, ctx, params) {
 		over = ctx.isPointInPath(eventCache.x[0], eventCache.y[0]),
 		out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
 
-	if (eventCache.type === 'hover' && out && !eventCache.fired) {
+	// Detect mouseover events
+	if (eventCache.type === 'hover' && over && !eventCache.fired) {
 		eventCache.fired = TRUE;
 		updateEventCache(params);
 		if (params.mouseover) {
 			params.mouseover.call(elem, params);
 			setGlobals(ctx, params);
 		}
-		
-	} else if (eventCache.type === 'hover' && !over && out) {
+	
+	// Detect mouseout events
+	} else if (eventCache.type === 'hover' && !over && out && eventCache.fired) {
 		eventCache.fired = FALSE;
 		updateEventCache(params);
 		if (params.mouseout) {
@@ -184,7 +186,8 @@ function checkEvents(elem, ctx, params) {
 			setGlobals(ctx, params);
 		}
 
-	} else if (callback && eventCache.type !== 'hover' && over) {
+	// Detect other mouse events
+	} else if (eventCache.type !== 'hover' && callback && over) {
 		updateEventCache(params);
 		callback.call(elem, params);
 		setGlobals(ctx, params);
@@ -1361,10 +1364,6 @@ $.fn.animateLayer = function() {
 			}
 			// Ignore layers that are functions
 			if (layer && layer.method !== 'draw') {
-			
-				// Ensure events don't accidentally fire when animation starts
-				eventCache.x = [];
-				eventCache.y = [];
 	
 				// Allow jQuery to animate jCanvas CSS-named properties (width, opacity, etc.)
 				hideProps(cssProps, layer);
