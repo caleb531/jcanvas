@@ -1202,7 +1202,7 @@ $.fn.getLayer = function(index) {
 // Add a new jCanvas layer
 $.fn.addLayer = function(args) {
 	var $elems = this, $elem,
-		params = merge(args, new Prefs(), $.extend({}, args)),
+		params = merge(args, new Prefs(), merge({}, args)),
 		layers, event, e;
 	params.layer = TRUE;
 
