@@ -16,6 +16,7 @@ var defaults, prefs,
 	cos = Math.cos,
 	oldEventFix = $.event.fix,
 	eventCache = {},
+	cache = {},
 	cssProps,
 	colorProps;
 
@@ -40,8 +41,8 @@ $.fn.jCanvas = jCanvas;
 
 // Set jCanvas default property values
 defaults = {
-	align: 'center',
 	angle: 0,
+	align: 'center',
 	baseline: 'middle',
 	ccw: FALSE,
 	closed: FALSE,
@@ -164,34 +165,34 @@ function updateEventCache(params) {
 }
 
 // Check if event fires when a drawing is drawn
-function checkEvents(elem, ctx, params) {
-	var callback = params[eventCache.type],
+function checkEvents(elem, ctx, layer) {
+	var callback = layer[eventCache.type],
 		over = ctx.isPointInPath(eventCache.x[0], eventCache.y[0]),
 		out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
 
 	// Detect mouseover events
-	if (eventCache.type === 'hover' && over && !params.fired) {
-		params.fired = TRUE;
-		updateEventCache(params);
-		if (params.mouseover) {
-			params.mouseover.call(elem, params);
-			setGlobals(ctx, params);
+	if (eventCache.type === 'hover' && over && !layer.fired) {
+		layer.fired = TRUE;
+		updateEventCache(layer);
+		if (layer.mouseover) {
+			layer.mouseover.call(elem, layer);
+			setGlobals(ctx, layer);
 		}
 	
 	// Detect mouseout events
-	} else if (eventCache.type === 'hover' && !over && out && params.fired) {
-		params.fired = FALSE;
-		updateEventCache(params);
-		if (params.mouseout) {
-			params.mouseout.call(elem, params);
-			setGlobals(ctx, params);
+	} else if (eventCache.type === 'hover' && !over && out && layer.fired) {
+		layer.fired = FALSE;
+		updateEventCache(layer);
+		if (layer.mouseout) {
+			layer.mouseout.call(elem, layer);
+			setGlobals(ctx, layer);
 		}
 
 	// Detect other mouse events
 	} else if (eventCache.type !== 'hover' && callback && over) {
-		updateEventCache(params);
-		callback.call(elem, params);
-		setGlobals(ctx, params);
+		updateEventCache(layer);
+		callback.call(elem, layer);
+		setGlobals(ctx, layer);
 	}
 }
 
@@ -783,6 +784,35 @@ $.fn.drawBezier = function(args) {
 	return $elems;
 };
 
+// Measure canvas text
+function measureText(elem, ctx, params) {
+	var originalSize, sizeMatch;
+	
+	// Calculate width
+	params.width = ctx.measureText(params.text).width;
+	
+	// Calculate height only if needed
+	if (cache.font === params.font) {
+		
+		params.height = cache.height;
+		
+	} else {
+		
+		// Save original font size
+		originalSize = elem.style.fontSize;
+		// Get specified font size, or calculate font size if not specified
+		sizeMatch = params.font.match(/\d+/gi);
+		if (sizeMatch) {
+			elem.style.fontSize = (params.font.match(/(\d*\.?\d*)\w+/gi) || $.css(elem, 'fontSize'))[0];
+		}
+		// Save text width and height in parameters
+		params.height = parseFloat($.css(elem, 'fontSize'));
+		// Reset font size to original size
+		elem.style.fontSize = originalSize;
+		
+	}
+}
+
 // Draw text
 $.fn.drawText = function(args) {
 	var $elems = this, $elem, e, ctx,
@@ -794,17 +824,39 @@ $.fn.drawText = function(args) {
 		if (ctx) {
 			
 			setGlobals(ctx, params);
-		
+				
 			// Set text-specific properties
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
 			ctx.font = params.font;
-				
+			
+			// Retrieve text's width and height
+			measureText($elem[0], ctx, params);
+			
+			positionShape(ctx, params, params.width, params.height);
+
 			ctx.strokeText(params.text, params.x, params.y);
 			ctx.fillText(params.text, params.x, params.y);
 		
+			// Detect jCanvas events
+			if (params.event) {
+				ctx.beginPath();
+				ctx.rect(
+					params.x - params.width / 2,
+					params.y - params.height / 2,
+					params.width,
+					params.height
+				);
+				ctx.restore();
+				checkEvents($elems[e], ctx, args);
+				ctx.closePath();
+			} else {
+				ctx.restore();
+			}
+			
 		}
 	}
+	cache = params;
 	return $elems;
 };
 
@@ -1103,7 +1155,7 @@ colorProps = [
 
 // Convert a color value to RGBA
 function toRgba(color) {
-	var oldColor, elem,
+	var originalColor, elem,
 		rgb = [],
 		multiple = 1;
 	
@@ -1119,10 +1171,10 @@ function toRgba(color) {
 				color = 'rgba(255,255,255,0)';
 			}
 			elem = document.documentElement;
-			oldColor = elem.style.color;
+			originalColor = elem.style.color;
 			elem.style.color = color;
 			color = $.css(elem, 'color');
-			elem.style.color = oldColor;
+			elem.style.color = originalColor;
 		}
 		// Deal with hexadecimal
 		if (color.match(/^\#/gi)) {
