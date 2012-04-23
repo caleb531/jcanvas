@@ -43,6 +43,7 @@ $.fn.jCanvas = jCanvas;
 defaults = {
 	angle: 0,
 	align: 'center',
+	autosave: TRUE,
 	baseline: 'middle',
 	ccw: FALSE,
 	closed: FALSE,
@@ -65,6 +66,7 @@ defaults = {
 	radius: 0,
 	repeat: 'repeat',
 	rounded: FALSE,
+	scale: 1,
 	scaleX: 1,
 	scaleY: 1,
 	shadowBlur: 3,
@@ -205,7 +207,7 @@ function loadCanvas(elem) {
 function closePath(ctx, params) {
 	// Mask shape/path if chosen
 	if (params.mask) {
-		ctx.save();
+		if (params.autosave) {ctx.save();}
 		ctx.clip();
 	}
 	// Close path if chosen
@@ -226,19 +228,19 @@ function positionShape(ctx, params, width, height) {
 	// Measure angles in chosen units
 	params.toRad = (params.inDegrees ? PI/180 : 1);
 	ctx.save();
-		
+
 	// Always rotate from center
 	if (!params.fromCenter) {
 		params.x += width/2;
 		params.y += height/2;
 	}
 	
-	// Rotate only if necessary
+	// Rotate shape if chosen
 	if (params.angle) {
-		ctx.translate(params.x, params.y);
-		ctx.rotate(params.angle*params.toRad);
-		ctx.translate(-params.x, -params.y);
+		rotateCanvas(ctx, params);
 	}
+	// Scale shape if chosen
+	scaleCanvas(ctx, params);
 }
 
 // Extend jCanvas
@@ -499,6 +501,19 @@ $.fn.restoreCanvas = function() {
 	return $elems;
 };
 
+function scaleCanvas(ctx, params) {
+	// Scale both the X and Y axis if chosen
+	if (params.scale !== 1) {
+		params.scaleX = params.scaleY = params.scale;
+	}
+	// Scale shape if chosen
+	if (params.scaleX !== 1 || params.scaleY !== 1) {
+		ctx.translate(params.x, params.y);
+		ctx.scale(params.scaleX, params.scaleY);
+		ctx.translate(-params.x, -params.y);
+	}
+}
+
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
 	var $elems = this, e, ctx,
@@ -507,10 +522,12 @@ $.fn.scaleCanvas = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-			ctx.save();
-			ctx.translate(params.x, params.y);
-			ctx.scale(params.scaleX, params.scaleY);
-			ctx.translate(-params.x, -params.y);
+			// Scale both the X and Y axis if chosen
+			if (params.scale !== 1) {
+				params.scaleX = params.scaleY = params.scale;
+			}
+			if (params.autosave) {ctx.save();}
+			scaleCanvas(ctx, params);
 		}
 	}
 	return $elems;
@@ -524,12 +541,20 @@ $.fn.translateCanvas = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-			ctx.save();
+			if (params.autosave) {ctx.save();}
 			ctx.translate(params.x, params.y);
 		}
 	}
 	return $elems;
 };
+
+// Rotate canvas (internally)
+function rotateCanvas(ctx, params) {
+	params.toRad = (params.inDegrees ? PI/180 : 1);
+	ctx.translate(params.x, params.y);
+	ctx.rotate(params.angle*params.toRad);
+	ctx.translate(-params.x, -params.y);
+}
 
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
@@ -539,7 +564,8 @@ $.fn.rotateCanvas = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-			positionShape(ctx, params, 0, 0);
+			if (params.autosave) {ctx.save();}
+			rotateCanvas(ctx, params);
 		}
 	}
 	return $elems;
@@ -824,7 +850,7 @@ $.fn.drawText = function(args) {
 		if (ctx) {
 			
 			setGlobals(ctx, params);
-				
+			
 			// Set text-specific properties
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
@@ -834,10 +860,10 @@ $.fn.drawText = function(args) {
 			measureText($elem[0], ctx, params);
 			
 			positionShape(ctx, params, params.width, params.height);
-
+			
 			ctx.strokeText(params.text, params.x, params.y);
 			ctx.fillText(params.text, params.x, params.y);
-		
+			
 			// Detect jCanvas events
 			if (params.event) {
 				ctx.beginPath();
@@ -1057,9 +1083,9 @@ $.fn.drawPolygon = function(args) {
 				}
 				ctx.restore();
 				// Check for jCanvas events
-			if (params.event) {
-				checkEvents($elems[e], ctx, args);
-			}
+				if (params.event) {
+					checkEvents($elems[e], ctx, args);
+				}
 				closePath(ctx, params);
 				
 			}
@@ -1281,27 +1307,66 @@ $.fn.getLayer = function(index) {
 	return layer;
 };
 
+function drawLayer($elem, ctx, layer) {
+	if (layer.visible) {
+		// If layer is a function
+		if (layer.method === 'draw') {
+			layer.call($elem[0], ctx);
+		// If layer is an object
+		} else {
+			if ($.fn[layer.method]) {
+				$.fn[layer.method].call($elem, layer);
+			}
+		}
+	}
+}
+
+// Draw jCanvas layers
+$.fn.drawLayers = function() {
+	var $elems = this, $elem, ctx,
+		layers, layer, e, i;
+	
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		ctx = loadCanvas($elem[0]);
+		if (ctx) {
+			
+			layers = $elem.getLayers();
+			// Clear canvas first
+			ctx.clearRect(0, 0, $elem[0].width, $elem[0].height);
+			// Draw items on queue
+			for (i=0; i<layers.length; i+=1) {
+				layer = layers[i];
+				drawLayer($elem, ctx, layer);
+			}
+			
+		}
+	}
+	return $elems;
+};
+
 // Add a new jCanvas layer
 $.fn.addLayer = function(args) {
-	var $elems = this, $elem,
+	var $elems = this, $elem, e, ctx,
 		params = merge(args, new Prefs(), merge({}, args)),
-		layers, event, e;
+		layers, event;
 	params.layer = TRUE;
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		if (loadCanvas($elems[e])) {
+		ctx = loadCanvas($elem[0]);
+		if (ctx) {
 		
 			layers = $elem.getLayers();
 			// If layer is a function
 			if (typeof params === 'function') {
 				params.method = 'draw';
 			} else {
-				// Ensure width/height of shapes (other than images) can be animated without specifying those properties
+				// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
 				if (params.method !== 'drawImage') {
 					params.width = params.width || 0;
 					params.height = params.height || 0;
-				}
+				}				
 				// Check for any associated jCanvas events and enable them
 				for (event in jCanvas.events) {
 					if (jCanvas.events.hasOwnProperty(event) && params[event]) {
@@ -1311,10 +1376,9 @@ $.fn.addLayer = function(args) {
 				}
 			}
 			layers.push(params);
-		
+			drawLayer($elem, ctx, params);
 		}
 	}
-	$elems.drawLayers();
 	return $elems;
 };
 
@@ -1348,41 +1412,6 @@ $.fn.removeLayer = function(index) {
 		}
 	}
 	return this;
-};
-
-// Draw jCanvas layers
-$.fn.drawLayers = function() {
-	var $elems = this, $elem, ctx,
-		params, layers, e, i;
-	
-	for (e=0; e<$elems.length; e+=1) {
-		$elem = $($elems[e]);
-		ctx = loadCanvas($elem[0]);
-		if (ctx) {
-		
-			layers = $elem.getLayers();
-			// Clear canvas first
-			ctx.clearRect(0, 0, $elem[0].width, $elem[0].height);
-			// Draw items on queue
-			for (i=0; i<layers.length; i+=1) {
-				params = layers[i];
-				// Only draw if layer is visible
-				if (params.visible) {
-					// If layer is a function
-					if (params.method === 'draw') {
-						params.call($elem[0], ctx);
-					// If layer is an object
-					} else {
-						if ($.fn[params.method]) {
-							$.fn[params.method].call($elem, params);
-						}
-					}
-				}
-			}
-		
-		}
-	}
-	return $elems;
 };
 
 // Animate jCanvas layer
