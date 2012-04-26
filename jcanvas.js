@@ -172,22 +172,25 @@ function checkEvents(elem, ctx, layer) {
 		over = ctx.isPointInPath(eventCache.x[0], eventCache.y[0]),
 		out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
 
-	// Detect mouseover events
-	if (eventCache.type === 'hover' && over && !layer.fired) {
-		layer.fired = TRUE;
-		updateEventCache(layer);
-		if (layer.mouseover) {
-			layer.mouseover.call(elem, layer);
-			setGlobals(ctx, layer);
-		}
-	
-	// Detect mouseout events
-	} else if (eventCache.type === 'hover' && !over && out && layer.fired) {
-		layer.fired = FALSE;
-		updateEventCache(layer);
-		if (layer.mouseout) {
-			layer.mouseout.call(elem, layer);
-			setGlobals(ctx, layer);
+	// Detect mouseover/mouseout events
+	if (eventCache.type === 'hover') {
+		
+		// Mouseover
+		if (over && !layer.fired) {
+			layer.fired = TRUE;
+			updateEventCache(layer);
+			if (layer.mouseover) {
+				layer.mouseover.call(elem, layer);
+				setGlobals(ctx, layer);
+			}
+		// Mouseout
+		} else if (!over && out && layer.fired) {
+			layer.fired = FALSE;
+			updateEventCache(layer);
+			if (layer.mouseout) {
+				layer.mouseout.call(elem, layer);
+				setGlobals(ctx, layer);
+			}
 		}
 
 	// Detect other mouse events
@@ -220,6 +223,28 @@ function closePath(ctx, params) {
 		ctx.stroke();
 		ctx.closePath();
 	}
+}
+
+// Scale canvas (used internally)
+function scaleCanvas(ctx, params) {
+	// Scale both the X and Y axis if chosen
+	if (params.scale !== 1) {
+		params.scaleX = params.scaleY = params.scale;
+	}
+	// Scale shape if chosen
+	if (params.scaleX !== 1 || params.scaleY !== 1) {
+		ctx.translate(params.x, params.y);
+		ctx.scale(params.scaleX, params.scaleY);
+		ctx.translate(-params.x, -params.y);
+	}
+}
+
+// Rotate canvas (used internally)
+function rotateCanvas(ctx, params) {
+	params.toRad = (params.inDegrees ? PI/180 : 1);
+	ctx.translate(params.x, params.y);
+	ctx.rotate(params.angle*params.toRad);
+	ctx.translate(-params.x, -params.y);
 }
 
 // Rotate individual shape
@@ -399,7 +424,7 @@ $.fn.gradient = function(args) {
 $.fn.pattern = function(args) {
 	var $elems = this,
 		ctx, params = merge(new Prefs(), args),
-		img, pattern;
+		img, pattern, pc, pctx;
 
 	// Create pattern when image can be loaded
 	function create() {
@@ -434,14 +459,23 @@ $.fn.pattern = function(args) {
 		}
 		
 		// Draw when image is loaded (if load() callback function is defined)
-		if (!img.complete && params.load) {
-			img.onload = onload;
+		if (typeof params.source === 'function') {
+			pc = document.createElement('canvas');
+			pc.width = params.width;
+			pc.height = params.height;
+			pctx = loadCanvas(pc);
+			params.source.call(pc, pctx);
+			pattern = ctx.createPattern(pc, params.repeat);
 		} else {
-			// Draw image if already loaded (and if load() callback is not defined)
-			if (!create()) {
+			if (!img.complete && params.load) {
 				img.onload = onload;
 			} else {
-				callback();
+				// Draw image if already loaded (and if load() callback is not defined)
+				if (!create()) {
+					img.onload = onload;
+				} else {
+					callback();
+				}
 			}
 		}
 	} else {
@@ -501,19 +535,6 @@ $.fn.restoreCanvas = function() {
 	return $elems;
 };
 
-function scaleCanvas(ctx, params) {
-	// Scale both the X and Y axis if chosen
-	if (params.scale !== 1) {
-		params.scaleX = params.scaleY = params.scale;
-	}
-	// Scale shape if chosen
-	if (params.scaleX !== 1 || params.scaleY !== 1) {
-		ctx.translate(params.x, params.y);
-		ctx.scale(params.scaleX, params.scaleY);
-		ctx.translate(-params.x, -params.y);
-	}
-}
-
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
 	var $elems = this, e, ctx,
@@ -547,14 +568,6 @@ $.fn.translateCanvas = function(args) {
 	}
 	return $elems;
 };
-
-// Rotate canvas (internally)
-function rotateCanvas(ctx, params) {
-	params.toRad = (params.inDegrees ? PI/180 : 1);
-	ctx.translate(params.x, params.y);
-	ctx.rotate(params.angle*params.toRad);
-	ctx.translate(-params.x, -params.y);
-}
 
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
@@ -770,9 +783,9 @@ $.fn.drawBezier = function(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l = 2, lc = 1,
-		lx=0, ly=0,
-		lcx1=0, lcy1=0,
-		lcx2=0, lcy2=0;
+		lx = 0, ly = 0,
+		lcx1 = 0, lcy1 = 0,
+		lcx2 = 0, lcy2 = 0;
 
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
@@ -818,7 +831,7 @@ function measureText(elem, ctx, params) {
 	params.width = ctx.measureText(params.text).width;
 	
 	// Calculate height only if needed
-	if (cache.font === params.font) {
+	if (cache.font === params.font && cache.text === params.text) {
 		
 		params.height = cache.height;
 		
@@ -1294,19 +1307,22 @@ $.fn.getLayer = function(index) {
 		layer, i;
 	if (!layers) {
 		layer = NULL;
-	} else if (typeof index === 'string') {
-		for (i=0; i<layers.length; i+=1) {
-			if (layers[i].name === index) {
-				index = i;
-				break;
+	} else {
+		if (typeof index === 'string') {
+			for (i=0; i<layers.length; i+=1) {
+				if (layers[i].name === index) {
+					index = i;
+					break;
+				}
 			}
 		}
+		index = index || 0;
+		layer = layers[index];
 	}
-	index = index || 0;
-	layer = layers[index];
 	return layer;
 };
 
+// Draw individual layer (used internally)
 function drawLayer($elem, ctx, layer) {
 	if (layer.visible) {
 		// If layer is a function
@@ -1366,7 +1382,7 @@ $.fn.addLayer = function(args) {
 				if (params.method !== 'drawImage') {
 					params.width = params.width || 0;
 					params.height = params.height || 0;
-				}				
+				}
 				// Check for any associated jCanvas events and enable them
 				for (event in jCanvas.events) {
 					if (jCanvas.events.hasOwnProperty(event) && params[event]) {
