@@ -22,7 +22,7 @@ var defaults,
 	cssProps,
 	colorProps;
 
-// Preferences constructor
+// Preferences constructor (which inherits from the defaults object)
 function Prefs() {}
 
 // jCanvas function
@@ -31,15 +31,16 @@ function jCanvas(args) {
 		// Merge arguments with preferences
 		merge(prefs, args);
 	} else {
-		// Reset to defaults if nothing is passed
+		// Reset preferences to defaults if nothing is passed
 		prefs = Prefs.prototype = merge({}, defaults);
 	}
 	return this;
 }
-jCanvas.version = '5.3b';
-jCanvas.events = {};
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
+
+jCanvas.version = '5.3b';
+jCanvas.events = {};
 
 // Set jCanvas default property values
 defaults = {
@@ -106,7 +107,7 @@ function setGlobalProps(ctx, params) {
 	ctx.fillStyle = params.fillStyle;
 	ctx.strokeStyle = params.strokeStyle;
 	ctx.lineWidth = params.strokeWidth;
-	// Set rounded corners for paths if chosen
+	// Rounded corners for paths if chosen
 	if (params.rounded) {
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
@@ -115,7 +116,7 @@ function setGlobalProps(ctx, params) {
 		ctx.lineJoin = params.strokeJoin;
 		ctx.miterLimit = params.miterLimit;
 	}
-	// Drop shadow
+	// Drop shadow styles
 	ctx.shadowOffsetX = params.shadowX;
 	ctx.shadowOffsetY = params.shadowY;
 	ctx.shadowBlur = params.shadowBlur;
@@ -125,15 +126,16 @@ function setGlobalProps(ctx, params) {
 	ctx.globalCompositeOperation = params.compositing;
 }
 
-// Set event cache properties
+// Keep track of the last 2 mouse coordinates on the canvas)
 eventCache.x = [];
 eventCache.y = [];
 
-// Populate jCanvas events object with a few standard jQuery events
+// Create jCanvas event from a standard jQuery event
 function createEvent(name) {
 	jCanvas.events[name] = function handler($elem) {
 		$elem
 		.bind(name + '.jCanvas', function(event) {
+			// Cache current mouse position and redraw layers
 			eventCache.x[0] = event.offsetX;
 			eventCache.y[0] = event.offsetY;
 			eventCache.type = event.type;
@@ -142,13 +144,14 @@ function createEvent(name) {
 		handler.called = TRUE;
 	};
 }
+// Populate jCanvas events object with some events
 createEvent('click');
 createEvent('dblclick');
 createEvent('mousedown');
 createEvent('mouseup');
 createEvent('mousemove');
 
-// Detect "mouseover" and "mouseout" events with one "hover" event
+// Detect both "mouseover" and "mouseout" events with one "hover" event
 jCanvas.events.mouseover = jCanvas.events.mouseout = function handler($elem) {
 	$elem
 	.bind('mousemove.jCanvas', function(event) {
@@ -166,7 +169,8 @@ jCanvas.events.mouseover = jCanvas.events.mouseout = function handler($elem) {
 function updateEventCache(params) {
 	params.mouseX = eventCache.x[0];
 	params.mouseY = eventCache.y[0];
-
+	eventCache.x = [];
+	eventCache.y = [];
 }
 
 // Check if event fires when a drawing is drawn
@@ -197,7 +201,7 @@ function checkEvents(elem, ctx, layer) {
 			}
 		}
 		
-	// Detect other mouse events
+	// Detect any other mouse events
 	} else if (type !== 'hover' && callback && over) {
 		updateEventCache(layer);
 		callback.call(elem, layer);
@@ -251,7 +255,7 @@ function rotateCanvas(ctx, params) {
 	ctx.translate(-params.x, -params.y);
 }
 
-// Rotate individual shape
+// Rotate/scale individual shape and/or position it correctly
 function positionShape(ctx, params, width, height) {
 	
 	// Measure angles in chosen units
@@ -272,7 +276,7 @@ function positionShape(ctx, params, width, height) {
 	scaleCanvas(ctx, params);
 }
 
-// Extend jCanvas
+// Extend jCanvas with custom methods
 function extend(plugin) {
 
 	// Merge properties with defaults
@@ -305,24 +309,19 @@ $.fn.loadCanvas = function() {
 	return loadCanvas(this[0]);
 };
 
-// Load canvas
-$.fn.getCanvasImage = function(type) {
+// Get canvas image as data URL
+$.fn.getCanvasImage = function(type, quality) {
 	var elem = this[0];
-	if (!elem || !elem.toDataURL) {
-		return NULL;
+	if (!type) {
+		type = 'png';
 	}
-	
-	if (type === UNDEFINED) {
-		type = 'image/png';
-	} else {
-		type = type
-		.replace(/^([a-z]+)$/gi, 'image/$1')
+	type = type
+		.replace(/^(\w+)$/gi, 'image/$1')
 		.replace(/jpg/gi, 'jpeg');
-	}
-	return elem.toDataURL(type);
+	return (elem && elem.toDataURL) ? elem.toDataURL(type, quality) : NULL;
 };
 
-// Draw on canvas manually
+// Draw on canvas using the standard canvas API
 $.fn.draw = function(callback) {
 	var $elems = this, e, ctx;
 	
@@ -335,7 +334,7 @@ $.fn.draw = function(callback) {
 	return $elems;
 };
 
-// Create gradient
+// Create a canvas gradient object
 $.fn.gradient = function(args) {
 	var $elems = this, ctx,
 		params = merge(new Prefs(), args),
@@ -353,10 +352,11 @@ $.fn.gradient = function(args) {
 			gradient = params.c1;
 		} else {
 
-			// Create radial gradient if chosen
 			if (params.r1 !== NULL || params.r2 !== NULL) {
+				// Create radial gradient if chosen
 				gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
 			} else {
+				// By default, create a linear gradient
 				gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
 			}
 
@@ -427,9 +427,9 @@ $.fn.gradient = function(args) {
 $.fn.pattern = function(args) {
 	var $elems = this,
 		ctx, params = merge(new Prefs(), args),
-		img, pattern, pctx;
+		img, pattern, imgCtx;
 
-	// Create pattern when image can be loaded
+	// Create pattern when image loads
 	function create() {
 		// Create pattern
 		pattern = ctx.createPattern(img, params.repeat);
@@ -452,13 +452,13 @@ $.fn.pattern = function(args) {
 			img = document.createElement('canvas');
 			img.width = params.width;
 			img.height = params.height;
-			pctx = loadCanvas(img);
-			params.source.call(img, pctx);
+			imgCtx = loadCanvas(img);
+			params.source.call(img, imgCtx);
 			onload();
 			
 		} else {
 			
-			// Use defined element, if not, a source URL
+			// Use image element, if not, a image URL
 			if (params.source.src) {
 				img = params.source;
 			} else {
@@ -906,7 +906,7 @@ $.fn.drawImage = function(args) {
 	// Define arguments if not defined (because the jCanvas() function was used instead)
 	args = args || {};
 	
-	// Use defined DOM element, if not, a source URL
+	// Use image element, if not, an image URL
 	if (params.source.src) {
 		img = params.source;
 	} else if (params.source) {
@@ -1028,7 +1028,7 @@ $.fn.drawImage = function(args) {
 			if (params.load) {
 				params.load.call(elem);
 			}
-		}
+		};
 	}
 	// Draw image if already loaded
 	for (e=0; e<$elems.length; e+=1) {
@@ -1078,13 +1078,13 @@ $.fn.drawPolygon = function(args) {
 				for (i=0; i<params.sides; i+=1) {
 					x1 = params.x + round(params.radius * cos(theta));
 					y1 = params.y + round(params.radius * sin(theta));
-					// Draw path
-					if (i === 0) {
+					// Draw side of polygon
+					if (!i) {
 						ctx.moveTo(x1, y1);
 					} else {
 						ctx.lineTo(x1, y1);
 					}
-					// Project sides if chosen
+					// Project side if chosen
 					if (params.projection) {
 						x2 = params.x + round((apothem+apothem*params.projection) * cos(theta+inner));
 						y2 = params.y + round((apothem+apothem*params.projection) * sin(theta+inner));
@@ -1156,15 +1156,13 @@ $.fn.setPixels = function(args) {
 	return $elems;
 };
 
-// Show object's CSS properties so they can be animated
+// Hide jCanvas/CSS properties from CSS Hooks so they can be animated using jCanvas
 function showProps(props, obj) {
 	var i;
 	for (i=0; i<props.length; i+=1) {
 		obj[props[i]] = obj['_' + props[i]];
 	}
 }
-
-// Hide object's CSS properties so they can be animated
 function hideProps(props, obj) {
 	var i;
 	for (i=0; i<props.length; i+=1) {
@@ -1302,22 +1300,22 @@ $.fn.getLayers = function() {
 };
 
 // Get a single jCanvas layer
-$.fn.getLayer = function(index) {
+$.fn.getLayer = function(name) {
 	var layers = this.getLayers(),
 		layer, i;
 	if (!layers) {
 		layer = NULL;
 	} else {
-		if (typeof index === 'string') {
+		if (typeof name === 'string') {
 			for (i=0; i<layers.length; i+=1) {
-				if (layers[i].name === index) {
-					index = i;
+				if (layers[i].name === name) {
+					name = i;
 					break;
 				}
 			}
 		}
-		index = index || 0;
-		layer = layers[index];
+		name = name || 0;
+		layer = layers[name];
 	}
 	return layer;
 };
@@ -1478,6 +1476,7 @@ $.fn.animateLayer = function() {
 			}
 		};
 	}
+	// Redraw layers on every frame of the animation
 	function step(layer) {
 		return function() {
 			showProps(cssProps, layer);
@@ -1488,6 +1487,7 @@ $.fn.animateLayer = function() {
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		if (loadCanvas($elems[e])) {
+		
 			// If a layer object was passed, use it as a reference
 			if (args[0].layer) {
 				layer = args[0];
@@ -1497,7 +1497,7 @@ $.fn.animateLayer = function() {
 			// Ignore layers that are functions
 			if (layer && layer.method !== 'draw') {
 				
-				// Allow jQuery to animate jCanvas CSS-named properties (width, opacity, etc.)
+				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(cssProps, layer);
 				hideProps(cssProps, args[1]);
 				// Animate layer
