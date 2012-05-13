@@ -77,7 +77,7 @@ defaults = {
 	shadowColor: transparent,
 	shadowX: 0,
 	shadowY: 0,
-	sHeight: 0,
+	sHeight: NULL,
 	sides: 3,
 	source: '',
 	start: 0,
@@ -85,7 +85,7 @@ defaults = {
 	strokeJoin: 'miter',
 	strokeStyle: transparent,
 	strokeWidth: 1,
-	sWidth: 0,
+	sWidth: NULL,
 	sx: NULL,
 	sy: NULL,
 	text: '',
@@ -179,7 +179,7 @@ function checkEvents(elem, ctx, layer) {
 		callback = layer[type],
 		over = ctx.isPointInPath(eventCache.x[0], eventCache.y[0]),
 		out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
-		
+	
 	// Detect mouseover/mouseout events
 	if (type === 'hover') {
 				
@@ -901,9 +901,10 @@ $.fn.drawText = function(args) {
 $.fn.drawImage = function(args) {
 	var $elems = this, elem, e, ctx,
 		params = merge(new Prefs(), args),
-		img, scaleFac;
+		img, scaleFac,
+		sWidthDefined, sHeightDefined;
 	
-	// Define arguments if not defined (because the jCanvas() function was used instead)
+	// Create arguments object if not defined (because the jCanvas() function was used instead)
 	args = args || {};
 	
 	// Use image element, if not, an image URL
@@ -920,20 +921,20 @@ $.fn.drawImage = function(args) {
 			scaleFac = img.width / img.height;
 			
 			// Show whole image if no cropping region is defined
-			params.sWidth = params.sWidth || img.width;
-			params.sHeight = params.sHeight || img.height;
-			// Ensure cropped region is not bigger than image
-			if (params.sWidth > img.width) {
+			// Also ensure cropped region is not bigger than image
+			if (params.sWidth === NULL || params.sWidth > img.width) {
 				params.sWidth = img.width;
+				sWidthDefined = TRUE;
 			}
-			if (params.sHeight > img.height) {
+			if (params.sHeight === NULL || params.sHeight > img.height) {
 				params.sHeight = img.height;
+				sHeightDefined = TRUE;
 			}
 			// Destination width/height should equal source unless otherwise defined
-			if (params.width === NULL && params.sWidth !== img.width) {
+			if (params.width === NULL && !sWidthDefined) {
 				params.width = params.sWidth;
 			}
-			if (params.height === NULL && params.sHeight !== img.height) {
+			if (params.height === NULL && !sHeightDefined) {
 				params.height = params.sHeight;
 			}
 			
@@ -985,9 +986,7 @@ $.fn.drawImage = function(args) {
 				args.height = params.height = img.height;
 			}
 			// Position image
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
-			}
+			positionShape(ctx, params, params.width, params.height);
 			
 		}
 			
@@ -1178,8 +1177,8 @@ cssProps = [
 ];
 // Define supported color properties
 colorProps = [
-	'backgroundColor',
 	'color',
+	'backgroundColor',
 	'borderColor',
 	'borderTopColor',
 	'borderRightColor',
