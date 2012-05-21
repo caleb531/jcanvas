@@ -261,7 +261,7 @@ function positionShape(ctx, params, width, height) {
 	// Measure angles in chosen units
 	params.toRad = (params.inDegrees ? PI/180 : 1);
 	ctx.save();
-
+	
 	// Always rotate from center
 	if (!params.fromCenter) {
 		params.x += width/2;
@@ -278,12 +278,12 @@ function positionShape(ctx, params, width, height) {
 
 // Extend jCanvas with custom methods
 function extend(plugin) {
-
+	
 	// Merge properties with defaults
 	plugin = plugin || {};
 	defaults = merge(defaults, plugin.props);
 	jCanvas();
-
+	
 	// Create plugin
 	if (plugin.name) {
 		$.fn[plugin.name] = function(args) {
@@ -343,7 +343,6 @@ $.fn.gradient = function(args) {
 		start, end,
 		i, a, n, p;
 	
-	args = args || {};
 	ctx = loadCanvas($elems[0]);
 	if (ctx) {
 				
@@ -411,7 +410,6 @@ $.fn.gradient = function(args) {
 				} else if (stops[i] === NULL) {
 					p += 1;
 					stops[i] = start + (p * ((end - start) / n));
-					args['s' + (i+1)] = stops[i];
 				}
 				gradient.addColorStop(stops[i], params['c' + (i+1)]);
 			}
@@ -459,14 +457,15 @@ $.fn.pattern = function(args) {
 		} else {
 			
 			// Use image element, if not, a image URL
-			if (params.source.src) {
+			imgCtx = params.source.getContext;
+			if (params.source.src || imgCtx) {
 				img = params.source;
 			} else {
 				img.src = params.source;
 			}
 			
 			// Draw image if already loaded
-			if (img.complete) {
+			if (img.complete || imgCtx) {
 				onload();
 			} else {
 				img.onload = onload;
@@ -634,12 +633,12 @@ $.fn.drawRect = function(args) {
 $.fn.drawArc = function(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
-
+	
 	// Change default end angle to radians if necessary
 	if (!params.inDegrees && params.end === 360) {
 		params.end = PI * 2;
 	}
-		
+	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
@@ -668,7 +667,7 @@ $.fn.drawEllipse = function(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		controlW = params.width * 4/3;
-		
+	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
@@ -702,7 +701,7 @@ $.fn.drawEllipse = function(args) {
 $.fn.drawLine = function(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
-		l=2, lx=0, ly=0;
+		l=1, lx=0, ly=0;
 
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
@@ -712,7 +711,6 @@ $.fn.drawLine = function(args) {
 			
 			// Draw each point
 			ctx.beginPath();
-			ctx.moveTo(params.x1, params.y1);
 			while (TRUE) {
 				lx = params['x' + l];
 				ly = params['y' + l];
@@ -744,9 +742,9 @@ $.fn.drawQuad = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-		
+			
 			setGlobalProps(ctx, params);
-				
+			
 			// Draw each point
 			ctx.beginPath();
 			ctx.moveTo(params.x1, params.y1);
@@ -786,9 +784,9 @@ $.fn.drawBezier = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-		
+			
 			setGlobalProps(ctx, params);
-		
+			
 			// Draw each point
 			ctx.beginPath();
 			ctx.moveTo(params.x1, params.y1);
@@ -821,7 +819,8 @@ $.fn.drawBezier = function(args) {
 
 // Measure canvas text
 function measureText(elem, ctx, params) {
-	var originalSize, sizeMatch;
+	var originalSize, sizeMatch,
+		sizeExp = /(\d*\.?\d*)\w+/gi;
 	
 	// Calculate width
 	params.width = ctx.measureText(params.text).width;
@@ -836,9 +835,9 @@ function measureText(elem, ctx, params) {
 		// Save original font size
 		originalSize = elem.style.fontSize;
 		// Get specified font size, or calculate font size if not specified
-		sizeMatch = params.font.match(/\d+/gi);
+		sizeMatch = params.font.match(sizeExp);
 		if (sizeMatch) {
-			elem.style.fontSize = (params.font.match(/(\d*\.?\d*)\w+/gi) || $.css(elem, 'fontSize'))[0];
+			elem.style.fontSize = (params.font.match(sizeExp) || $.css(elem, 'fontSize'))[0];
 		}
 		// Save text width and height in parameters
 		params.height = parseFloat($.css(elem, 'fontSize'));
@@ -903,9 +902,6 @@ $.fn.drawImage = function(args) {
 		params = merge(new Prefs(), args),
 		img, scaleFac,
 		sWidthDefined, sHeightDefined;
-	
-	// Create arguments object if not defined (because the jCanvas() function was used instead)
-	args = args || {};
 	
 	// Use image element, if not, an image URL
 	if (params.source.src) {
@@ -1004,7 +1000,6 @@ $.fn.drawImage = function(args) {
 		);
 		// Draw invisible rectangle to allow for events
 		if (params.event) {
-			ctx.fillStyle = '#000';
 			ctx.beginPath();
 			ctx.rect(
 				params.x - params.width / 2,
@@ -1059,46 +1054,40 @@ $.fn.drawPolygon = function(args) {
 		theta = (PI/2) + inner,
 		dtheta = (PI*2) / params.sides,
 		apothem = cos(dtheta/2) * params.radius,
-		x1, y1, x2, y2, i;
+		x, y, i;
 	params.closed = TRUE;
 	
-	if (params.sides > 2) {
-		for (e=0; e<$elems.length; e+=1) {
-			ctx = loadCanvas($elems[e]);
-			if (ctx) {
+	for (e=0; e<$elems.length; e+=1) {
+		ctx = loadCanvas($elems[e]);
+		if (ctx) {
+		
+			setGlobalProps(ctx, params);
 			
-				setGlobalProps(ctx, params);
-				
-				// Calculate points and draw
-				if (!e) {
-					positionShape(ctx, params, params.radius, params.radius);
-				}
-				ctx.beginPath();
-				for (i=0; i<params.sides; i+=1) {
-					x1 = params.x + round(params.radius * cos(theta));
-					y1 = params.y + round(params.radius * sin(theta));
-					// Draw side of polygon
-					if (!i) {
-						ctx.moveTo(x1, y1);
-					} else {
-						ctx.lineTo(x1, y1);
-					}
-					// Project side if chosen
-					if (params.projection) {
-						x2 = params.x + round((apothem+apothem*params.projection) * cos(theta+inner));
-						y2 = params.y + round((apothem+apothem*params.projection) * sin(theta+inner));
-						ctx.lineTo(x2, y2);
-					}
-					theta += dtheta;
-				}
-				ctx.restore();
-				// Check for jCanvas events
-				if (params.event) {
-					checkEvents($elems[e], ctx, args);
-				}
-				closePath(ctx, params);
-				
+			if (!e) {
+				positionShape(ctx, params, params.radius, params.radius);
 			}
+			// Calculate points and draw
+			ctx.beginPath();
+			for (i=0; i<params.sides; i+=1) {
+				// Draw side of polygon
+				x = params.x + round(params.radius * cos(theta));
+				y = params.y + round(params.radius * sin(theta));
+				ctx.lineTo(x, y);
+				// Project side if chosen
+				if (params.projection) {
+					x = params.x + round((apothem+apothem*params.projection) * cos(theta+inner));
+					y = params.y + round((apothem+apothem*params.projection) * sin(theta+inner));
+					ctx.lineTo(x, y);
+				}
+				theta += dtheta;
+			}
+			ctx.restore();
+			// Check for jCanvas events
+			if (params.event) {
+				checkEvents($elems[e], ctx, args);
+			}
+			closePath(ctx, params);
+			
 		}
 	}
 	return $elems;
@@ -1117,14 +1106,14 @@ $.fn.setPixels = function(args) {
 		if (ctx) {
 		
 			// Measure (x, y) from center of region
+			if (!e) {
+				positionShape(ctx, params, params.width, params.height);
+			}
 			if (!params.x && !params.y && !params.width && !params.height) {
 				params.width = elem.width;
 				params.height = elem.height;
 				params.x = params.width/2;
 				params.y = params.height/2;
-			}
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
 			}
 			imgData = ctx.getImageData(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			data = imgData.data;
@@ -1155,7 +1144,7 @@ $.fn.setPixels = function(args) {
 	return $elems;
 };
 
-// Hide jCanvas/CSS properties from CSS Hooks so they can be animated using jCanvas
+// Hide/show jCanvas/CSS properties so they can be animated using jCanvas
 function showProps(props, obj) {
 	var i;
 	for (i=0; i<props.length; i+=1) {
@@ -1185,6 +1174,7 @@ colorProps = [
 	'borderBottomColor',
 	'borderLeftColor',
 	'fillStyle',
+	'outlineColor',
 	'strokeStyle',
 	'shadowColor',
 ];
@@ -1233,7 +1223,7 @@ function toRgba(color) {
 			rgb[1] = rgb[1] * multiple;
 			rgb[2] = rgb[2] * multiple;
 		}
-		// Add alpha
+		// Add alpha value
 		if (color.match('rgba')) {
 			rgb[3] = parseFloat(rgb[3]);
 		} else {
@@ -1246,7 +1236,7 @@ function toRgba(color) {
 // Get current frame value
 function getFrame(fx, i) {
 	fx.now[i] = fx.start[i] + (fx.end[i] - fx.start[i]) * fx.pos;
-	// Don't round a color's alpha value
+	// Round only the red, green, and blue values
 	if (i < 3) {
 		fx.now[i] = round(fx.now[i]);
 	}
@@ -1276,9 +1266,7 @@ function animateColor(fx) {
 function supportColorProps(props) {
 	var p;
 	for (p=0; p<props.length; p+=1) {
-		if (!$.fx.step[props[p]]) {
-			$.fx.step[props[p]] = animateColor;
-		}
+		$.fx.step[props[p]] = animateColor;
 	}
 }
 
@@ -1397,7 +1385,6 @@ $.fn.addLayer = function(args) {
 	return $elems;
 };
 
-
 // Remove all jCanvas layers
 $.fn.removeLayers = function() {
 	var $elems = this, layers, e;
@@ -1409,21 +1396,21 @@ $.fn.removeLayers = function() {
 };
 
 // Remove a single jCanvas layer
-$.fn.removeLayer = function(index) {
+$.fn.removeLayer = function(name) {
 	var $elems = this, e,
-		type = typeof index,
+		type = typeof name,
 		layers, i;
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers() || [];
 		if (type === 'string') {
 			for (i=0; i<layers.length; i+=1) {
-				if (layers[i].name === index) {
+				if (layers[i].name === name) {
 					layers.splice(i, 1);
 					break;
 				}
 			}
 		} else if (type === 'number') {
-			layers.splice(index, 1);
+			layers.splice(name, 1);
 		}
 	}
 	return $elems;
@@ -1437,7 +1424,7 @@ $.fn.animateLayer = function() {
 		
 	// Deal with all cases of argument placement
 	
-	// If index is omitted
+	// If layer name is omitted
 	if (typeof args[0] === 'object' && !args[0].layer) {
 		// Animate first layer by default
 		args.unshift(0);
@@ -1465,7 +1452,7 @@ $.fn.animateLayer = function() {
 		args[4] = NULL;
 	}
 
-	// Animation callback functions
+	// Run callback function when animation completes
 	function complete(layer) {
 		return function() {
 			showProps(cssProps, layer);
@@ -1513,6 +1500,17 @@ $.fn.animateLayer = function() {
 		}
 	}
 	return $elems;
+};
+
+// Stop layer animation
+$.fn.stopLayer = function(layer, clearQueue) {
+	if (layer.layer) {
+		$(layer).stop(clearQueue);
+	} else {
+		layer = $(this).getLayer(layer);
+		$(layer).stop(clearQueue);
+	}
+	return this;
 };
 
 // Normalize offsetX and offsetY for all browsers
