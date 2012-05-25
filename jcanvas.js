@@ -576,7 +576,7 @@ $.fn.rotateCanvas = function(args) {
 };
 
 // Draw rectangle
-$.fn.drawRect = function(args) {
+$.fn.drawRect = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		x1, y1, x2, y2, r;
@@ -587,7 +587,7 @@ $.fn.drawRect = function(args) {
 		
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawRect');
+				addLayer($elems[e], args, self);
 			}
 		
 			setGlobalProps(ctx, params);
@@ -638,7 +638,7 @@ $.fn.drawRect = function(args) {
 
 
 // Draw arc
-$.fn.drawArc = function(args) {
+$.fn.drawArc = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
 
@@ -653,7 +653,7 @@ $.fn.drawArc = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawArc');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -678,7 +678,7 @@ $.fn.drawArc = function(args) {
 };
 
 // Draw ellipse
-$.fn.drawEllipse = function(args) {
+$.fn.drawEllipse = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		controlW = params.width * 4/3;
@@ -689,7 +689,7 @@ $.fn.drawEllipse = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawEllipse');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -729,7 +729,7 @@ $.fn.drawLine = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawLine');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -759,7 +759,7 @@ $.fn.drawLine = function(args) {
 };
 
 // Draw quadratic curve
-$.fn.drawQuad = function(args) {
+$.fn.drawQuad = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l=2, lx=0, ly=0, lcx=0, lcy=0;
@@ -770,7 +770,7 @@ $.fn.drawQuad = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawQuad');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -803,7 +803,7 @@ $.fn.drawQuad = function(args) {
 };
 
 // Draw Bezier curve
-$.fn.drawBezier = function(args) {
+$.fn.drawBezier = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l = 2, lc = 1,
@@ -817,7 +817,7 @@ $.fn.drawBezier = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawBezier');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -883,7 +883,7 @@ function measureText(elem, ctx, params) {
 }
 
 // Draw text
-$.fn.drawText = function(args) {
+$.fn.drawText = function self(args) {
 	var $elems = this, $elem, e, ctx,
 		params = merge(new Prefs(), args);
 
@@ -894,7 +894,7 @@ $.fn.drawText = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawText');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -937,7 +937,7 @@ $.fn.drawText = function(args) {
 };
 
 // Draw image
-$.fn.drawImage = function(args) {
+$.fn.drawImage = function self(args) {
 	var $elems = this, elem, e, ctx,
 		params = merge(new Prefs(), args),
 		img, scaleFac,
@@ -1022,9 +1022,9 @@ $.fn.drawImage = function(args) {
 				args.width = params.width = img.width;
 				args.height = params.height = img.height;
 			}
+			
 			// Position image
 			positionShape(ctx, params, params.width, params.height);
-			
 		}
 							
 		// Draw image
@@ -1073,9 +1073,9 @@ $.fn.drawImage = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawImage');
+				addLayer($elems[e], args, self);
 			}
-						
+			
 			setGlobalProps(ctx, params);
 			
 			// Draw image if already loaded
@@ -1093,7 +1093,7 @@ $.fn.drawImage = function(args) {
 };
 
 // Draw a regular (equal-angled) polygon
-$.fn.drawPolygon = function(args) {
+$.fn.drawPolygon = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		inner = PI / params.sides,
@@ -1109,7 +1109,7 @@ $.fn.drawPolygon = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'drawPolygon');
+				addLayer($elems[e], args, self);
 			}
 			
 			setGlobalProps(ctx, params);
@@ -1144,7 +1144,7 @@ $.fn.drawPolygon = function(args) {
 };
 
 // Get pixels on the canvas
-$.fn.setPixels = function(args) {
+$.fn.setPixels = function self(args) {
 	var $elems = this,
 		elem, e, ctx,
 		params = merge(new Prefs(), args),
@@ -1157,7 +1157,7 @@ $.fn.setPixels = function(args) {
 			
 			// Allow for layer support
 			if (params.layer && !params._layer) {
-				addLayer($elems[e], params, 'setPixels');
+				addLayer($elems[e], args, self);
 			}
 			
 			// Measure (x, y) from center of region
@@ -1239,12 +1239,12 @@ $.fn.getLayer = function(name) {
 function drawLayer($elem, ctx, layer) {
 	if (layer.visible) {
 		// If layer is a function
-		if (layer.method === 'draw') {
+		if (layer.method === $.fn.draw) {
 			layer.call($elem[0], ctx);
 		// If layer is an object
 		} else {
-			if ($.fn[layer.method]) {
-				$.fn[layer.method].call($elem, layer);
+			if (layer.method) {
+				layer.method.call($elem, layer);
 			}
 		}
 	}
@@ -1279,16 +1279,17 @@ function addLayer(elem, params, method) {
 	var $elem = $(elem),
 		layers, event;
 	
-	params = merge(new Prefs(), params);
+	params = merge(params, new Prefs(), merge({}, params));
+	
 	layers = $elem.getLayers();
 	
 	// If layer is a function
 	if (typeof params === 'function') {
-		params.method = 'draw';
+		params.method = $.fn.draw;
 	} else {
-		params.method = params.method || method;
+		params.method = $.fn[params.method] || method;
 		// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
-		if (params.method !== 'drawImage') {
+		if (params.method !== $.fn.drawImage) {
 			params.width = params.width || 0;
 			params.height = params.height || 0;
 		}
@@ -1534,7 +1535,7 @@ $.fn.animateLayer = function() {
 				layer = $elem.getLayer(args[0]);
 			}
 			// Ignore layers that are functions
-			if (layer && layer.method !== 'draw') {
+			if (layer && layer.method !== $.fn.draw) {
 				
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(cssProps, layer);
