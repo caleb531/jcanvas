@@ -379,6 +379,7 @@ $.fn.gradient = function(args) {
 
 			// Loop through color stops to fill in the blanks
 			for (i=0; i<nstops; i+=1) {
+				// A progression, in this case, is defined as all of the color stops between and including two known color stops
 				
 				// If stop is a number, start a new progression
 				if (stops[i] !== NULL && stops[i] !== 1) {
@@ -391,8 +392,8 @@ $.fn.gradient = function(args) {
 
 					// Look ahead to find end stop
 					for (a=(i+1); a<nstops; a+=1) {
-						// If this future stop is a number, make it the end stop for this progression
 						if (stops[a] !== NULL) {
+							// If this future stop is a number, make it the end stop for this progression
 							end = stops[a];
 							break;
 						} else {
@@ -584,6 +585,11 @@ $.fn.drawRect = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 		
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawRect');
+			}
+		
 			setGlobalProps(ctx, params);
 			if (!e) {
 				positionShape(ctx, params, params.width, params.height);
@@ -619,7 +625,7 @@ $.fn.drawRect = function(args) {
 			}
 			ctx.restore();
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
@@ -629,11 +635,13 @@ $.fn.drawRect = function(args) {
 	return $elems;
 };
 
+
+
 // Draw arc
 $.fn.drawArc = function(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
-	
+
 	// Change default end angle to radians if necessary
 	if (!params.inDegrees && params.end === 360) {
 		params.end = PI * 2;
@@ -643,8 +651,15 @@ $.fn.drawArc = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawArc');
+			}
+			
 			setGlobalProps(ctx, params);
-			positionShape(ctx, params, params.radius*2, params.radius*2);
+			if (!e) {
+				positionShape(ctx, params, params.radius*2, params.radius*2);
+			}
 	
 			// Draw arc
 			ctx.beginPath();
@@ -652,7 +667,7 @@ $.fn.drawArc = function(args) {
 			// Close path if chosen
 			ctx.restore();
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
@@ -672,6 +687,11 @@ $.fn.drawEllipse = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawEllipse');
+			}
+			
 			setGlobalProps(ctx, params);
 			if (!e) {
 				positionShape(ctx, params, params.width, params.height);
@@ -687,7 +707,7 @@ $.fn.drawEllipse = function(args) {
 			ctx.restore();
 			
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
@@ -707,6 +727,11 @@ $.fn.drawLine = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawLine');
+			}
+			
 			setGlobalProps(ctx, params);
 			
 			// Draw each point
@@ -722,7 +747,7 @@ $.fn.drawLine = function(args) {
 				}
 			}
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
@@ -743,6 +768,11 @@ $.fn.drawQuad = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawQuad');
+			}
+			
 			setGlobalProps(ctx, params);
 			
 			// Draw each point
@@ -761,7 +791,7 @@ $.fn.drawQuad = function(args) {
 				}
 			}
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
@@ -785,6 +815,11 @@ $.fn.drawBezier = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawBezier');
+			}
+			
 			setGlobalProps(ctx, params);
 			
 			// Draw each point
@@ -806,7 +841,7 @@ $.fn.drawBezier = function(args) {
 				}
 			}
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
@@ -820,7 +855,7 @@ $.fn.drawBezier = function(args) {
 // Measure canvas text
 function measureText(elem, ctx, params) {
 	var originalSize, sizeMatch,
-		sizeExp = /(\d*\.?\d*)\w+/gi;
+		sizeExp = /(\d*\.?\d*)\w\w\b/gi;
 	
 	// Calculate width
 	params.width = ctx.measureText(params.text).width;
@@ -857,6 +892,11 @@ $.fn.drawText = function(args) {
 		ctx = loadCanvas($elem[0]);
 		if (ctx) {
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawText');
+			}
+			
 			setGlobalProps(ctx, params);
 			
 			// Set text-specific properties
@@ -875,7 +915,7 @@ $.fn.drawText = function(args) {
 			ctx.fillText(params.text, params.x, params.y);
 			
 			// Detect jCanvas events
-			if (params.event) {
+			if (params._event) {
 				ctx.beginPath();
 				ctx.rect(
 					params.x - params.width / 2,
@@ -901,7 +941,7 @@ $.fn.drawImage = function(args) {
 	var $elems = this, elem, e, ctx,
 		params = merge(new Prefs(), args),
 		img, scaleFac,
-		sWidthDefined, sHeightDefined;
+		sWidthNull, sHeightNull;
 	
 	// Use image element, if not, an image URL
 	if (params.source.src) {
@@ -913,24 +953,25 @@ $.fn.drawImage = function(args) {
 	
 	// Draw image function
 	function draw(ctx, e) {
+	
 		if (!e) {
 			scaleFac = img.width / img.height;
-			
+						
 			// Show whole image if no cropping region is defined
 			// Also ensure cropped region is not bigger than image
 			if (params.sWidth === NULL || params.sWidth > img.width) {
 				params.sWidth = img.width;
-				sWidthDefined = TRUE;
+				sWidthNull = TRUE;
 			}
 			if (params.sHeight === NULL || params.sHeight > img.height) {
 				params.sHeight = img.height;
-				sHeightDefined = TRUE;
+				sHeightNull = TRUE;
 			}
 			// Destination width/height should equal source unless otherwise defined
-			if (params.width === NULL && !sWidthDefined) {
+			if (params.width === NULL && !sWidthNull) {
 				params.width = params.sWidth;
 			}
-			if (params.height === NULL && !sHeightDefined) {
+			if (params.height === NULL && !sHeightNull) {
 				params.height = params.sHeight;
 			}
 			
@@ -985,7 +1026,7 @@ $.fn.drawImage = function(args) {
 			positionShape(ctx, params, params.width, params.height);
 			
 		}
-			
+							
 		// Draw image
 		ctx.drawImage(
 			img,
@@ -999,7 +1040,7 @@ $.fn.drawImage = function(args) {
 			params.height
 		);
 		// Draw invisible rectangle to allow for events
-		if (params.event) {
+		if (params._event) {
 			ctx.beginPath();
 			ctx.rect(
 				params.x - params.width / 2,
@@ -1029,7 +1070,12 @@ $.fn.drawImage = function(args) {
 		elem = $elems[e];
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-		
+			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawImage');
+			}
+						
 			setGlobalProps(ctx, params);
 			
 			// Draw image if already loaded
@@ -1040,7 +1086,7 @@ $.fn.drawImage = function(args) {
 					img.onload = onload(elem, e, ctx);
 				}
 			}
-		
+				
 		}
 	}
 	return $elems;
@@ -1060,9 +1106,13 @@ $.fn.drawPolygon = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-		
-			setGlobalProps(ctx, params);
 			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'drawPolygon');
+			}
+			
+			setGlobalProps(ctx, params);
 			if (!e) {
 				positionShape(ctx, params, params.radius, params.radius);
 			}
@@ -1083,7 +1133,7 @@ $.fn.drawPolygon = function(args) {
 			}
 			ctx.restore();
 			// Check for jCanvas events
-			if (params.event) {
+			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
@@ -1104,7 +1154,12 @@ $.fn.setPixels = function(args) {
 		elem = $elems[e];
 		ctx = loadCanvas(elem);
 		if (ctx) {
-		
+			
+			// Allow for layer support
+			if (params.layer && !params._layer) {
+				addLayer($elems[e], params, 'setPixels');
+			}
+			
 			// Measure (x, y) from center of region
 			if (!e) {
 				positionShape(ctx, params, params.width, params.height);
@@ -1119,11 +1174,10 @@ $.fn.setPixels = function(args) {
 			data = imgData.data;
 			len = data.length;
 			px = [];
-			
+						
 			// Loop through pixels with the "each" method
 			if (params.each !== NULL) {
 				for (i=0; i<len; i+=4) {
-					px.index = i / 4;
 					px.r = data[i];
 					px.g = data[i+1];
 					px.b = data[i+2];
@@ -1138,137 +1192,11 @@ $.fn.setPixels = function(args) {
 			// Put pixels on canvas
 			ctx.putImageData(imgData, params.x-params.width/2, params.y-params.height/2);
 			ctx.restore();
-		
+			
 		}
 	}
 	return $elems;
 };
-
-// Hide/show jCanvas/CSS properties so they can be animated using jCanvas
-function showProps(props, obj) {
-	var i;
-	for (i=0; i<props.length; i+=1) {
-		obj[props[i]] = obj['_' + props[i]];
-	}
-}
-function hideProps(props, obj) {
-	var i;
-	for (i=0; i<props.length; i+=1) {
-		obj['_' + props[i]] = obj[props[i]];
-	}
-}
-
-// Define properties for both CSS and jCanvas
-cssProps = [
-	'width',
-	'height',
-	'opacity'
-];
-// Define supported color properties
-colorProps = [
-	'color',
-	'backgroundColor',
-	'borderColor',
-	'borderTopColor',
-	'borderRightColor',
-	'borderBottomColor',
-	'borderLeftColor',
-	'fillStyle',
-	'outlineColor',
-	'strokeStyle',
-	'shadowColor',
-];
-
-// Convert a color value to RGBA
-function toRgba(color) {
-	var originalColor, elem,
-		rgb = [],
-		multiple = 1;
-	
-	// If color is array already
-	if (typeof color === 'object') {
-		rgb = color;
-	} else {
-		
-		// Deal with color names
-		if (color.match(/^[a-z]+$/gi)) {
-			// Deal with complete transparency
-			if (color === transparent) {
-				color = 'rgba(255,255,255,0)';
-			}
-			elem = document.documentElement;
-			originalColor = elem.style.color;
-			elem.style.color = color;
-			color = $.css(elem, 'color');
-			elem.style.color = originalColor;
-		}
-		// Deal with hexadecimal
-		if (color.match(/^\#/gi)) {
-			// Deal with shorthand hex
-			if (color.length === 4) {
-				color = color.replace(/([0-9a-f])/gi, '$1$1');
-			}
-			rgb = color.match(/[0-9a-f]{2}/gi);
-			rgb[0] = parseInt(rgb[0], 16);
-			rgb[1] = parseInt(rgb[1], 16);
-			rgb[2] = parseInt(rgb[2], 16);
-		// Parse RGB string
-		} else if (color.match(/^rgb/gi)) {
-			rgb = color.match(/[0-9\.]+/gi);
-			// Deal with RGB percentages
-			if (color.match(/\%/gi)) {
-				multiple = 2.55;
-			}
-			rgb[0] = rgb[0] * multiple;
-			rgb[1] = rgb[1] * multiple;
-			rgb[2] = rgb[2] * multiple;
-		}
-		// Add alpha value
-		if (color.match('rgba')) {
-			rgb[3] = parseFloat(rgb[3]);
-		} else {
-			rgb[3] = 1;
-		}
-	}
-	return rgb;
-}
-
-// Get current frame value
-function getFrame(fx, i) {
-	fx.now[i] = fx.start[i] + (fx.end[i] - fx.start[i]) * fx.pos;
-	// Round only the red, green, and blue values
-	if (i < 3) {
-		fx.now[i] = round(fx.now[i]);
-	}
-}
-
-// Animate a hex or RGB color
-function animateColor(fx) {
-	if (typeof fx.start !== 'object') {
-		fx.start = toRgba(fx.start);
-		fx.end = toRgba(fx.end);
-	}
-	fx.now = [];
-	getFrame(fx, 0);
-	getFrame(fx, 1);
-	getFrame(fx, 2);
-	getFrame(fx, 3);
-	fx.now = 'rgba(' + fx.now.join(',') + ')';
-	// Animate colors for canvas shapes and elements
-	if (fx.elem.style) {
-		fx.elem.style[fx.prop] = fx.now;
-	} else {
-		fx.elem[fx.prop] = fx.now;
-	}
-}
-
-// Enable animation for color properties
-function supportColorProps(props) {
-	var p;
-	for (p=0; p<props.length; p+=1) {
-		$.fx.step[props[p]] = animateColor;
-	}
-}
 
 // Get jCanvas layers
 $.fn.getLayers = function() {
@@ -1324,8 +1252,8 @@ function drawLayer($elem, ctx, layer) {
 
 // Draw jCanvas layers
 $.fn.drawLayers = function() {
-	var $elems = this, $elem, ctx,
-		layers, layer, e, i;
+	var $elems = this, $elem, e, ctx,
+		layers, layer, i;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
@@ -1346,39 +1274,51 @@ $.fn.drawLayers = function() {
 	return $elems;
 };
 
-// Add a new jCanvas layer
+// Add a new jCanvas layer (used internally)
+function addLayer(elem, params, method) {
+	var $elem = $(elem),
+		layers, event;
+	
+	params = merge(new Prefs(), params);
+	layers = $elem.getLayers();
+	
+	// If layer is a function
+	if (typeof params === 'function') {
+		params.method = 'draw';
+	} else {
+		params.method = params.method || method;
+		// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
+		if (params.method !== 'drawImage') {
+			params.width = params.width || 0;
+			params.height = params.height || 0;
+		}
+		// Check for any associated jCanvas events and enable them
+		for (event in jCanvas.events) {
+			if (jCanvas.events.hasOwnProperty(event) && params[event]) {
+				if (!jCanvas.events[event].called) {
+					jCanvas.events[event].call(window, $elem);
+				}
+				params._event = TRUE;
+			}
+		}
+	}
+	// Set layer properties and add to stack
+	params.layer = TRUE;
+	params._layer = TRUE;
+	layers.push(params);
+	return params;
+}
+
+// Add jCanvas layer
 $.fn.addLayer = function(args) {
 	var $elems = this, $elem, e, ctx,
-		params = merge(args, new Prefs(), merge({}, args)),
-		layers, event;
-	params.layer = TRUE;
+		params = args || {};
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		ctx = loadCanvas($elem[0]);
+		ctx = loadCanvas($elems[e]);
 		if (ctx) {
-		
-			layers = $elem.getLayers();
-			// If layer is a function
-			if (typeof params === 'function') {
-				params.method = 'draw';
-			} else {
-				// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
-				if (params.method !== 'drawImage') {
-					params.width = params.width || 0;
-					params.height = params.height || 0;
-				}
-				// Check for any associated jCanvas events and enable them
-				for (event in jCanvas.events) {
-					if (jCanvas.events.hasOwnProperty(event) && params[event]) {
-						if (!jCanvas.events[event].called) {
-							jCanvas.events[event].call(window, $elem);
-						}
-						params.event = TRUE;
-					}
-				}
-			}
-			layers.push(params);
+			params = addLayer($elem[0], params);
 			drawLayer($elem, ctx, params);
 		}
 	}
@@ -1416,9 +1356,121 @@ $.fn.removeLayer = function(name) {
 	return $elems;
 };
 
+
+// Hide/show jCanvas/CSS properties so they can be animated using jCanvas
+function showProps(props, obj) {
+	var i;
+	for (i=0; i<props.length; i+=1) {
+		obj[props[i]] = obj['_' + props[i]];
+	}
+}
+function hideProps(props, obj) {
+	var i;
+	for (i=0; i<props.length; i+=1) {
+		obj['_' + props[i]] = obj[props[i]];
+	}
+}
+
+// Define properties for both CSS and jCanvas
+cssProps = [
+	'width',
+	'height',
+	'opacity'
+];
+// Define supported color properties
+colorProps = [
+	'color',
+	'backgroundColor',
+	'borderColor',
+	'borderTopColor',
+	'borderRightColor',
+	'borderBottomColor',
+	'borderLeftColor',
+	'fillStyle',
+	'outlineColor',
+	'strokeStyle',
+	'shadowColor',
+];
+
+// Convert a color value to RGB
+function toRgb(color) {
+	var originalColor, elem,
+		rgb = [],
+		multiple = 1;
+	
+	// If color is array already
+	if (typeof color === 'object') {
+		rgb = color;
+	} else {
+		
+		// Deal with color names
+		if (color.match(/^[a-z]+$/gi)) {
+			elem = document.documentElement;
+			originalColor = elem.style.color;
+			elem.style.color = color;
+			color = $.css(elem, 'color');
+			elem.style.color = originalColor;
+		}
+		// Deal with hexadecimal
+		if (color.match(/^#/gi)) {
+			// Deal with shorthand hex
+			if (color.length === 4) {
+				color = color.replace(/([0-9a-f])/gi, '$1$1');
+			}
+			rgb = color.match(/[0-9a-f]{2}/gi);
+			rgb[0] = parseInt(rgb[0], 16);
+			rgb[1] = parseInt(rgb[1], 16);
+			rgb[2] = parseInt(rgb[2], 16);
+		// Parse RGB string
+		} else if (color.match(/^rgb/gi)) {
+			rgb = color.match(/[0-9]+/gi);
+			// Deal with RGB percentages
+			if (color.match(/\%/gi)) {
+				multiple = 2.55;
+			}
+			rgb[0] = rgb[0] * multiple;
+			rgb[1] = rgb[1] * multiple;
+			rgb[2] = rgb[2] * multiple;
+		}
+	}
+	return rgb;
+}
+
+// Get current frame value
+function getFrame(fx, i) {
+	fx.now[i] = round(fx.start[i] + (fx.end[i] - fx.start[i]) * fx.pos);
+}
+
+// Animate a hex or RGB color
+function animateColor(fx) {
+	if (typeof fx.start !== 'object') {
+		fx.start = toRgb(fx.start);
+		fx.end = toRgb(fx.end);
+	}
+	fx.now = [];
+	getFrame(fx, 0);
+	getFrame(fx, 1);
+	getFrame(fx, 2);
+	fx.now = 'rgb(' + fx.now.join(',') + ')';
+	// Animate colors for canvas shapes and elements
+	if (fx.elem.style) {
+		fx.elem.style[fx.prop] = fx.now;
+	} else {
+		fx.elem[fx.prop] = fx.now;
+	}
+}
+
+// Enable animation for color properties
+function supportColorProps(props) {
+	var p;
+	for (p=0; p<props.length; p+=1) {
+		$.fx.step[props[p]] = animateColor;
+	}
+}
+
 // Animate jCanvas layer
 $.fn.animateLayer = function() {
-	var $elems = this, $elem, e,
+	var $elems = this, $elem, e, ctx,
 		args = ([]).slice.call(arguments, 0),
 		layer;
 		
@@ -1472,8 +1524,9 @@ $.fn.animateLayer = function() {
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		if (loadCanvas($elems[e])) {
-		
+		ctx = loadCanvas($elems[e]);
+		if (ctx) {
+			
 			// If a layer object was passed, use it as a reference
 			if (args[0].layer) {
 				layer = args[0];
@@ -1517,6 +1570,7 @@ $.fn.stopLayer = function(layer, clearQueue) {
 $.event.fix = function(event) {
 	var offset;
 	event = oldEventFix.call($.event, event);
+	
 	// If offsetX and offsetY are not supported
 	if (event.pageX !== UNDEFINED && event.offsetX === UNDEFINED) {
 		offset = $(event.target).offset();
