@@ -1239,12 +1239,12 @@ $.fn.getLayer = function(name) {
 function drawLayer($elem, ctx, layer) {
 	if (layer.visible) {
 		// If layer is a function
-		if (layer.method === $.fn.draw) {
+		if (layer.method === 'draw') {
 			layer.call($elem[0], ctx);
 		// If layer is an object
 		} else {
-			if (layer.method) {
-				layer.method.call($elem, layer);
+			if ($.fn[layer.method]) {
+				$.fn[layer.method].call($elem, layer);
 			}
 		}
 	}
@@ -1285,11 +1285,11 @@ function addLayer(elem, params, method) {
 	
 	// If layer is a function
 	if (typeof params === 'function') {
-		params.method = $.fn.draw;
+		params.method = 'draw';
 	} else {
-		params.method = $.fn[params.method] || method;
+		params.method = params.method || method.name;
 		// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
-		if (params.method !== $.fn.drawImage) {
+		if (params.method !== 'drawImage') {
 			params.width = params.width || 0;
 			params.height = params.height || 0;
 		}
@@ -1535,7 +1535,7 @@ $.fn.animateLayer = function() {
 				layer = $elem.getLayer(args[0]);
 			}
 			// Ignore layers that are functions
-			if (layer && layer.method !== $.fn.draw) {
+			if (layer && layer.method !== 'draw') {
 				
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(cssProps, layer);
