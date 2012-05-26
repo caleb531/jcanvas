@@ -1,5 +1,5 @@
 /*!
-jCanvas v5.3b
+jCanvas v5.3
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -39,7 +39,7 @@ function jCanvas(args) {
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
 
-jCanvas.version = '5.3b';
+jCanvas.version = '5.3';
 jCanvas.events = {};
 
 // Set jCanvas default property values
@@ -957,13 +957,13 @@ $.fn.drawImage = function self(args) {
 			
 			// Show whole image if no cropping region is defined
 			// Also ensure cropped region is not bigger than image
-			
+						
 			// If width/sWidth or height/sHeight is not defined
 			if (params.width === NULL && params.sWidth === NULL) {
-				params.width = params.sWidth = img.width;
+				args.width = params.width = params.sWidth = img.width;
 			}
 			if (params.height === NULL && params.sHeight === NULL) {
-				params.height = params.sHeight = img.height;
+				args.height = params.height = params.sHeight = img.height;
 			}
 
 			// If width or height is not defined			
@@ -976,12 +976,13 @@ $.fn.drawImage = function self(args) {
 			
 			// If sWidth or sHeight is not defined						
 			if (params.sWidth === NULL && params.width !== NULL) {
-				params.sWidth = params.width;
+				args.sWidth = params.sWidth = img.width;
 			}
 			if (params.sHeight === NULL && params.height !== NULL) {
-				params.sHeight = params.height;
+				args.sHeight = params.sHeight = img.height;
 			}
-						
+			
+			
 			// If no sx/sy defined, use center of image (or top-left corner if cropFromCenter is FALSE)
 			if (params.sx === NULL) {
 				if (params.cropFromCenter) {
@@ -1029,14 +1030,13 @@ $.fn.drawImage = function self(args) {
 				args.width = params.width = img.width;
 				args.height = params.height = img.height;
 			}
-			args.sWidth = params.sWidth;
-			args.sHeight = params.sHeight;
 			
 			// Position image
 			positionShape(ctx, params, params.width, params.height);
 		}
 							
 		// Draw image
+		
 		ctx.drawImage(
 			img,
 			params.sx - params.sWidth / 2,
