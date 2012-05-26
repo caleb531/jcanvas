@@ -93,10 +93,8 @@ defaults = {
 	width: NULL,
 	x: 0,
 	x1: 0,
-	x2: 0,
 	y: 0,
 	y1: 0,
-	y2: 0
 };
 // Copy defaults over to preferences
 jCanvas();
@@ -718,7 +716,7 @@ $.fn.drawEllipse = function self(args) {
 };
 
 // Draw line
-$.fn.drawLine = function(args) {
+$.fn.drawLine = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l=1, lx=0, ly=0;
@@ -1136,6 +1134,7 @@ $.fn.drawPolygon = function self(args) {
 				ctx.lineTo(x, y);
 				// Project side if chosen
 				if (params.projection) {
+					// Sides are projected from the polygon's apothem
 					x = params.x + round((apothem+apothem*params.projection) * cos(theta+inner));
 					y = params.y + round((apothem+apothem*params.projection) * sin(theta+inner));
 					ctx.lineTo(x, y);
@@ -1248,16 +1247,8 @@ $.fn.getLayer = function(name) {
 
 // Draw individual layer (used internally)
 function drawLayer($elem, ctx, layer) {
-	if (layer.visible) {
-		// If layer is a function
-		if (layer.method === 'draw') {
-			layer.call($elem[0], ctx);
-		// If layer is an object
-		} else {
-			if ($.fn[layer.method]) {
-				$.fn[layer.method].call($elem, layer);
-			}
-		}
+	if (layer.visible && layer.method) {
+		layer.method.call($elem, layer);
 	}
 }
 
@@ -1296,11 +1287,11 @@ function addLayer(elem, params, method) {
 	
 	// If layer is a function
 	if (typeof params === 'function') {
-		params.method = 'draw';
+		params.method = $.fn.draw;
 	} else {
-		params.method = params.method || method.name;
+		params.method = $.fn[params.method] || method;
 		// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
-		if (params.method !== 'drawImage') {
+		if (params.method !== $.fn.drawImage) {
 			params.width = params.width || 0;
 			params.height = params.height || 0;
 		}
@@ -1476,7 +1467,9 @@ function animateColor(fx) {
 function supportColorProps(props) {
 	var p;
 	for (p=0; p<props.length; p+=1) {
-		$.fx.step[props[p]] = animateColor;
+		if (!$.fx.step[props[p]]) {
+			$.fx.step[props[p]] = animateColor;
+		}
 	}
 }
 
@@ -1484,7 +1477,7 @@ function supportColorProps(props) {
 $.fn.animateLayer = function() {
 	var $elems = this, $elem, e, ctx,
 		args = ([]).slice.call(arguments, 0),
-		layer;
+		layer, animating;
 		
 	// Deal with all cases of argument placement
 	
@@ -1517,17 +1510,18 @@ $.fn.animateLayer = function() {
 	}
 
 	// Run callback function when animation completes
-	function complete(layer) {
+	function complete($elem, layer) {
 		return function() {
 			showProps(cssProps, layer);
 			$elems.drawLayers();
 			if (args[4]) {
 				args[4].call($elems);
 			}
+			animating = false;
 		};
 	}
 	// Redraw layers on every frame of the animation
-	function step(layer) {
+	function step($elem, layer) {
 		return function() {
 			showProps(cssProps, layer);
 			$elems.drawLayers();
@@ -1539,28 +1533,32 @@ $.fn.animateLayer = function() {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
-			// If a layer object was passed, use it as a reference
+			// If a layer object was passed, use it the layer to be animated
 			if (args[0].layer) {
 				layer = args[0];
 			} else {
 				layer = $elem.getLayer(args[0]);
 			}
 			// Ignore layers that are functions
-			if (layer && layer.method !== 'draw') {
+			if (layer && layer.method !== $.fn.draw) {
 				
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(cssProps, layer);
 				hideProps(cssProps, args[1]);
-				// Animate layer
-				$(layer).animate(args[1], {
-					duration: args[2],
-					easing: ($.easing[args[3]] ? args[3] : NULL),
-					// When animation completes
-					complete: complete(layer),
-					// Redraw canvas for every animation frame
-					step: step(layer)
-				});
 				
+				// Only queue animation if layer is currently not being animated
+				if (!animating) {
+					animating = true;
+					// Animate layer
+					$(layer).animate(args[1], {
+						duration: args[2],
+						easing: ($.easing[args[3]] ? args[3] : NULL),
+						// When animation completes
+						complete: complete($elem, layer),
+						// Redraw canvas for every animation frame
+						step: step($elem, layer)
+					});
+				}
 			}
 		}
 	}
