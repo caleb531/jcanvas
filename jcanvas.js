@@ -956,25 +956,34 @@ $.fn.drawImage = function self(args) {
 	
 		if (!e) {
 			scaleFac = img.width / img.height;
-						
+			
 			// Show whole image if no cropping region is defined
 			// Also ensure cropped region is not bigger than image
-			if (params.sWidth === NULL || params.sWidth > img.width) {
-				params.sWidth = img.width;
-				sWidthNull = TRUE;
+			
+			// If width/sWidth or height/sHeight is not defined
+			if (params.width === NULL && params.sWidth === NULL) {
+				params.width = params.sWidth = img.width;
 			}
-			if (params.sHeight === NULL || params.sHeight > img.height) {
-				params.sHeight = img.height;
-				sHeightNull = TRUE;
+			if (params.height === NULL && params.sHeight === NULL) {
+				params.height = params.sHeight = img.height;
 			}
-			// Destination width/height should equal source unless otherwise defined
-			if (params.width === NULL && !sWidthNull) {
+
+			// If width or height is not defined			
+			if (params.width === NULL && params.sWidth !== NULL) {
 				params.width = params.sWidth;
 			}
-			if (params.height === NULL && !sHeightNull) {
+			if (params.height === NULL && params.sHeight !== NULL) {
 				params.height = params.sHeight;
 			}
 			
+			// If sWidth or sHeight is not defined						
+			if (params.sWidth === NULL && params.width !== NULL) {
+				params.sWidth = params.width;
+			}
+			if (params.sHeight === NULL && params.height !== NULL) {
+				params.sHeight = params.height;
+			}
+						
 			// If no sx/sy defined, use center of image (or top-left corner if cropFromCenter is FALSE)
 			if (params.sx === NULL) {
 				if (params.cropFromCenter) {
@@ -1022,6 +1031,8 @@ $.fn.drawImage = function self(args) {
 				args.width = params.width = img.width;
 				args.height = params.height = img.height;
 			}
+			args.sWidth = params.sWidth;
+			args.sHeight = params.sHeight;
 			
 			// Position image
 			positionShape(ctx, params, params.width, params.height);
