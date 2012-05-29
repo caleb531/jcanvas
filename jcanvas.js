@@ -1307,6 +1307,29 @@ $.fn.addLayer = function(args) {
 	return $elems;
 };
 
+// Queue a new jCanvas layer in a forced order (using the "after" callback).
+//    Draw layers after all have been queued.
+$.fn.queueLayer = function(args) {
+	var $elems = this, $elem, e, ctx,
+		params = args || {};
+
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		ctx = loadCanvas($elem[e]);
+		if (ctx) {
+			params = addLayer($elem[0], params);
+		}
+	}
+	if (params.after === UNDEFINED) {
+		// no layers after this one, draw all layers
+		this.drawLayers();
+	} else if (typeof params.after === 'function') {
+		// queue the layer after this one
+		params.after.call();
+        }
+	return $elems;
+};
+
 // Remove all jCanvas layers
 $.fn.removeLayers = function() {
 	var $elems = this, layers, e;
