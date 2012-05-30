@@ -1,11 +1,11 @@
 /*!
-jCanvas v5.3.1
+jCanvas v5.4b
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
 
 // Import frequently used globals
-(function($, window, document, Math, Image, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
+(function($, window, document, Image, Math, Function, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
 
 // Define local aliases to frequently used properties
 var defaults,
@@ -39,7 +39,7 @@ function jCanvas(args) {
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
 
-jCanvas.version = '5.3.1';
+jCanvas.version = '5.4b';
 jCanvas.events = {};
 
 // Set jCanvas default property values
@@ -139,7 +139,7 @@ function createEvent(name) {
 			eventCache.type = event.type;
 			$elem.drawLayers();
 		});
-		handler.called = TRUE;
+		$.data($elem[0], 'jCanvas-' + name, TRUE);
 	};
 }
 // Populate jCanvas events object with some events
@@ -160,7 +160,7 @@ jCanvas.events.mouseover = jCanvas.events.mouseout = function handler($elem) {
 		eventCache.type = 'hover';
 		$elem.drawLayers();
 	});
-	handler.called = TRUE;
+	$.data($elem[0], 'jCanvas-' + name, TRUE);
 };
 
 // Update event cache with new coordinates
@@ -253,14 +253,14 @@ function rotateCanvas(ctx, params) {
 }
 
 // Rotate/scale individual shape and/or position it correctly
-function positionShape(ctx, params, width, height) {
+function positionShape(e, ctx, params, width, height) {
 	
 	// Measure angles in chosen units
 	params.toRad = (params.inDegrees ? PI/180 : 1);
 	ctx.save();
 	
 	// Always rotate from center
-	if (!params.fromCenter) {
+	if (!e && !params.fromCenter) {
 		params.x += width/2;
 		params.y += height/2;
 	}
@@ -314,7 +314,8 @@ $.fn.getCanvasImage = function(type, quality) {
 	type = type || 'png';
 	type = type
 		.replace(/jpg/gi, 'jpeg');
-	return (elem && elem.toDataURL) ? elem.toDataURL('image/' + type, quality) : NULL;
+	type = 'image/' + type;
+	return (elem && elem.toDataURL) ? elem.toDataURL(type, quality) : NULL;
 };
 
 // Draw on canvas using the standard canvas API
@@ -485,9 +486,7 @@ $.fn.clearCanvas = function(args) {
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
 			
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
-			}
+			positionShape(e, ctx, params, params.width, params.height);
 			
 			// Clear entire canvas
 			if (!params.x && !params.y && !params.width && !params.height) {
@@ -586,9 +585,7 @@ $.fn.drawRect = function self(args) {
 			addLayer($elems[e], args, self);
 		
 			setGlobalProps(ctx, params);
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
-			}
+			positionShape(e, ctx, params, params.width, params.height);
 			
 			ctx.beginPath();
 			// Draw a rounded rectangle if chosen
@@ -649,9 +646,7 @@ $.fn.drawArc = function self(args) {
 			// Allow for layer support
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			if (!e) {
-				positionShape(ctx, params, params.radius*2, params.radius*2);
-			}
+			positionShape(e, ctx, params, params.radius*2, params.radius*2);
 	
 			// Draw arc
 			ctx.beginPath();
@@ -683,9 +678,7 @@ $.fn.drawEllipse = function self(args) {
 			// Allow for layer support
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
-			}
+			positionShape(e, ctx, params, params.width, params.height);
 			
 			// Create ellipse using curves
 			ctx.beginPath();
@@ -885,9 +878,7 @@ $.fn.drawText = function self(args) {
 			// Retrieve text's width and height
 			measureText($elem[0], ctx, params);
 			
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
-			}
+			positionShape(e, ctx, params, params.width, params.height);
 			
 			ctx.strokeText(params.text, params.x, params.y);
 			ctx.fillText(params.text, params.x, params.y);
@@ -918,8 +909,7 @@ $.fn.drawText = function self(args) {
 $.fn.drawImage = function self(args) {
 	var $elems = this, elem, e, ctx,
 		params = merge(new Prefs(), args),
-		img, scaleFac,
-		sWidthNull, sHeightNull;
+		img, scaleFac;
 	
 	// Use image element, if not, an image URL
 	if (params.source.src) {
@@ -946,7 +936,7 @@ $.fn.drawImage = function self(args) {
 				args.height = params.height = params.sHeight = img.height;
 			}
 
-			// If width or height is not defined			
+			// If width or height is not defined
 			if (params.width === NULL && params.sWidth !== NULL) {
 				params.width = params.sWidth;
 			}
@@ -954,7 +944,7 @@ $.fn.drawImage = function self(args) {
 				params.height = params.sHeight;
 			}
 			
-			// If sWidth or sHeight is not defined						
+			// If sWidth or sHeight is not defined
 			if (params.sWidth === NULL && params.width !== NULL) {
 				args.sWidth = params.sWidth = img.width;
 			}
@@ -1011,9 +1001,10 @@ $.fn.drawImage = function self(args) {
 				args.height = params.height = img.height;
 			}
 			
-			// Position image
-			positionShape(ctx, params, params.width, params.height);
 		}
+		
+		// Position image
+		positionShape(e, ctx, params, params.width, params.height);
 							
 		// Draw image
 		
@@ -1096,9 +1087,8 @@ $.fn.drawPolygon = function self(args) {
 			// Allow for layer support
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			if (!e) {
-				positionShape(ctx, params, params.radius, params.radius);
-			}
+			positionShape(e, ctx, params, params.radius, params.radius);
+
 			// Calculate points and draw
 			ctx.beginPath();
 			for (i=0; i<params.sides; i+=1) {
@@ -1144,9 +1134,7 @@ $.fn.setPixels = function self(args) {
 
 			
 			// Measure (x, y) from center of region
-			if (!e) {
-				positionShape(ctx, params, params.width, params.height);
-			}
+			positionShape(e, ctx, params, params.width, params.height);
 			if (!params.x && !params.y && !params.width && !params.height) {
 				params.width = elem.width;
 				params.height = elem.height;
@@ -1181,6 +1169,8 @@ $.fn.setPixels = function self(args) {
 	return $elems;
 };
 
+/* Layers API */
+
 // Get jCanvas layers
 $.fn.getLayers = function() {
 	var elem = this[0], layers;
@@ -1206,6 +1196,9 @@ $.fn.getLayer = function(name) {
 	} else {
 		if (typeof name === 'string') {
 			for (i=0; i<layers.length; i+=1) {
+				// Ensure layer's index is up-to-date
+				layers[i].index = i;
+				// Check if layer matches name
 				if (layers[i].name === name) {
 					name = i;
 					break;
@@ -1220,10 +1213,26 @@ $.fn.getLayer = function(name) {
 
 // Draw individual layer (used internally)
 function drawLayer($elem, ctx, layer) {
-	if (layer.visible && layer.method) {
-		layer.method.call($elem, layer);
+	if (layer) {
+		if (layer.method === $.fn.draw) {
+			layer.call($elem[0], ctx);
+		} else if (layer.visible && layer.method) {
+			layer.method.call($elem, layer);
+		}
 	}
 }
+
+// Draw individual layer (jQuery method)
+$.fn.drawLayer = function(name) {
+	var $elems = this, e, ctx,
+		$elem, layer;
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		ctx = loadCanvas($elem[0]);
+		layer = $elem.getLayer(name);
+		drawLayer($elem, ctx, layer);
+	}
+};
 
 // Draw jCanvas layers
 $.fn.drawLayers = function() {
@@ -1235,9 +1244,10 @@ $.fn.drawLayers = function() {
 		ctx = loadCanvas($elem[0]);
 		if (ctx) {
 			
-			layers = $elem.getLayers();
 			// Clear canvas first
 			ctx.clearRect(0, 0, $elem[0].width, $elem[0].height);
+			// Get canvas layers
+			layers = $elem.getLayers();
 			// Draw items on queue
 			for (i=0; i<layers.length; i+=1) {
 				layer = layers[i];
@@ -1258,13 +1268,15 @@ function addLayer(elem, params, method) {
 	if (params.layer && !params._layer) {
 		
 		$elem = $(elem);
-		params = merge(params, new Prefs(), merge({}, params));
 		layers = $elem.getLayers();
-	
+		
 		// If layer is a function
 		if (typeof params === 'function') {
+			params = new Function('return ' + params)();
 			params.method = $.fn.draw;
 		} else {
+			// Ensure layers are unique across canvases
+			params = merge(new Prefs(), params);
 			params.method = $.fn[params.method] || method;
 			// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
 			if (params.method !== $.fn.drawImage) {
@@ -1274,7 +1286,7 @@ function addLayer(elem, params, method) {
 			// Check for any associated jCanvas events and enable them
 			for (event in jCanvas.events) {
 				if (jCanvas.events.hasOwnProperty(event) && params[event]) {
-					if (!jCanvas.events[event].called) {
+					if (!$.data($elem[0], 'jCanvas-' + event)) {
 						jCanvas.events[event].call(window, $elem);
 					}
 					params._event = TRUE;
@@ -1285,23 +1297,21 @@ function addLayer(elem, params, method) {
 		params.layer = TRUE;
 		params._layer = TRUE;
 		layers.push(params);
-		
+		params.index = layers.length - 1;
 	}
-	return params;
 }
 
 // Add jCanvas layer
 $.fn.addLayer = function(args) {
-	var $elems = this, $elem, e, ctx,
-		params = args || {};
+	var $elems = this, e, ctx,
+		params;
 
 	for (e=0; e<$elems.length; e+=1) {
-		$elem = $($elems[e]);
 		ctx = loadCanvas($elems[e]);
 		if (ctx) {
+			params = args || {};
 			params.layer = TRUE;
-			params = addLayer($elem[0], params);
-			drawLayer($elem, ctx, params);
+			addLayer($elems[e], params);
 		}
 	}
 	return $elems;
@@ -1442,7 +1452,7 @@ function supportColorProps(props) {
 $.fn.animateLayer = function() {
 	var $elems = this, $elem, e, ctx,
 		args = ([]).slice.call(arguments, 0),
-		layer, animating;
+		layer;
 		
 	// Deal with all cases of argument placement
 	
@@ -1481,7 +1491,6 @@ $.fn.animateLayer = function() {
 			if (args[4]) {
 				args[4].call($elems);
 			}
-			animating = false;
 		};
 	}
 	// Redraw layers on every frame of the animation
@@ -1511,8 +1520,6 @@ $.fn.animateLayer = function() {
 				hideProps(cssProps, args[1]);
 				
 				// Only queue animation if layer is currently not being animated
-				if (!animating) {
-					animating = true;
 					// Animate layer
 					$(layer).animate(args[1], {
 						duration: args[2],
@@ -1522,7 +1529,6 @@ $.fn.animateLayer = function() {
 						// Redraw canvas for every animation frame
 						step: step($elem, layer)
 					});
-				}
 			}
 		}
 	}
@@ -1568,4 +1574,4 @@ jCanvas.prefs = prefs;
 jCanvas.extend = extend;
 $.jCanvas = jCanvas;
 
-}(jQuery, window, document, Math, Image, parseFloat, true, false, null));
+}(jQuery, window, document, Image, Math, Function, parseFloat, true, false, null));
