@@ -93,9 +93,7 @@ defaults = {
 	visible: TRUE,
 	width: NULL,
 	x: 0,
-	x1: 0,
 	y: 0,
-	y1: 0,
 };
 // Copy defaults over to preferences
 jCanvas();
@@ -140,13 +138,16 @@ function getEventCache(elem) {
 // Bind event to jCanvas layer using standard jQuery events
 function createEvent(name) {
 	jCanvas.events[name] = function($elem) {
+		var helperEventName = (name === 'mouseover' || name === 'mouseout') ? 'mousemove' : name;
 		$elem
-		.bind(name + '.jCanvas', function(event) {
+		.bind(helperEventName + '.jCanvas', function(event) {
 			var eventCache = getEventCache($elem[0]);
 			// Cache current mouse position and redraw layers
+			eventCache.x[1] = eventCache.x[0];
+			eventCache.y[1] = eventCache.y[0];
 			eventCache.x[0] = event.offsetX;
 			eventCache.y[0] = event.offsetY;
-			eventCache.type = event.type;
+			eventCache.type = helperEventName;
 			$elem.drawLayers();
 		});
 		$.data($elem[0], 'jCanvas-' + name, TRUE);
@@ -158,21 +159,8 @@ createEvent('dblclick');
 createEvent('mousedown');
 createEvent('mouseup');
 createEvent('mousemove');
-
-// Detect both "mouseover" and "mouseout" events with one "hover" event
-jCanvas.events.mouseover = jCanvas.events.mouseout = function($elem) {
-	$elem
-	.bind('mousemove.jCanvas', function(event) {
-		var eventCache = getEventCache($elem[0]);
-		eventCache.x[1] = eventCache.x[0];
-		eventCache.y[1] = eventCache.y[0];
-		eventCache.x[0] = event.offsetX;
-		eventCache.y[0] = event.offsetY;
-		eventCache.type = 'hover';
-		$elem.drawLayers();
-	});
-	$.data($elem[0], 'jCanvas-hover', TRUE);
-};
+createEvent('mouseover');
+createEvent('mouseout');
 
 // Update event cache with new coordinates
 function updateEventCache(eventCache, params) {
@@ -190,7 +178,7 @@ function checkEvents(elem, ctx, layer) {
 	out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
 	
 	// Detect mouseover/mouseout events
-	if (type === 'hover') {
+	if (layer.mouseover || layer.mouseout) {
 				
 		// Mouseover
 		if (over && !out && !layer._fired) {
@@ -209,9 +197,10 @@ function checkEvents(elem, ctx, layer) {
 				setGlobalProps(ctx, layer);
 			}
 		}
-		
+	}
+
 	// Detect any other mouse event
-	} else if (type !== 'hover' && callback && over) {
+	if (callback && over) {
 		updateEventCache(eventCache, layer);
 		callback.call(elem, layer);
 		setGlobalProps(ctx, layer);
@@ -1023,9 +1012,6 @@ $.fn.drawImage = function self(args) {
 			}
 			
 		}
-		
-		// Position image
-		positionShape(e, ctx, params, params.width, params.height);
 							
 		// Draw image
 		
@@ -1075,6 +1061,7 @@ $.fn.drawImage = function self(args) {
 			// Allow for layer support
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			positionShape(e, ctx, params, params.width, params.height);
 			
 			// Draw image if already loaded
 			if (img) {
@@ -1278,8 +1265,9 @@ $.fn.drawLayers = function() {
 
 // Add a new jCanvas layer (internal)
 function addLayer(elem, layer, method) {
-	var $elem, layers, event;
+	var $elem, layers, event, originalLayer;
 	layer = layer || {};
+	originalLayer = layer;
 	
 	// Only add layer if it hasn't been added before
 	if (layer.layer && !layer._layer) {
@@ -1290,7 +1278,9 @@ function addLayer(elem, layer, method) {
 		// If layer is a function
 		if (typeof layer === 'function') {
 			// Clone function
-			layer = new Function('return ' + layer)();
+			layer = function(ctx) {
+				return originalLayer.call(this, ctx);
+			};
 			layer.method = $.fn.draw;
 			// Ensure layer is visible unless otherwise specified
 			if (layer.visible === UNDEFINED) {
