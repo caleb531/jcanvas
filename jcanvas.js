@@ -336,14 +336,21 @@ $.fn.getCanvasImage = function(type, quality) {
 		NULL;
 };
 
-// Draw on canvas using the standard canvas API
-$.fn.draw = function(callback) {
-	var $elems = this, e, ctx;
+// Draw on canvas using a function
+$.fn.draw = function self(args) {
+	var $elems = this, e, ctx, params;
+	
+	// Convert single function argument to 'fn' method
+	if (args && !args.fn) {
+		args = {fn: args};
+	}
+	params = merge(new Prefs(), args);
 	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			callback.call($elems[e], ctx);
+			addLayer($elems[e], args, self);
+			args.fn.call($elems[e], ctx);
 		}
 	}
 	return $elems;
@@ -1214,12 +1221,26 @@ $.fn.getLayer = function(name) {
 	return layers[name];
 };
 
+// Get all layers within a specific group
+$.fn.getLayerGroup = function(name) {
+	var layers = this.getLayers(),
+		group = [], i;
+	
+	for (i=0; i<layers.length; i+=1) {
+		// Check if layer is in group
+		if (layers[i].group === name) {
+			group.push(layers[i]);
+		}
+	}
+	return group;
+};
+
 // Draw individual layer (internal)
 function drawLayer($elem, ctx, layer) {
 	if (layer && layer.visible) {
 		if (layer.method === $.fn.draw) {
 			// If layer is a function, call it
-			layer.call($elem[0], ctx);
+			layer.fn.call($elem[0], ctx);
 		} else if (layer.method) {
 			// If layer is an object, call its respective method
 			layer.method.call($elem, layer);
@@ -1234,12 +1255,18 @@ $.fn.drawLayer = function(name) {
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		ctx = getContext($elem[0]);
-		layer = $elem.getLayer(name);
+		if (name.layer) {
+			// Draw the given layer
+			drawLayer($elem, ctx, name);
+		} else {
+			// Otherwise, get the layer with the specified name/index
+			layer = $elem.getLayer(name);
+		}
 		drawLayer($elem, ctx, layer);
 	}
 };
 
-// Draw jCanvas layers
+// Draw all jCanvas layers (or only the given layers)
 $.fn.drawLayers = function() {
 	var $elems = this, $elem, e, ctx,
 		layers, layer, i;
@@ -1277,11 +1304,14 @@ function addLayer(elem, layer, method) {
 		
 		// If layer is a function
 		if (typeof layer === 'function') {
-			// Clone function
-			layer = function(ctx) {
-				return originalLayer.call(this, ctx);
+			// Wrap function within object
+			layer = {
+				method: $.fn.draw,
+				fn: originalLayer,
+				name: originalLayer.name,
+				group: originalLayer.group,
+				visible: originalLayer.visible
 			};
-			layer.method = $.fn.draw;
 			// Ensure layer is visible unless otherwise specified
 			if (layer.visible === UNDEFINED) {
 				layer.visible = TRUE;
@@ -1308,8 +1338,8 @@ function addLayer(elem, layer, method) {
 		}
 		// Set layer properties and add to stack
 		layer._layer = TRUE;
-		layer.index = layers.length - 1;
-		layers.push(layer);
+		// The push() method returns the new array length
+		layer.index = layers.push(layer);
 	}
 }
 
