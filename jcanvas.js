@@ -1362,6 +1362,7 @@ $.fn.removeLayer = function(name) {
 		// Remove layer from the layers array
 		layers.splice(name, 1);
 	}
+	return $elems;
 };
 
 // Define properties used in both CSS and jCanvas
