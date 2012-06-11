@@ -1,11 +1,11 @@
 /*!
-jCanvas v5.4
+jCanvas v5.4b
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
 
 // Import frequently used globals
-(function($, window, document, Image, Math, Function, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
+(function($, document, Image, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
 
 // Define local aliases to frequently used properties
 var defaults,
@@ -95,7 +95,7 @@ defaults = {
 	x: 0,
 	y: 0,
 };
-// Copy defaults over to preferences
+// Copy defaults to preferences object
 jCanvas();
 
 // Set global properties
@@ -122,6 +122,8 @@ function setGlobalProps(ctx, params) {
 	ctx.globalAlpha = params.opacity;
 	ctx.globalCompositeOperation = params.compositing;
 }
+
+/* Events API */
 
 // Keep track of the last two mouse coordinates for each canvas
 function getEventCache(elem) {
@@ -206,6 +208,8 @@ function checkEvents(elem, ctx, layer) {
 		setGlobalProps(ctx, layer);
 	}
 }
+
+/* Internal helper methods */
 
 // Get canvas context
 function getContext(elem) {
@@ -296,6 +300,8 @@ function positionShape(e, ctx, params, width, height) {
 	}
 }
 
+/* Plugin API */
+
 // Extend jCanvas with custom methods
 jCanvas.extend = function(plugin) {
 	
@@ -328,19 +334,11 @@ $.fn.loadCanvas = function() {
 	return getContext(this[0]);
 };
 
-// Get canvas image as data URL
-$.fn.getCanvasImage = function(type, quality) {
-	var elem = this[0];
-	return (elem && elem.toDataURL) ?
-		elem.toDataURL('image/' + type, quality) :
-		NULL;
-};
-
 // Draw on canvas using a function
 $.fn.draw = function self(args) {
 	var $elems = this, e, ctx, params;
 	
-	// Convert single function argument to 'fn' method
+	// Convert single function argument to object
 	if (args && !args.fn) {
 		args = {fn: args};
 	}
@@ -518,6 +516,8 @@ $.fn.clearCanvas = function(args) {
 	return $elems;
 };
 
+/* Transformation API */
+
 // Save canvas
 $.fn.saveCanvas = function() {
 	var $elems = this, e, ctx;
@@ -588,6 +588,8 @@ $.fn.rotateCanvas = function(args) {
 	}
 	return $elems;
 };
+
+/* Shape API */
 
 // Draw rectangle
 $.fn.drawRect = function self(args) {
@@ -717,12 +719,17 @@ $.fn.drawEllipse = function self(args) {
 	return $elems;
 };
 
-// Draw line
-$.fn.drawLine = function self(args) {
+// Draw a regular (equal-angled) polygon
+$.fn.drawPolygon = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
-		l=1, lx=0, ly=0;
-
+		rotation = PI / params.sides,
+		theta = (PI/2) + rotation,
+		dtheta = (PI*2) / params.sides,
+		apothem = cos(dtheta/2) * params.radius,
+		x, y, i;
+	params.closed = TRUE;
+	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
@@ -730,7 +737,55 @@ $.fn.drawLine = function self(args) {
 			// Allow for layer support
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			positionShape(e, ctx, params, params.radius*2);
+
+			// Calculate points and draw
+			ctx.beginPath();
+			for (i=0; i<params.sides; i+=1) {
+				// Draw side of polygon
+				x = params.x + round(params.radius * cos(theta));
+				y = params.y + round(params.radius * sin(theta));
+				ctx.lineTo(x, y);
+				// Project side if chosen
+				if (params.projection) {
+					// Sides are projected from the polygon's apothem
+					x = params.x + round((apothem+apothem*params.projection) * cos(theta+rotation));
+					y = params.y + round((apothem+apothem*params.projection) * sin(theta+rotation));
+					ctx.lineTo(x, y);
+				}
+				theta += dtheta;
+			}
+			ctx.restore();
+			// Check for jCanvas events
+			if (params._event) {
+				checkEvents($elems[e], ctx, args);
+			}
+			closePath(ctx, params);
 			
+		}
+	}
+	return $elems;
+};
+
+/* Path API */
+
+// Draw line
+$.fn.drawLine = function self(args) {
+	var $elems = this, e, ctx,
+		params = merge(new Prefs(), args),
+		l, lx, ly;
+
+	for (e=0; e<$elems.length; e+=1) {
+		ctx = getContext($elems[e]);
+		if (ctx) {
+						
+			// Allow for layer support
+			addLayer($elems[e], args, self);
+			setGlobalProps(ctx, params);
+							
+			// Reset path increments
+			l = 1;
+								
 			// Draw each point
 			ctx.beginPath();
 			while (TRUE) {
@@ -759,7 +814,7 @@ $.fn.drawLine = function self(args) {
 $.fn.drawQuad = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
-		l=2, lx=0, ly=0, lcx=0, lcy=0;
+		l, lx, ly, lcx, lcy;
 
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
@@ -768,6 +823,9 @@ $.fn.drawQuad = function self(args) {
 			// Allow for layer support
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			
+			// Reset path increments
+			l = 2;
 			
 			// Draw each point
 			ctx.beginPath();
@@ -800,10 +858,10 @@ $.fn.drawQuad = function self(args) {
 $.fn.drawBezier = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
-		l = 2, lc = 1,
-		lx = 0, ly = 0,
-		lcx1 = 0, lcy1 = 0,
-		lcx2 = 0, lcy2 = 0;
+		l , lc,
+		lx, ly,
+		lcx1, lcy1,
+		lcx2, lcy2;
 
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
@@ -813,6 +871,10 @@ $.fn.drawBezier = function self(args) {
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			
+			// Reset path increments
+			l = 2;
+			lc = 1;
+
 			// Draw each point
 			ctx.beginPath();
 			ctx.moveTo(params.x1, params.y1);
@@ -843,27 +905,30 @@ $.fn.drawBezier = function self(args) {
 	return $elems;
 };
 
+/* Text API */
+
 // Measure canvas text
 function measureText(elem, ctx, params) {
 	var originalSize, sizeMatch,
-		sizeExp = /(\d*\.?\d*)\w\w\b/gi;
+		sizeExp = /\b(\d*\.?\d*)\w\w\b/gi;
 	
-	// Calculate width
-	params.width = ctx.measureText(params.text).width;
-	
-	// Calculate height only if needed
-	if (cache.font === params.font && cache.text === params.text) {
+	// Used cached width/height if possible
+	if (cache.text === params.text && cache.font === params.font) {
 		
+		params.width = cache.width;
 		params.height = cache.height;
 		
 	} else {
+		
+		// Calculate text width
+		params.width = ctx.measureText(params.text).width;
 		
 		// Save original font size
 		originalSize = elem.style.fontSize;
 		// Get specified font size, or calculate font size if not specified
 		sizeMatch = params.font.match(sizeExp);
 		if (sizeMatch) {
-			elem.style.fontSize = (params.font.match(sizeExp) || $.css(elem, 'fontSize'))[0];
+			elem.style.fontSize = params.font.match(sizeExp)[0];
 		}
 		// Save text width and height in parameters object
 		params.height = parseFloat($.css(elem, 'fontSize'));
@@ -922,6 +987,8 @@ $.fn.drawText = function self(args) {
 	return $elems;
 };
 
+/* Image API */
+
 // Draw image
 $.fn.drawImage = function self(args) {
 	var $elems = this, elem, e, ctx,
@@ -939,6 +1006,7 @@ $.fn.drawImage = function self(args) {
 	// Draw image function
 	function draw(e, ctx) {
 	
+		// Only calculate image width/height once
 		if (!e) {
 			scaleFac = img.width / img.height;
 			
@@ -968,7 +1036,6 @@ $.fn.drawImage = function self(args) {
 			if (params.sHeight === NULL && params.height !== NULL) {
 				args.sHeight = params.sHeight = img.height;
 			}
-			
 			
 			// If no sx/sy defined, use center of image (or top-left corner if cropFromCenter is FALSE)
 			if (params.sx === NULL) {
@@ -1021,7 +1088,6 @@ $.fn.drawImage = function self(args) {
 		}
 							
 		// Draw image
-		
 		ctx.drawImage(
 			img,
 			params.sx - params.sWidth / 2,
@@ -1084,53 +1150,15 @@ $.fn.drawImage = function self(args) {
 	return $elems;
 };
 
-// Draw a regular (equal-angled) polygon
-$.fn.drawPolygon = function self(args) {
-	var $elems = this, e, ctx,
-		params = merge(new Prefs(), args),
-		rotation = PI / params.sides,
-		theta = (PI/2) + rotation,
-		dtheta = (PI*2) / params.sides,
-		apothem = cos(dtheta/2) * params.radius,
-		x, y, i;
-	params.closed = TRUE;
-	
-	for (e=0; e<$elems.length; e+=1) {
-		ctx = getContext($elems[e]);
-		if (ctx) {
-			
-			// Allow for layer support
-			addLayer($elems[e], args, self);
-			setGlobalProps(ctx, params);
-			positionShape(e, ctx, params, params.radius*2);
-
-			// Calculate points and draw
-			ctx.beginPath();
-			for (i=0; i<params.sides; i+=1) {
-				// Draw side of polygon
-				x = params.x + round(params.radius * cos(theta));
-				y = params.y + round(params.radius * sin(theta));
-				ctx.lineTo(x, y);
-				// Project side if chosen
-				if (params.projection) {
-					// Sides are projected from the polygon's apothem
-					x = params.x + round((apothem+apothem*params.projection) * cos(theta+rotation));
-					y = params.y + round((apothem+apothem*params.projection) * sin(theta+rotation));
-					ctx.lineTo(x, y);
-				}
-				theta += dtheta;
-			}
-			ctx.restore();
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
-			}
-			closePath(ctx, params);
-			
-		}
-	}
-	return $elems;
+// Get canvas image as data URL
+$.fn.getCanvasImage = function(type, quality) {
+	var elem = this[0];
+	return (elem && elem.toDataURL) ?
+		elem.toDataURL('image/' + type, quality) :
+		NULL;
 };
+
+/* Pixel API */
 
 // Get pixels on the canvas
 $.fn.setPixels = function self(args) {
@@ -1290,11 +1318,11 @@ $.fn.drawLayers = function() {
 	return $elems;
 };
 
-// Add a new jCanvas layer (internal)
+// Add a jCanvas layer (internal)
 function addLayer(elem, layer, method) {
-	var $elem, layers, event, originalLayer;
+	var $elem, layers, event, layerFn,
+		isFn = (typeof layer === 'function');
 	layer = layer || {};
-	originalLayer = layer;
 	
 	// Only add layer if it hasn't been added before
 	if (layer.layer && !layer._layer) {
@@ -1303,22 +1331,23 @@ function addLayer(elem, layer, method) {
 		layers = $elem.getLayers();
 		
 		// If layer is a function
-		if (typeof layer === 'function') {
+		if (isFn) {
+			layerFn = layer;
 			// Wrap function within object
 			layer = {
 				method: $.fn.draw,
-				fn: originalLayer,
-				name: originalLayer.name,
-				group: originalLayer.group,
-				visible: originalLayer.visible
+				fn: layerFn,
+				name: layerFn.name,
+				group: layerFn.group,
+				visible: layerFn.visible
 			};
-			// Ensure layer is visible unless otherwise specified
-			if (layer.visible === UNDEFINED) {
-				layer.visible = TRUE;
-			}
-		} else {
-			// Ensure layers are unique across canvases
-			layer = merge(new Prefs(), layer);
+		}
+		
+		// Ensure layers are unique across canvases by cloning them
+		layer = merge(new Prefs(), layer);
+	
+		// If layer is a regular object
+		if (!isFn) {
 			layer.method = $.fn[layer.method] || method;
 			// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
 			if (layer.method !== $.fn.drawImage) {
@@ -1330,20 +1359,22 @@ function addLayer(elem, layer, method) {
 				if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
 					// Ensure canvas event is not bound more than once
 					if (!$.data($elem[0], 'jCanvas-' + event)) {
-						jCanvas.events[event].call(window, $elem);
+						jCanvas.events[event].call($, $elem);
 					}
 					layer._event = TRUE;
 				}
 			}
 		}
 		// Set layer properties and add to stack
+		layer.layer = TRUE;
 		layer._layer = TRUE;
-		// The push() method returns the new array length
-		layer.index = layers.push(layer);
+		// Add layer to layers array
+		layers.push(layer);
+		layer.index = layers.length - 1;
 	}
 }
 
-// Add jCanvas layer
+// Add a jCanvas layer
 $.fn.addLayer = function(args) {
 	var $elems = this, e, ctx;
 	args = args || {};
@@ -1375,7 +1406,7 @@ $.fn.removeLayer = function(name) {
 	
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers();
-		
+		// Search layers array if layer name is given
 		if (typeof name === 'string') {
 		
 			// Search layers array to find a matching name
@@ -1388,7 +1419,6 @@ $.fn.removeLayer = function(name) {
 			}
 			
 		}
-		
 		// Remove layer from the layers array
 		layers.splice(name, 1);
 	}
@@ -1423,7 +1453,7 @@ function toRgb(color) {
 		multiple = 1;
 	
 	// Deal with hexadecimal colors and color names
-	if (color.match(/^#?[a-z0-9]+$/gi)) {
+	if (color.match(/^#?[a-z0-9]+$/i)) {
 		elem = document.head;
 		originalColor = elem.style.color;
 		elem.style.color = color;
@@ -1431,7 +1461,7 @@ function toRgb(color) {
 		elem.style.color = originalColor;
 	}
 	// Parse RGB string
-	if (color.match(/^rgb/gi)) {
+	if (color.match(/^rgb/i)) {
 		rgb = color.match(/[0-9]+/gi);
 		// Deal with RGB percentages
 		if (color.match(/%/gi)) {
@@ -1612,4 +1642,4 @@ jCanvas.defaults = defaults;
 jCanvas.prefs = prefs;
 $.jCanvas = jCanvas;
 
-}(jQuery, window, document, Image, Math, Function, parseFloat, true, false, null));
+}(jQuery, document, Image, Math, parseFloat, true, false, null));
