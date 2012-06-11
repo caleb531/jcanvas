@@ -1368,9 +1368,12 @@ function addLayer(elem, layer, method) {
 		// Set layer properties and add to stack
 		layer.layer = TRUE;
 		layer._layer = TRUE;
-		// Add layer to layers array
-		layers.push(layer);
-		layer.index = layers.length - 1;
+		// Add layer to end of array if no index is specified
+		if (layer.index === UNDEFINED) {
+			layer.index = layers.length;
+		}
+		// Add layer to layers array at specified index
+		layers.splice(layer.index, 0, layer);
 	}
 }
 
