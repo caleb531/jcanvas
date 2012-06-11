@@ -1121,7 +1121,7 @@ $.fn.drawImage = function self(args) {
 			draw(e, ctx);
 			// Run callback function if defined
 			if (params.load) {
-				params.load.call(elem);
+				params.load.call(elem, args);
 			}
 		};
 	}
