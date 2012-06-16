@@ -1284,7 +1284,6 @@ $.fn.drawLayer = function(name) {
 		$elem = $($elems[e]);
 		ctx = getContext($elem[0]);
 		if (name.layer) {
-			// Draw the given layer
 			drawLayer($elem, ctx, name);
 		} else {
 			// Otherwise, get the layer with the specified name/index
