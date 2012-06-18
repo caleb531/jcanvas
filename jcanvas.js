@@ -150,11 +150,15 @@ function closePath(ctx, params) {
 
 // Translate canvas (internal)
 function translateCanvas(ctx, params) {
+
+	/* Compatibility check: START */
 	// Maintain compatibility for 'x' and 'y' properties
 	if ((!params.translateX && !params.translateY) && (params.x || params.y)) {
 		params.translateX = params.x;
 		params.translateY = params.y;
 	}
+	/* Compatibility check: END */
+	
 	// Translate both the x- and y-axis using the 'translate' property
 	if (params.translate) {
 		params.translateX = params.translateY = params.translate;
@@ -169,6 +173,7 @@ function scaleCanvas(ctx, params) {
 	if (params.scale !== 1) {
 		params.scaleX = params.scaleY = params.scale;
 	}
+	
 	// Scale shape
 	ctx.translate(params.x, params.y);
 	ctx.scale(params.scaleX, params.scaleY);
@@ -178,8 +183,11 @@ function scaleCanvas(ctx, params) {
 // Rotate canvas (internal)
 function rotateCanvas(ctx, params) {
 	params.toRad = (params.inDegrees ? PI/180 : 1);
+	
+	/* Compatibility fix: START */
 	// Maintain compatibility for 'angle' property
 	params.rotate = params.rotate || params.angle;
+	/* Compatibility fix: END */
 
 	ctx.translate(params.x, params.y);
 	ctx.rotate(params.rotate*params.toRad);
@@ -213,7 +221,7 @@ function positionShape(e, ctx, params, width, height) {
 	}
 }
 
-/* Plugin API: START */
+/* Plugin API */
 
 // Extend jCanvas with custom methods
 jCanvas.extend = function(plugin) {
@@ -242,8 +250,6 @@ jCanvas.extend = function(plugin) {
 	return $.fn[plugin.name];
 };
 
-/* Plugin API: END */
-
 // Load canvas (deprecated)
 $.fn.loadCanvas = function() {
 	return getContext(this[0]);
@@ -261,7 +267,8 @@ $.fn.draw = function self(args) {
 	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
-		if (ctx) {args.fn.call($elems[e], ctx);
+		if (ctx) {
+			args.fn.call($elems[e], ctx);
 		}
 	}
 	return $elems;
@@ -363,7 +370,7 @@ $.fn.rotateCanvas = function(args) {
 	return $elems;
 };
 
-/* Shapes API */
+/* Shape API */
 
 // Draw rectangle
 $.fn.drawRect = function self(args) {
@@ -375,6 +382,7 @@ $.fn.drawRect = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 		
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			positionShape(e, ctx, params, params.width, params.height);
 			
@@ -432,6 +440,7 @@ $.fn.drawArc = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			positionShape(e, ctx, params, params.radius*2);
 	
@@ -462,6 +471,7 @@ $.fn.drawEllipse = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			positionShape(e, ctx, params, params.width, params.height);
 			
@@ -504,6 +514,7 @@ $.fn.drawPolygon = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			positionShape(e, ctx, params, params.radius*2);
 
@@ -547,6 +558,7 @@ $.fn.drawLine = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 						
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 										
 			// Draw each point
@@ -584,6 +596,7 @@ $.fn.drawQuad = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			
 			// Draw each point
@@ -627,6 +640,7 @@ $.fn.drawBezier = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			
 			// Draw each point
@@ -704,6 +718,7 @@ $.fn.drawText = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			
 			// Set text-specific properties
@@ -761,6 +776,9 @@ $.fn.drawImage = function self(args) {
 	
 	// Draw image function
 	function draw(e, ctx) {
+		var width, height;
+		width = img.width || $.css(img, 'width');
+		height = img.height || $.css(img, 'height');
 	
 		// Only calculate image width/height once
 		if (!e) {
@@ -842,7 +860,7 @@ $.fn.drawImage = function self(args) {
 			}
 			
 		}
-							
+					
 		// Draw image
 		ctx.drawImage(
 			img,
@@ -887,9 +905,10 @@ $.fn.drawImage = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			positionShape(e, ctx, params, params.width, params.height);
-			
+						
 			// Draw image if already loaded
 			if (img) {
 				if (img.complete || imgCtx) {
@@ -1056,6 +1075,7 @@ $.fn.setPixels = function self(args) {
 		ctx = getContext(elem);
 		if (ctx) {
 			
+			addLayer($elems[e], args, self);
 			// Measure (x, y) from center of region
 			positionShape(e, ctx, params, params.width, params.height);
 			
@@ -1101,7 +1121,7 @@ $.fn.getCanvasImage = function(type, quality) {
 		NULL;
 };
 
-/* Layers API */
+/* Layer API: START */
 
 // Get jCanvas layers
 $.fn.getLayers = function() {
@@ -1276,7 +1296,9 @@ $.fn.addLayer = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			args.layer = TRUE;}
+			args.layer = TRUE;
+			addLayer($elems[e], args);
+		}
 	}
 	return $elems;
 };
@@ -1543,9 +1565,7 @@ supportColorProps([
 
 /* Animation API: END */
 
-/* Layers API: END */
-
-/* Events API: START */
+/* Event API: START */
 
 // Keep track of the last two mouse coordinates for each canvas
 function getEventCache(elem) {
@@ -1626,6 +1646,10 @@ function checkEvents(elem, ctx, layer) {
 	}
 }
 
+/* Event API: END */
+
+/* Layer API: END */
+
 // Normalize offsetX and offsetY for all browsers
 $.event.fix = function(event) {
 	var offset;
@@ -1641,8 +1665,6 @@ $.event.fix = function(event) {
 	}
 	return event;
 };
-
-/* Events API: END */
 
 // Enable canvas feature detection with $.support
 $.support.canvas = (document.createElement('canvas').getContext !== UNDEFINED);
