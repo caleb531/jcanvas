@@ -776,17 +776,14 @@ $.fn.drawImage = function self(args) {
 	
 	// Draw image function
 	function draw(e, ctx) {
-		var width, height;
-		width = img.width || $.css(img, 'width');
-		height = img.height || $.css(img, 'height');
 	
 		// Only calculate image width/height once
 		if (!e) {
 		
 			scaleFactor = img.width / img.height;
 			
-			// Show whole image if no cropping region is defined
-						
+			// Show entire image if no cropping region is defined
+			
 			// If width/sWidth or height/sHeight is not defined
 			if (params.width === NULL && params.sWidth === NULL) {
 				args.width = params.width = params.sWidth = img.width;
@@ -794,7 +791,7 @@ $.fn.drawImage = function self(args) {
 			if (params.height === NULL && params.sHeight === NULL) {
 				args.height = params.height = params.sHeight = img.height;
 			}
-
+			
 			// If width or height is not defined
 			if (params.width === NULL && params.sWidth !== NULL) {
 				params.width = params.sWidth;
@@ -915,6 +912,8 @@ $.fn.drawImage = function self(args) {
 					onload(elem, e, ctx)();
 				} else {
 					img.onload = onload(elem, e, ctx);
+					// Image onload fix for IE9
+					img.src = img.src;
 				}
 			}
 				
