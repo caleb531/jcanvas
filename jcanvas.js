@@ -143,6 +143,10 @@ function closePath(ctx, params) {
 		ctx.stroke();
 	} else {
 		ctx.fill();
+		// Prevent extra shadow created by stroke (but only when fill is present)
+		if (params.fillStyle !== 'transparent') {
+			ctx.shadowColor = 'transparent';
+		}
 		ctx.stroke();
 		ctx.closePath();
 	}
@@ -1259,11 +1263,6 @@ function addLayer(elem, layer, method) {
 		// If layer is a regular object
 		if (!isFn) {
 			layer.method = $.fn[layer.method] || method;
-			// Ensure width/height of shapes (other than images) can be animated without specifying those properties initially
-			if (layer.method !== $.fn.drawImage) {
-				layer.width = layer.width || 0;
-				layer.height = layer.height || 0;
-			}
 			// Check for any associated jCanvas events and enable them
 			for (event in jCanvas.events) {
 				if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
