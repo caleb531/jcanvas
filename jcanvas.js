@@ -28,7 +28,7 @@ function jCanvas(args) {
 		merge(prefs, args);
 	} else {
 		// Reset preferences to defaults if nothing is passed
-		prefs = merge(Prefs.prototype, defaults);
+		prefs = Prefs.prototype = merge({}, defaults);
 	}
 	return this;
 }
@@ -139,15 +139,14 @@ function closePath(ctx, params) {
 	// Close path if chosen
 	if (params.closed) {
 		ctx.closePath();
-		ctx.fill();
-		ctx.stroke();
-	} else {
-		ctx.fill();
-		// Prevent extra shadow created by stroke (but only when fill is present)
-		if (params.fillStyle !== 'transparent') {
-			ctx.shadowColor = 'transparent';
-		}
-		ctx.stroke();
+	}
+	ctx.fill();
+	// Prevent extra shadow created by stroke (but only when fill is present)
+	if (params.fillStyle !== 'transparent') {
+		ctx.shadowColor = 'transparent';
+	}
+	ctx.stroke();
+	if (!params.closed) {
 		ctx.closePath();
 	}
 }
@@ -734,8 +733,12 @@ $.fn.drawText = function self(args) {
 			measureText($elems[e], ctx, params);
 			positionShape(e, ctx, params, params.width, params.height);
 			
-			ctx.strokeText(params.text, params.x, params.y);
 			ctx.fillText(params.text, params.x, params.y);
+			// Prevent extra shadow created by stroke (but only when fill is present)
+			if (params.fillStyle !== 'transparent') {
+				ctx.shadowColor = 'transparent';
+			}
+			ctx.strokeText(params.text, params.x, params.y);
 			
 			// Detect jCanvas events
 			if (params._event) {
