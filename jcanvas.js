@@ -1,4 +1,4 @@
-/**@license jCanvas v5.5b
+/** @license jCanvas v5.5b
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -28,7 +28,7 @@ function jCanvas(args) {
 		merge(prefs, args);
 	} else {
 		// Reset preferences to defaults if nothing is passed
-		prefs = Prefs.prototype = merge({}, defaults);
+		jCanvas.prefs = prefs = Prefs.prototype = merge({}, defaults);
 	}
 	return this;
 }
@@ -94,6 +94,7 @@ defaults = {
 	x: 0,
 	y: 0
 };
+
 // Copy defaults to preferences object
 jCanvas();
 
@@ -1146,43 +1147,103 @@ $.fn.getLayers = function() {
 };
 
 // Get a single jCanvas layer
-$.fn.getLayer = function(name) {
+$.fn.getLayer = function(id) {
 	var layers = this.getLayers(), layer, l;
 	
-	if (name && name.layer) {
+	if (id && id.layer) {
 		// Return the layer if passed into the method
-		layer = name;
+		layer = id;
 	} else {
-		if (typeof name === 'string') {
+		if (typeof id === 'string') {
 			for (l=0; l<layers.length; l+=1) {
-				// Ensure layer's index is up-to-date
-				layers[l].index = l;
 				// Check if layer matches name
-				if (layers[l].name === name) {
-					name = l;
+				if (layers[l].name === id) {
+					id = l;
 					break;
 				}
 			}
 		}
 		// layer index defaults to 0
-		name = name || 0;
-		layer = layers[name];
+		id = id || 0;
+		layer = layers[id];
 	}
 	return layer;
 };
 
-// Get all layers within a specific group
+// Set properties of a layer
+$.fn.setLayer = function(id, props) {
+	var $elems = this, e,
+		layers, l;
+	for (e=0; e<$elems.length; e+=1) {
+		layers = $($elems[e]).getLayers();
+		
+		if (typeof id === 'string') {
+			for (l=0; l<layers.length; l+=1) {
+				if (layers[l].name === id) {
+					id = l;
+				}
+			}
+		}
+		id = id || 0;
+		// Merge properties with layer
+		merge(layers[id], props);
+		
+	}
+	return $elems;
+};
+
+// Get all layers in the given group
 $.fn.getLayerGroup = function(name) {
 	var layers = this.getLayers(),
 		group = [], l;
 	
 	for (l=0; l<layers.length; l+=1) {
-		// Check if layer is in group
+		// Include layer if apart of group
 		if (layers[l].group === name) {
 			group.push(layers[l]);
 		}
 	}
 	return group;
+};
+
+// Set properties of all layers in the given group
+$.fn.setLayerGroup = function(name, props) {
+	var $elems = this, e,
+		layers, l;
+	for (e=0; e<$elems.length; e+=1) {
+		layers = $($elems[e]).getLayers();
+		
+		// Find layers in group
+		for (l=0; l<layers.length; l+=1) {
+			if (layers[l].group === name) {
+				// Merge properties with layer
+				merge(layers[l], props);
+			}
+		}
+		
+	}
+	return $elems;
+};
+
+// Remove all layers within a specific group
+$.fn.removeLayerGroup = function(name) {
+	var $elems = this, e,
+		layers, l;
+	
+	for (e=0; e<$elems.length; e+=1) {
+		// Get layers array for each element
+		layers = $($elems[e]).getLayers();
+	
+		// Loop through layers array for each element
+		for (l=0; l<layers.length; l+=1) {
+			// Remove layer if group name matches
+			if (layers[l].group === name) {
+				layers.splice(l, 1);
+			}
+		}
+	
+	}
+	return $elems;
 };
 
 // Draw individual layer (internal)
@@ -1198,10 +1259,11 @@ function drawLayer($elem, ctx, layer) {
 	}
 }
 
-// Draw individual layer (jQuery method)
+// Draw an individual layer
 $.fn.drawLayer = function(name) {
 	var $elems = this, e, ctx,
 		$elem, layer;
+		
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		ctx = getContext($elems[e]);
@@ -1209,9 +1271,10 @@ $.fn.drawLayer = function(name) {
 		layer = $elem.getLayer(name);
 		drawLayer($elem, ctx, layer);
 	}
+	return $elems;
 };
 
-// Draw all jCanvas layers (or only the given layers)
+// Draw all layers (or only the given layers)
 $.fn.drawLayers = function() {
 	var $elems = this, $elem, e, ctx,
 		layers, layer, l;
@@ -1315,27 +1378,27 @@ $.fn.removeLayers = function() {
 };
 
 // Remove a jCanvas layer
-$.fn.removeLayer = function(name) {
+$.fn.removeLayer = function(id) {
 	var $elems = this, e,
 		layers, i;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers();
 		// Search layers array if layer name is given
-		if (typeof name === 'string') {
+		if (typeof id === 'string') {
 		
 			// Search layers array to find a matching name
 			for (i=0; i<layers.length; i+=1) {
 				// Check to see if name matches
-				if (layers[i].name === name) {
-					name = i;
+				if (layers[i].name === id) {
+					id = i;
 					break;
 				}
 			}
 			
 		}
 		// Remove layer from the layers array
-		layers.splice(name, 1);
+		layers.splice(id, 1);
 	}
 	return $elems;
 };
@@ -1672,7 +1735,6 @@ $.support.canvas = (document.createElement('canvas').getContext !== UNDEFINED);
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
-jCanvas.prefs = prefs;
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Image, Math, parseFloat, true, false, null));
