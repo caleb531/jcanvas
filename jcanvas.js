@@ -1275,7 +1275,7 @@ $.fn.drawLayer = function(name) {
 };
 
 // Draw all layers (or only the given layers)
-$.fn.drawLayers = function() {
+$.fn.drawLayers = function(resetFire) {
 	var $elems = this, $elem, e, ctx,
 		layers, layer, l;
 	
@@ -1291,6 +1291,12 @@ $.fn.drawLayers = function() {
 			// Draw layers from first to last (bottom to top)
 			for (l=0; l<layers.length; l+=1) {
 				layer = layers[l];
+
+				// Prevent excessive events from firing				
+				if (resetFire) {
+					layer._fired = FALSE;
+				}
+				
 				drawLayer($elem, ctx, layer);
 			}
 		}
@@ -1652,6 +1658,7 @@ function createEvent(name) {
 		
 		// Retrieve or create canvas's event cache
 		var eventCache = getEventCache($elem[0]);
+		var layers = $elem.getLayers();
 		
 		// Bind one canvas event which handles all layer events of that type
 		$elem.bind(helperEventName + '.jCanvas', function(event) {
@@ -1661,7 +1668,7 @@ function createEvent(name) {
 			eventCache.x[0] = event.offsetX;
 			eventCache.y[0] = event.offsetY;
 			eventCache.type = helperEventName;
-			$elem.drawLayers();
+			$elem.drawLayers(TRUE);
 		});
 		$.data($elem[0], 'jCanvas-' + name, TRUE);
 	};
@@ -1691,15 +1698,15 @@ function checkEvents(elem, ctx, layer) {
 	if (layer.mouseover || layer.mouseout) {
 				
 		// Mouseover
-		if (over && !out && !layer._fired) {
-			layer._fired = TRUE;
+		if (over && !out && !layer._hovered) {
+			layer._hovered = TRUE;
 			if (layer.mouseover) {
 				layer.mouseover.call(elem, layer);
 				setGlobalProps(ctx, layer);
 			}
 		// Mouseout
-		} else if (!over && out && layer._fired) {
-			layer._fired = FALSE;
+		} else if (!over && out && layer._hovered) {
+			layer._hovered = FALSE;
 			if (layer.mouseout) {
 				layer.mouseout.call(elem, layer);
 				setGlobalProps(ctx, layer);
@@ -1709,9 +1716,10 @@ function checkEvents(elem, ctx, layer) {
 	}
 
 	// Detect any other mouse event
-	if (callback && over) {
+	if (callback && over && !layer._fired) {
 		callback.call(elem, layer);
 		setGlobalProps(ctx, layer);
+		layer._fired = TRUE;
 	}
 }
 
