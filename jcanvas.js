@@ -1587,6 +1587,8 @@ $.fn.animateLayer = function() {
 // Delay layer animation by a given number of milliseconds
 $.fn.delayLayer = function(name, duration) {
 	var $elems = this, e, layer;
+	duration = duration || 0;
+	
 	for (e=0; e<$elems.length; e+=1) {
 		layer = $($elems[e]).getLayer(name);
 		$(layer).delay(duration);
@@ -1647,9 +1649,12 @@ function getEventCache(elem) {
 function createEvent(name) {
 	jCanvas.events[name] = function($elem) {
 		var helperEventName = (name === 'mouseover' || name === 'mouseout') ? 'mousemove' : name;
-		$elem
-		.bind(helperEventName + '.jCanvas', function(event) {
-			var eventCache = getEventCache($elem[0]);
+		
+		// Retrieve or create canvas's event cache
+		var eventCache = getEventCache($elem[0]);
+		
+		// Bind one canvas event which handles all layer events of that type
+		$elem.bind(helperEventName + '.jCanvas', function(event) {
 			// Cache current mouse position and redraw layers
 			eventCache.x[1] = eventCache.x[0];
 			eventCache.y[1] = eventCache.y[0];
