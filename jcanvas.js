@@ -1,4 +1,4 @@
-/** @license jCanvas v5.5b
+/** @license jCanvas v5.5
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -35,7 +35,7 @@ function jCanvas(args) {
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
 
-jCanvas.version = '5.5b';
+jCanvas.version = '5.5';
 jCanvas.events = {};
 
 // Set jCanvas default property values
@@ -699,7 +699,7 @@ function measureText(elem, ctx, params) {
 		
 		// Save original font size
 		originalSize = elem.style.fontSize;
-		// Get specified font size, or calculate font size if not specified
+		// Get specified font size
 		sizeMatch = params.font.match(sizeExp);
 		if (sizeMatch) {
 			elem.style.fontSize = params.font.match(sizeExp)[0];
@@ -866,7 +866,7 @@ $.fn.drawImage = function self(args) {
 			
 		}
 		
-		// Only position image	
+		// Only position image
 		transformShape(e, ctx, params, params.width, params.height);
 					
 		// Draw image
@@ -1294,7 +1294,7 @@ $.fn.drawLayers = function(resetFire) {
 			for (l=0; l<layers.length; l+=1) {
 				layer = layers[l];
 
-				// Prevent any one event from firing excessively			
+				// Prevent any one event from firing excessively
 				if (resetFire) {
 					layer._fired = FALSE;
 				}
@@ -1342,7 +1342,7 @@ function addLayer(elem, layer, method) {
 				if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
 					// Ensure canvas event is not bound more than once
 					if (!$.data(elem, 'jCanvas-' + event)) {
-						jCanvas.events[event].call($, $elem);
+						jCanvas.events[event]($elem);
 					}
 					layer._event = TRUE;
 				}
@@ -1541,7 +1541,7 @@ $.fn.animateLayer = function() {
 			showProps(layer);
 			$elem.drawLayers();
 			if (args[4]) {
-				args[4].call($elem);
+				args[4].call($elem[0]);
 			}
 		};
 	}
@@ -1550,9 +1550,9 @@ $.fn.animateLayer = function() {
 		return function(now, fx) {
 			showProps(layer);
 			$elem.drawLayers();
-			// Run callback function on every frame (if specified)
+			// Run callback function for every frame (if specified)
 			if (args[5]) {
-				args[5].call($elem, now, fx);
+				args[5].call($elem[0], now, fx);
 			}
 		};
 	}
@@ -1656,11 +1656,11 @@ function getEventCache(elem) {
 // Bind event to jCanvas layer using standard jQuery events
 function createEvent(name) {
 	jCanvas.events[name] = function($elem) {
-		var helperEventName = (name === 'mouseover' || name === 'mouseout') ? 'mousemove' : name;
-		
-		// Retrieve or create canvas's event cache
-		var eventCache = getEventCache($elem[0]);
-		var layers = $elem.getLayers();
+	
+		// Both mouseover/mouseout events will be managed by a single mousemove event
+		var helperEventName = (name === 'mouseover' || name === 'mouseout') ? 'mousemove' : name,
+			// Retrieve or create canvas's event cache
+			eventCache = getEventCache($elem[0]);
 		
 		// Bind one canvas event which handles all layer events of that type
 		$elem.bind(helperEventName + '.jCanvas', function(event) {
@@ -1673,6 +1673,7 @@ function createEvent(name) {
 			$elem.drawLayers(TRUE);
 		});
 		$.data($elem[0], 'jCanvas-' + name, TRUE);
+		
 	};
 }
 // Populate jCanvas events object with some standard events
