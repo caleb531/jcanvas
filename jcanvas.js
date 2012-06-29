@@ -199,7 +199,7 @@ function rotateCanvas(ctx, params) {
 }
 
 // Rotate/scale individual shape and/or position it correctly
-function positionShape(e, ctx, params, width, height) {
+function transformShape(e, ctx, params, width, height) {
 	
 	// Measure angles in chosen units
 	params.toRad = (params.inDegrees ? PI/180 : 1);
@@ -287,7 +287,7 @@ $.fn.clearCanvas = function(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 			
-			positionShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, params.width, params.height);
 			
 			// Clear entire canvas
 			if (!params.x && !params.y && !params.width && !params.height) {
@@ -388,7 +388,7 @@ $.fn.drawRect = function self(args) {
 		
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			positionShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, params.width, params.height);
 			
 			ctx.beginPath();
 			x1 = params.x - params.width/2;
@@ -446,7 +446,7 @@ $.fn.drawArc = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			positionShape(e, ctx, params, params.radius*2);
+			transformShape(e, ctx, params, params.radius*2);
 	
 			// Draw arc
 			ctx.beginPath();
@@ -477,7 +477,7 @@ $.fn.drawEllipse = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			positionShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, params.width, params.height);
 			
 			// Create ellipse using curves
 			ctx.beginPath();
@@ -520,7 +520,7 @@ $.fn.drawPolygon = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			positionShape(e, ctx, params, params.radius*2);
+			transformShape(e, ctx, params, params.radius*2);
 
 			// Calculate points and draw
 			ctx.beginPath();
@@ -732,7 +732,7 @@ $.fn.drawText = function self(args) {
 			
 			// Retrieve text's width and height
 			measureText($elems[e], ctx, params);
-			positionShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, params.width, params.height);
 			
 			ctx.fillText(params.text, params.x, params.y);
 			// Prevent extra shadow created by stroke (but only when fill is present)
@@ -865,6 +865,9 @@ $.fn.drawImage = function self(args) {
 			}
 			
 		}
+		
+		// Only position image	
+		transformShape(e, ctx, params, params.width, params.height);
 					
 		// Draw image
 		ctx.drawImage(
@@ -912,7 +915,6 @@ $.fn.drawImage = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			positionShape(e, ctx, params, params.width, params.height);
 						
 			// Draw image if already loaded
 			if (img) {
@@ -1084,7 +1086,7 @@ $.fn.setPixels = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			// Measure (x, y) from center of region
-			positionShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, params.width, params.height);
 			
 			if (!params.x && !params.y && !params.width && !params.height) {
 				params.width = elem.width;
@@ -1292,7 +1294,7 @@ $.fn.drawLayers = function(resetFire) {
 			for (l=0; l<layers.length; l+=1) {
 				layer = layers[l];
 
-				// Prevent excessive events from firing				
+				// Prevent any one event from firing excessively			
 				if (resetFire) {
 					layer._fired = FALSE;
 				}
@@ -1698,14 +1700,16 @@ function checkEvents(elem, ctx, layer) {
 	if (layer.mouseover || layer.mouseout) {
 				
 		// Mouseover
-		if (over && !out && !layer._hovered) {
+		if (over && !out && !layer._hovered && !layer._fired) {
+			layer._fired = TRUE;
 			layer._hovered = TRUE;
 			if (layer.mouseover) {
 				layer.mouseover.call(elem, layer);
 				setGlobalProps(ctx, layer);
 			}
 		// Mouseout
-		} else if (!over && out && layer._hovered) {
+		} else if (!over && layer._hovered && !layer._fired) {
+			layer._fired = TRUE;
 			layer._hovered = FALSE;
 			if (layer.mouseout) {
 				layer.mouseout.call(elem, layer);
