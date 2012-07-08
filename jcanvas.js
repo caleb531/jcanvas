@@ -1,4 +1,4 @@
-/** @license jCanvas v5.5
+/** @license jCanvas v5.6b
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -35,7 +35,7 @@ function jCanvas(args) {
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
 
-jCanvas.version = '5.5';
+jCanvas.version = '5.6b';
 jCanvas.events = {};
 
 // Set jCanvas default property values
@@ -147,6 +147,7 @@ function closePath(ctx, params) {
 		ctx.shadowColor = 'transparent';
 	}
 	ctx.stroke();
+	// Close path if chosen
 	if (!params.closed) {
 		ctx.closePath();
 	}
@@ -418,13 +419,12 @@ $.fn.drawRect = function self(args) {
 			} else {
 				ctx.rect(x1, y1, params.width, params.height);
 			}
-			ctx.restore();
 			// Check for jCanvas events
 			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
-			
+			ctx.restore();
 		}
 	}
 	return $elems;
@@ -451,14 +451,13 @@ $.fn.drawArc = function self(args) {
 			// Draw arc
 			ctx.beginPath();
 			ctx.arc(params.x, params.y, params.radius, (params.start*params.toRad)-(PI/2), (params.end*params.toRad)-(PI/2), params.ccw);
-			// Close path if chosen
-			ctx.restore();
 			// Check for jCanvas events
 			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
+			// Close path if chosen
 			closePath(ctx, params);
-		
+			ctx.restore();
 		}
 	}
 	return $elems;
@@ -486,14 +485,12 @@ $.fn.drawEllipse = function self(args) {
 			ctx.bezierCurveTo(params.x-controlW/2, params.y-controlH/2, params.x-controlW/2, params.y+controlH/2, params.x, params.y+controlH/2);
 			// Right side
 			ctx.bezierCurveTo(params.x+controlW/2, params.y+controlH/2, params.x+controlW/2, params.y-controlH/2, params.x, params.y-controlH/2);
-			ctx.restore();
-			
 			// Check for jCanvas events
 			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
-			
+			ctx.restore();			
 		}
 	}
 	return $elems;
@@ -538,13 +535,12 @@ $.fn.drawPolygon = function self(args) {
 				}
 				theta += dtheta;
 			}
-			ctx.restore();
 			// Check for jCanvas events
 			if (params._event) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
-			
+			ctx.restore();
 		}
 	}
 	return $elems;
@@ -730,8 +726,10 @@ $.fn.drawText = function self(args) {
 			ctx.textAlign = params.align;
 			ctx.font = params.font;
 			
-			// Retrieve text's width and height
-			measureText($elems[e], ctx, params);
+			// Retrieve text layer's width and height
+			if (params.layer) {
+				measureText($elems[e], ctx, params);
+			}
 			transformShape(e, ctx, params, params.width, params.height);
 			
 			ctx.fillText(params.text, params.x, params.y);
@@ -915,7 +913,7 @@ $.fn.drawImage = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-						
+				
 			// Draw image if already loaded
 			if (img) {
 				if (img.complete || imgCtx) {
@@ -1125,9 +1123,9 @@ $.fn.setPixels = function self(args) {
 // Get canvas image as data URL
 $.fn.getCanvasImage = function(type, quality) {
 	var elem = this[0];
-	return (elem && elem.toDataURL) ?
+	return (elem && elem.toDataURL ?
 		elem.toDataURL('image/' + type, quality) :
-		NULL;
+		NULL);
 };
 
 /* Layer API: START */
@@ -1176,6 +1174,10 @@ $.fn.getLayer = function(id) {
 $.fn.setLayer = function(id, props) {
 	var $elems = this, e,
 		layers, l;
+	if (!id) {
+		props = id;
+		id = 0;
+	}
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers();
 		
@@ -1186,7 +1188,6 @@ $.fn.setLayer = function(id, props) {
 				}
 			}
 		}
-		id = id || 0;
 		// Merge properties with layer
 		merge(layers[id], props);
 		
@@ -1324,10 +1325,7 @@ function addLayer(elem, layer, method) {
 			// Wrap function within object
 			layer = {
 				method: $.fn.draw,
-				fn: layerFn,
-				name: layerFn.name,
-				group: layerFn.group,
-				visible: layerFn.visible
+				fn: layerFn
 			};
 		}
 		
