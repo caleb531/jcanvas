@@ -490,7 +490,7 @@ $.fn.drawEllipse = function self(args) {
 				checkEvents($elems[e], ctx, args);
 			}
 			closePath(ctx, params);
-			ctx.restore();			
+			ctx.restore();
 		}
 	}
 	return $elems;
@@ -1242,6 +1242,7 @@ $.fn.removeLayerGroup = function(name) {
 			// Remove layer if group name matches
 			if (layers[l].group === name) {
 				layers.splice(l, 1);
+				l -= 1;
 			}
 		}
 	
