@@ -291,7 +291,7 @@ $.fn.clearCanvas = function(args) {
 			transformShape(e, ctx, params, params.width, params.height);
 			
 			// Clear entire canvas
-			if (!params.x && !params.y && !params.width && !params.height) {
+			if (!params.x || !params.y || !params.width || !params.height) {
 				ctx.clearRect(0, 0, $elems[e].width, $elems[e].height);
 			} else {
 				ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
@@ -1086,7 +1086,7 @@ $.fn.setPixels = function self(args) {
 			// Measure (x, y) from center of region
 			transformShape(e, ctx, params, params.width, params.height);
 			
-			if (!params.x && !params.y && !params.width && !params.height) {
+			if (!params.x || !params.y || !params.width || !params.height) {
 				params.width = elem.width;
 				params.height = elem.height;
 				params.x = params.width / 2;
