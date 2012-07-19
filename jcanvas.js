@@ -978,6 +978,8 @@ $.fn.pattern = function(args) {
 				onload();
 			} else {
 				img.onload = onload;
+				// Image onload fix for IE9
+				img.src = img.src;
 			}
 			
 		}
@@ -1242,6 +1244,7 @@ $.fn.removeLayerGroup = function(name) {
 			// Remove layer if group name matches
 			if (layers[l].group === name) {
 				layers.splice(l, 1);
+				// Ensure no layers are skipped when one is removed
 				l -= 1;
 			}
 		}
