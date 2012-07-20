@@ -1299,12 +1299,12 @@ $.fn.drawLayers = function(resetFire) {
 				if (resetFire) {
 					layer._fired = FALSE;
 				}
-				
+				console.log(layer);
 				drawLayer($elem, ctx, layer);
 			}
 			
 			layer = data.intersects[data.intersects.length-1] || {};
-			eventCache = data.events;
+			eventCache = data.event;
 			eventType = eventCache.type;
 			callback = layer[eventType];
 			drag = data.drag;
@@ -1321,11 +1321,11 @@ $.fn.drawLayers = function(resetFire) {
 						}
 					}
 				}
-				
+																
 				// Detect any other mouse event
 				if (callback && !layer._fired) {
-					callback.call($elems[e], layer);
 					layer._fired = TRUE;
+					callback.call($elems[e], layer);
 				}
 				
 				// Use the mousedown event to start drag
@@ -1383,7 +1383,7 @@ $.fn.drawLayers = function(resetFire) {
 // Add a jCanvas layer (internal)
 function addLayer(elem, layer, method) {
 	var $elem, layers, event, layerFn,
-		isFn = (typeof layer === 'function').
+		isFn = (typeof layer === 'function'),
 		data, dragHelperEvents, i;
 	layer = layer || {};
 	
@@ -1405,34 +1405,38 @@ function addLayer(elem, layer, method) {
 		
 		// Ensure layers are unique across canvases by cloning them
 		layer = merge(new Prefs(), layer);
-		layer.method = $.fn[layer.method] || method;
 		
-		// Retrieve canvas data
-		data = getCanvasData(elem);	
+		// Detect events for non-function layers
+		if (!isFn) {
 			
-		// Check for any associated jCanvas events and enable them
-		for (event in jCanvas.events) {
-			if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
-				// Ensure canvas event is not bound more than once
-				if (!data[event]) {
-					jCanvas.events[event]($elem);
+			// Associate a jCanvas method with layer
+			layer.method = $.fn[layer.method] || method;
+			// Retrieve canvas data
+			data = getCanvasData(elem);	
+				
+			// Check for any associated jCanvas events and enable them
+			for (event in jCanvas.events) {
+				if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
+					// Ensure canvas event is not bound more than once
+					if (!data[event]) {
+						jCanvas.events[event]($elem);
+					}
+					layer._event = TRUE;
 				}
+			}
+	
+			// Enable drag-and-drop support	
+			if (layer.draggable) {
 				layer._event = TRUE;
-			}
-		}
-
-		// Enable drag-and-drop support	
-		if (layer.draggable) {
-			layer._event = TRUE;
-			dragHelperEvents = ['mousedown', 'mousemove', 'mouseup'];
-			for (i=0; i<dragHelperEvents.length; i+=1) {
-				event = dragHelperEvents[i];
-				if (!data[event]) {
-					jCanvas.events[event]($elem);
+				dragHelperEvents = ['mousedown', 'mousemove', 'mouseup'];
+				for (i=0; i<dragHelperEvents.length; i+=1) {
+					event = dragHelperEvents[i];
+					if (!data[event]) {
+						jCanvas.events[event]($elem);
+					}
 				}
 			}
 		}
-
 		// Set layer properties and add to stack
 		layer.layer = TRUE;
 		layer._layer = TRUE;
@@ -1656,7 +1660,11 @@ $.fn.animateLayer = function() {
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(layer);
 				hideProps(args[1]);
-								
+				
+				var eventCache = getCanvasData($elems[e]).event;
+				eventCache.x = UNDEFINED;
+				eventCache.y = UNDEFINED;
+						
 				// Animate layer
 				$(layer).animate(args[1], {
 					duration: args[2],
@@ -1730,9 +1738,7 @@ function getCanvasData(elem) {
 			layers: [],
 			intersects: [],
 			drag: {},
-			events: {
-				x: [], y: []
-			}
+			event: {}
 		});
 	}
 	return data;
@@ -1746,15 +1752,13 @@ function createEvent(eventName) {
 		var helperEventName = (eventName === 'mouseover' || eventName === 'mouseout') ? 'mousemove' : eventName,
 			data = getCanvasData($elem[0]),
 			// Retrieve canvas's event cache
-			eventCache = data.events;
+			eventCache = data.event;
 		
 		// Bind one canvas event which handles all layer events of that type
 		$elem.bind(helperEventName + '.jCanvas', function(event) {
 			// Cache current mouse position and redraw layers
-			eventCache.x[1] = eventCache.x[0];
-			eventCache.y[1] = eventCache.y[0];
-			eventCache.x[0] = event.offsetX;
-			eventCache.y[0] = event.offsetY;
+			eventCache.x = event.offsetX;
+			eventCache.y = event.offsetY;
 			eventCache.type = helperEventName;
 			$elem.drawLayers(TRUE);
 			event.preventDefault();
@@ -1775,14 +1779,12 @@ createEvent('mouseout');
 // Check if event fires when a drawing is drawn
 function checkEvents(elem, ctx, layer) {
 	var data = getCanvasData(elem),
-		eventCache = data.events,
-		callback = layer[eventCache.type],
-		over = ctx.isPointInPath(eventCache.x[0], eventCache.y[0]),
-		out = ctx.isPointInPath(eventCache.x[1], eventCache.y[1]);
-	
+		eventCache = data.event,
+		over = ctx.isPointInPath(eventCache.x, eventCache.y);
+		
 	// Allow callback functions to retrieve the mouse coordinates
-	layer.mouseX = eventCache.x[0];
-	layer.mouseY = eventCache.y[0];
+	layer.mouseX = eventCache.x;
+	layer.mouseY = eventCache.y;
 	
 	// Detect
 	if (!over && layer._hovered && !layer._fired) {
@@ -1797,7 +1799,6 @@ function checkEvents(elem, ctx, layer) {
 	if (over) {
 		data.intersects.push(layer);
 	}
-	layer.over = over;
 }
 
 /* Event API: END */
