@@ -95,7 +95,11 @@ defaults = {
 	visible: TRUE,
 	width: NULL,
 	x: 0,
-	y: 0
+	y: 0,
+	x1: 0,
+	y1: 0,
+	x2: 0,
+	y2: 0
 };
 
 // Copy defaults to preferences object
@@ -1301,7 +1305,8 @@ $.fn.drawLine = function self(args) {
 						
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-										
+			transformShape(e, ctx, params, 0);
+								
 			// Draw each point
 			l = 1;
 			ctx.beginPath();
@@ -1339,6 +1344,7 @@ $.fn.drawQuad = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			transformShape(e, ctx, params, 0);
 			
 			// Draw each point
 			l = 2;
@@ -1383,6 +1389,7 @@ $.fn.drawBezier = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			transformShape(e, ctx, params, 0);
 			
 			// Draw each point
 			l = 2;
@@ -1674,7 +1681,7 @@ $.fn.drawImage = function self(args) {
 };
 
 // Create canvas pattern
-$.fn.pattern = function(args) {
+$.fn.createPattern = $.fn.pattern = function(args) {
 	var $elems = this,
 		ctx, params = merge(new Prefs(), args),
 		img, pattern, imgCtx;
@@ -1731,7 +1738,7 @@ $.fn.pattern = function(args) {
 };
 
 // Create a canvas gradient object
-$.fn.gradient = function(args) {
+$.fn.createGradient = $.fn.gradient = function(args) {
 	var $elems = this, ctx,
 		params = merge(new Prefs(), args),
 		gradient,
@@ -1741,7 +1748,7 @@ $.fn.gradient = function(args) {
 	
 	ctx = getContext($elems[0]);
 	if (ctx) {
-			
+		
 		if (params.r1 !== NULL || params.r2 !== NULL) {
 			// Create radial gradient if chosen
 			gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
@@ -1767,7 +1774,7 @@ $.fn.gradient = function(args) {
 		if (stops[nstops-1] === NULL) {
 			stops[nstops-1] = 1;
 		}
-
+		
 		// Loop through color stops to fill in the blanks
 		for (i=0; i<nstops; i+=1) {
 			// A progression, in this case, is defined as all of the color stops between and including two known color stops
