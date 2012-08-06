@@ -543,8 +543,8 @@ $.fn.drawLayers = function(resetFire) {
 					// Being layer to front when drag starts (if chosen)
 					if (layer.bringToFront) {
 						layers.splice(layer.index, 1);
-						layer.index = layer.length - 1;
-						layers.push(layer);
+						// The push() method returns the new length of the array
+						layer.index = layers.push(layer);
 					}
 					
 					// Keep track of drag state
@@ -837,7 +837,7 @@ $.fn.animateLayer = function() {
 			showProps(layer);
 			$elem.drawLayers();
 			if (args[4]) {
-				args[4].call($elem[0]);
+				args[4].call($elem[0], layer);
 			}
 		};
 	}
@@ -848,7 +848,7 @@ $.fn.animateLayer = function() {
 			$elem.drawLayers();
 			// Run callback function for every frame (if specified)
 			if (args[5]) {
-				args[5].call($elem[0], now, fx);
+				args[5].call($elem[0], now, fx, layer);
 			}
 		};
 	}
@@ -1012,7 +1012,7 @@ $.fn.draw = function self(args) {
 	args = args || {};
 	
 	// Convert single function argument to object
-	if (typeof args.fn === 'function') {
+	if (typeof args === 'function') {
 		args = {
 			fn: args
 		};
