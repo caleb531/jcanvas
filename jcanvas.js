@@ -95,11 +95,7 @@ defaults = {
 	visible: TRUE,
 	width: NULL,
 	x: 0,
-	y: 0,
-	x1: 0,
-	y1: 0,
-	x2: 0,
-	y2: 0
+	y: 0
 };
 
 // Copy defaults to preferences object
@@ -1766,6 +1762,11 @@ $.fn.createGradient = $.fn.gradient = function(args) {
 	ctx = getContext($elems[0]);
 	if (ctx) {
 		
+		// Gradient coordinates must be defined
+		params.x1 = params.x1 || 0;
+		params.y1 = params.y1 || 0;
+		params.x2 = params.x2 || 0;
+		params.y2 = params.y2 || 0;
 		if (params.r1 !== NULL || params.r2 !== NULL) {
 			// Create radial gradient if chosen
 			gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
