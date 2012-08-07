@@ -1516,6 +1516,18 @@ $.fn.drawText = function self(args) {
 	return $elems;
 };
 
+// Measure text width/height using the given parameters
+$.fn.measureText = function(args) {
+	var $elems = this, $elem, e, ctx,
+		params = merge(new Prefs(), args);
+	
+	ctx = getContext($elems[0]);
+	if (ctx) {
+		measureText($elems[0], ctx, params);
+	}
+	return params;
+};
+
 /* Text API: END */
 
 /* Image API: START */
