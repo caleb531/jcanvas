@@ -269,15 +269,25 @@ jCanvas.extend = function(plugin) {
 
 // Keep track of the last two mouse coordinates for each canvas
 function getCanvasData(elem) {
-	var data = $.data(elem, 'jCanvas');
-	// Create event cache if it does not already exist
-	if (!data) {
-		data = $.data(elem, 'jCanvas', {
-			layers: [],
-			intersects: [],
-			drag: {},
-			event: {}
-		});
+	var data;
+	if (cache.elem === elem) {
+		// Retrieve canvas data from cache
+		data = cache.data;
+	} else {
+		// Get canvas data
+		data = $.data(elem, 'jCanvas');
+		// Create canvas data object if it does not already exist
+		if (!data) {
+			data = $.data(elem, 'jCanvas', {
+				layers: [],
+				intersects: [],
+				drag: {},
+				event: {}
+			});
+		}
+		// Cache canvas data
+		cache.elem = elem;
+		cache.data = data;
 	}
 	return data;
 }
@@ -471,7 +481,7 @@ $.fn.drawLayers = function(resetFire) {
 		layers, layer, l,
 		data, eventCache, eventType,
 		drag, callback;
-		
+	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		ctx = getContext($elems[e]);
@@ -480,8 +490,15 @@ $.fn.drawLayers = function(resetFire) {
 			// Clear canvas first
 			ctx.clearRect(0, 0, $elems[e].width, $elems[e].height);
 			
-			// Get canvas layers
-			data = getCanvasData($elems[e]);
+			// Retrieve canvas data from cache
+			if (cache.elem === $elems[e]) {
+				data = cache.data;
+			} else {
+				// Get canvas data and cache it
+				data = getCanvasData($elems[e]);
+				cache.elem = $elems[e];
+				cache.data = data;
+			}
 			layers = data.layers;
 			
 			// Draw layers from first to last (bottom to top)
@@ -707,7 +724,7 @@ function toRgb(color) {
 	if (color.match(/^#?[a-z0-9]+$/i)) {
 		// Deal with complete transparency
 		if (color === 'transparent') {
-			color = 'rgba(255, 255, 255, 0)';
+			color = 'rgba(0,0,0,0)';
 		}
 		elem = document.head;
 		originalColor = elem.style.color;
@@ -877,6 +894,21 @@ $.fn.animateLayer = function() {
 		}
 	}
 	return $elems;
+};
+
+// Animate all layers in a layer group
+$.fn.animateLayerGroup = function(name) {
+	var $elems = this, $elem, e,
+		args = ([]).slice.call(arguments, 0),
+		group, g;
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		group = $elem.getLayerGroup(name);
+		// Animate all layers in the group
+		for (g=0; g<group.length; g+=1) {
+			$elem.animateLayer.apply($elem, [group[g]].concat(args.slice(1)));
+		}
+	}
 };
 
 // Delay layer animation by a given number of milliseconds
@@ -1508,14 +1540,23 @@ $.fn.drawText = function self(args) {
 			
 		}
 	}
-	cache = params;
+	cache.text = params.text;
+	cache.font = params.font;
 	return $elems;
 };
 
 // Measure text width/height using the given parameters
 $.fn.measureText = function(args) {
-	var $elems = this, $elem, e, ctx,
+	var $elems = this, ctx,
+		params;
+	
+	if (args && typeof args !== 'object') {
+		// If layer identifier is given, get that layer
+		params = $elems.getLayer(args);
+	} else {
+		// If object is given, just use that
 		params = merge(new Prefs(), args);
+	}
 	
 	ctx = getContext($elems[0]);
 	if (ctx) {
