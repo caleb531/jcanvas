@@ -348,13 +348,14 @@ $.fn.setLayer = function(id, props) {
 // Remove a jCanvas layer
 $.fn.removeLayer = function(id) {
 	var $elems = this, e,
-		layers, index, l;
+		layers, index, l,
+		idType = typeof id;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers();
 		
 		// Search layers array if layer name is given
-		if (typeof id === 'string') {
+		if (idType === 'string') {
 		
 			// Search layers array to find a matching name
 			for (l=0; l<layers.length; l+=1) {
@@ -365,9 +366,12 @@ $.fn.removeLayer = function(id) {
 				}
 			}
 			
-		} else {
+		} else if (idType === 'number') {
 			// Use layer index if given
-			index = id || '';
+			index = id;
+		} else {
+			// Do not remove any layer if no identifier is given
+			index = '';
 		}
 		// Ensure layer index exists in the layers array
 		if (layers[index]) {
