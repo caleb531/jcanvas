@@ -927,14 +927,46 @@ $.fn.delayLayer = function(name, duration) {
 	return $elems;
 };
 
+// Delay animation all layers in a layer group
+$.fn.delayLayerGroup = function(name, duration) {
+	var $elems = this, $elem, e,
+		group, g;
+	duration = duration || 0;
+	
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		group = $elem.getLayerGroup(name);
+		// Delay all layers in the group
+		for (g=0; g<group.length; g+=1) {
+			$elem.delayLayer.call($elem, name, duration);
+		}
+	}
+};
+
 // Stop layer animation
 $.fn.stopLayer = function(name, clearQueue) {
 	var $elems = this, e, layer;
+	
 	for (e=0; e<$elems.length; e+=1) {
 		layer = $($elems[e]).getLayer(name);
 		$(layer).stop(clearQueue);
 	}
 	return $elems;
+};
+
+// Stop animation of all layers in a layer group
+$.fn.stopLayerGroup = function(name, clearQueue) {
+	var $elems = this, $elem, e,
+		group, g;
+	
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		group = $elem.getLayerGroup(name);
+		// Delay all layers in the group
+		for (g=0; g<group.length; g+=1) {
+			$elem.stopLayer.call($elem, name, clearQueue);
+		}
+	}
 };
 
 // Enable animation for color properties
@@ -1514,9 +1546,7 @@ $.fn.drawText = function self(args) {
 			ctx.font = params.font;
 			
 			// Retrieve text layer's width and height
-			if (params.layer) {
-				measureText($elems[e], ctx, params);
-			}
+			measureText($elems[e], ctx, params);
 			transformShape(e, ctx, params, params.width, params.height);
 			
 			ctx.fillText(params.text, params.x, params.y);
@@ -1546,6 +1576,8 @@ $.fn.drawText = function self(args) {
 	}
 	cache.text = params.text;
 	cache.font = params.font;
+	cache.width = params.width;
+	cache.height = params.height;
 	return $elems;
 };
 
