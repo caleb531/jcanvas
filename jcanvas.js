@@ -715,6 +715,7 @@ function hideProps(obj) {
 	var i;
 	for (i=0; i<cssProps.length; i+=1) {
 		obj['_' + cssProps[i]] = obj[cssProps[i]];
+		delete obj[cssProps[i]];
 	}
 }
 
@@ -962,7 +963,7 @@ $.fn.stopLayerGroup = function(name, clearQueue) {
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		group = $elem.getLayerGroup(name);
-		// Delay all layers in the group
+		// Stop all layers in the group
 		for (g=0; g<group.length; g+=1) {
 			$elem.stopLayer.call($elem, name, clearQueue);
 		}
@@ -1248,10 +1249,11 @@ $.fn.drawRect = function self(args) {
 $.fn.drawArc = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
+	args = args || {};
 
 	// Change default end angle to radians if necessary
 	if (!params.inDegrees && params.end === 360) {
-		params.end = PI * 2;
+		args.end = params.end = PI * 2;
 	}
 	
 	for (e=0; e<$elems.length; e+=1) {
