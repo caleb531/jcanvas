@@ -16,7 +16,8 @@ var defaults,
 	cos = Math.cos,
 	originalEventFix = $.event.fix,
 	cache = {},
-	cssProps;
+	cssProps,
+	cssPropsObj;
 	
 // Preferences constructor (which inherits from the defaults object)
 function Prefs() {}
@@ -703,6 +704,7 @@ cssProps = [
 	'height',
 	'opacity'
 ];
+cssPropsObj = {};
 
 // Hide/show jCanvas/CSS properties so they can be animated using jCanvas
 function showProps(obj) {
@@ -715,7 +717,7 @@ function hideProps(obj) {
 	var i;
 	for (i=0; i<cssProps.length; i+=1) {
 		obj['_' + cssProps[i]] = obj[cssProps[i]];
-		delete obj[cssProps[i]];
+		cssPropsObj[cssProps[i]] = 1;
 	}
 }
 
@@ -790,7 +792,7 @@ function animateColor(fx) {
 		fx.now = 'rgb(' + fx.now.join(',') + ')';
 	}
 	// Animate colors for both canvas layers and DOM elements
-	if (fx.elem.style) {
+	if (fx.elem.nodeName) {
 		fx.elem.style[fx.prop] = fx.now;
 	} else {
 		fx.elem[fx.prop] = fx.now;
@@ -885,6 +887,9 @@ $.fn.animateLayer = function() {
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(layer);
 				hideProps(args[1]);
+				
+				// Fix for jQuery's vendor prefixing support, which affects how width/height/opacity are animated
+				layer.style = cssPropsObj;
 				
 				// Animate layer
 				$(layer).animate(args[1], {
