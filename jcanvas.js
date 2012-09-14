@@ -51,7 +51,8 @@ defaults = {
 	compositing: 'source-over',
 	cornerRadius: 0,
 	cropFromCenter: TRUE,
-	draggable: false,
+	draggable: FALSE,
+	disableDrag: FALSE,
 	each: NULL,
 	end: 360,
 	fillStyle: 'transparent',
@@ -246,7 +247,7 @@ jCanvas.extend = function(plugin) {
 	
 	// Create plugin
 	if (plugin.name) {
-		$.fn[plugin.name] = function(args) {
+		$.fn[plugin.name] = function self(args) {
 			var $elems = this, elem, e, ctx,
 				params = merge(new Prefs(), args);
 			
@@ -254,6 +255,7 @@ jCanvas.extend = function(plugin) {
 				elem = $elems[e];
 				ctx = getContext(elem);
 				if (ctx) {
+					addLayer($elems[e], args, self);
 					setGlobalProps(ctx, params);
 					plugin.fn.call(elem, ctx, params);
 				}
@@ -556,7 +558,7 @@ $.fn.drawLayers = function(resetFire) {
 				}
 				
 				// Use the mousedown event to start drag
-				if (layer.draggable && eventType === 'mousedown') {
+				if (layer.draggable && !layer.disableDrag && eventType === 'mousedown') {
 					
 					// Being layer to front when drag starts (if chosen)
 					if (layer.bringToFront) {
