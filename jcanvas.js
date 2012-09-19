@@ -1,4 +1,4 @@
-/** @license jCanvas v6.0
+/** @license jCanvas v6.1b
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -36,7 +36,7 @@ function jCanvas(args) {
 // Make jCanvas function "chainable"
 $.fn.jCanvas = jCanvas;
 
-jCanvas.version = '6.0';
+jCanvas.version = '6.1b';
 jCanvas.events = {};
 
 // Set jCanvas default property values
@@ -62,6 +62,7 @@ defaults = {
 	inDegrees: TRUE,
 	load: NULL,
 	mask: FALSE,
+	maxWidth: NULL,
 	method: NULL,
 	miterLimit: 10,
 	opacity: 1,
@@ -1506,20 +1507,30 @@ $.fn.drawBezier = function self(args) {
 /* Text API: START */
 
 // Measure canvas text
-function measureText(elem, ctx, params) {
+function measureText(elem, ctx, params, lines) {
 	var originalSize, sizeMatch,
-		sizeExp = /\b(\d*\.?\d*)\w\w\b/gi;
+		sizeExp = /\b(\d*\.?\d*)\w\w\b/gi,
+		l, curWidth;
 	
 	// Used cached width/height if possible
-	if (cache.text === params.text && cache.font === params.font) {
+	if (cache.text === params.text && cache.font === params.font && cache.maxWidth === params.maxWidth) {
 		
 		params.width = cache.width;
 		params.height = cache.height;
 		
 	} else {
 		
-		// Calculate text width
-		params.width = ctx.measureText(params.text).width;
+		// Calculate width of first line (for comparison)
+		params.width = ctx.measureText(lines[0]).width;
+		
+		// Get width of longest line
+		for (l=1; l<lines.length; l+=1) {
+			curWidth = ctx.measureText(lines[l]).width;
+			// Ensure text's width is the width of its longest line
+			if (curWidth > params.width) {
+				params.width = curWidth;
+			}
+		}
 		
 		// Save original font size
 		originalSize = elem.style.fontSize;
@@ -1529,17 +1540,47 @@ function measureText(elem, ctx, params) {
 			elem.style.fontSize = params.font.match(sizeExp)[0];
 		}
 		// Save text width and height in parameters object
-		params.height = parseFloat($.css(elem, 'fontSize'));
+		params.height = parseFloat($.css(elem, 'fontSize')) * lines.length;
 		// Reset font size to original size
 		elem.style.fontSize = originalSize;
 		
 	}
 }
 
+// Wrap text within width
+function wrapText(ctx, params) {
+	var text = params.text,
+		maxWidth = params.maxWidth,
+		words = params.text.split(' '),
+		lines = [],
+		line = "";
+	if (ctx.measureText(text).width < maxWidth) {
+		// If text is short enough initially, do nothing else
+		lines = [text];
+	} else {
+		// Keep adding words to line until line is too long
+		while (words.length > 0) {
+			if (ctx.measureText(line + words[0]).width < maxWidth) {
+				line += words.shift() + " ";
+			} else {
+				// When line is too long, break and start a new line
+				lines.push(line);
+				line = "";
+			}
+			if (words.length === 0) {
+				// If we reach the last word, break and add new line
+				lines.push(line);
+			}
+		}
+	}
+	return lines;
+}
+
 // Draw text
 $.fn.drawText = function self(args) {
 	var $elems = this, $elem, e, ctx,
-		params = merge(new Prefs(), args);
+		params = merge(new Prefs(), args),
+		lines, l, y;
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
@@ -1553,17 +1594,39 @@ $.fn.drawText = function self(args) {
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
 			ctx.font = params.font;
+						
+			if (!e && params.maxWidth !== NULL) {
+				// Wrap text using an internal function
+				lines = wrapText(ctx, params);
+				// Remove unnecessary white space
+				lines = lines
+					.join('\n')
+					.replace(/( (\n))|( $)/gi, '$2')
+					.split('\n');
+			} else if (!e) {
+				// Convert string of text to list of lines
+				lines = params.text.split('\n');
+			}
 			
-			// Retrieve text layer's width and height
-			measureText($elems[e], ctx, params);
+			// Calculate text's width and height
+			measureText($elems[e], ctx, params, lines);
 			transformShape(e, ctx, params, params.width, params.height);
 			
-			ctx.fillText(params.text, params.x, params.y);
-			// Prevent extra shadow created by stroke (but only when fill is present)
-			if (params.fillStyle !== 'transparent') {
-				ctx.shadowColor = 'transparent';
+			// Ensure multi-line text is still centered
+			if (!e) {
+				params.y -= ((lines.length - 1) * params.height / lines.length) / 2;
 			}
-			ctx.strokeText(params.text, params.x, params.y);
+			
+			// Draw each line of text separately
+			for (l=0; l<lines.length; l+=1) {
+				y = params.y + (l * params.height / lines.length);
+				ctx.fillText(lines[l], params.x, y);
+				// Prevent extra shadow created by stroke (but only when fill is present)
+				if (params.fillStyle !== 'transparent') {
+					ctx.shadowColor = 'transparent';
+				}
+				ctx.strokeText(lines[l], params.x, y);
+			}
 			
 			// Detect jCanvas events
 			if (params._event) {
@@ -1586,6 +1649,7 @@ $.fn.drawText = function self(args) {
 	cache.text = params.text;
 	cache.font = params.font;
 	cache.width = params.width;
+	cache.maxWidth = params.maxWidth;
 	cache.height = params.height;
 	return $elems;
 };
@@ -1595,7 +1659,7 @@ $.fn.measureText = function(args) {
 	var $elems = this, ctx,
 		params;
 	
-	if (args && typeof args !== 'object') {
+	if (args !== UNDEFINED && typeof args !== 'object') {
 		// If layer identifier is given, get that layer
 		params = $elems.getLayer(args);
 	} else {
@@ -1604,8 +1668,9 @@ $.fn.measureText = function(args) {
 	}
 	
 	ctx = getContext($elems[0]);
-	if (ctx) {
-		measureText($elems[0], ctx, params);
+	if (ctx && params.text !== UNDEFINED) {
+		// Calculate width and height of text
+		measureText($elems[0], ctx, params, params.text.split('\n'));
 	}
 	return params;
 };
