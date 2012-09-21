@@ -722,6 +722,7 @@ function hideProps(obj) {
 	var i;
 	for (i=0; i<cssProps.length; i+=1) {
 		obj['_' + cssProps[i]] = obj[cssProps[i]];
+		delete obj[cssProps[i]];
 		cssPropsObj[cssProps[i]] = 1;
 	}
 }
