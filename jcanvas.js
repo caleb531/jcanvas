@@ -60,6 +60,7 @@ defaults = {
 	fromCenter: TRUE,
 	height: NULL,
 	inDegrees: TRUE,
+	lineHeight: 1,
 	load: NULL,
 	mask: FALSE,
 	maxWidth: NULL,
@@ -705,7 +706,8 @@ $.fn.addLayer = function(args) {
 cssProps = [
 	'width',
 	'height',
-	'opacity'
+	'opacity',
+	'lineHeight'
 ];
 cssPropsObj = {};
 
@@ -1513,7 +1515,7 @@ function measureText(elem, ctx, params, lines) {
 		l, curWidth;
 	
 	// Used cached width/height if possible
-	if (cache.text === params.text && cache.font === params.font && cache.maxWidth === params.maxWidth) {
+	if (cache.text === params.text && cache.font === params.font && cache.maxWidth === params.maxWidth && cache.lineHeight === params.lineHeight) {
 		
 		params.width = cache.width;
 		params.height = cache.height;
@@ -1540,7 +1542,7 @@ function measureText(elem, ctx, params, lines) {
 			elem.style.fontSize = params.font.match(sizeExp)[0];
 		}
 		// Save text width and height in parameters object
-		params.height = parseFloat($.css(elem, 'fontSize')) * lines.length;
+		params.height = parseFloat($.css(elem, 'fontSize')) * lines.length * params.lineHeight;
 		// Reset font size to original size
 		elem.style.fontSize = originalSize;
 		
@@ -1580,7 +1582,7 @@ function wrapText(ctx, params) {
 $.fn.drawText = function self(args) {
 	var $elems = this, $elem, e, ctx,
 		params = merge(new Prefs(), args),
-		lines, l, y;
+		lines, l, x, y;
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
@@ -1612,22 +1614,28 @@ $.fn.drawText = function self(args) {
 			measureText($elems[e], ctx, params, lines);
 			transformShape(e, ctx, params, params.width, params.height);
 			
-			// Ensure multi-line text is still centered
+			// Adjust text position to accomodate different horizontal alignments
 			if (!e) {
-				params.y -= ((lines.length - 1) * params.height / lines.length) / 2;
+				x = params.x;
+				if (params.align === 'left') {
+					x -= params.width / 2;
+				} else if (params.align === 'right') {
+					x += params.width / 2;
+				}
 			}
 			
 			// Draw each line of text separately
 			for (l=0; l<lines.length; l+=1) {
-				y = params.y + (l * params.height / lines.length);
-				ctx.fillText(lines[l], params.x, y);
+				// Add line offset to center point, but subtract some to center everything
+				y = params.y + (l * params.height / lines.length) - ((lines.length - 1) * params.height / lines.length) / 2;
+				ctx.fillText(lines[l], x, y);
 				// Prevent extra shadow created by stroke (but only when fill is present)
 				if (params.fillStyle !== 'transparent') {
 					ctx.shadowColor = 'transparent';
 				}
 				ctx.strokeText(lines[l], params.x, y);
 			}
-			
+						
 			// Detect jCanvas events
 			if (params._event) {
 				ctx.beginPath();
@@ -1651,6 +1659,7 @@ $.fn.drawText = function self(args) {
 	cache.width = params.width;
 	cache.maxWidth = params.maxWidth;
 	cache.height = params.height;
+	cache.lineHeight = params.lineHeight;
 	return $elems;
 };
 
