@@ -718,12 +718,14 @@ function showProps(obj) {
 		obj[cssProps[i]] = obj['_' + cssProps[i]];
 	}
 }
-function hideProps(obj) {
+function hideProps(obj, reset) {
 	var i;
 	for (i=0; i<cssProps.length; i+=1) {
 		obj['_' + cssProps[i]] = obj[cssProps[i]];
-		delete obj[cssProps[i]];
 		cssPropsObj[cssProps[i]] = 1;
+		if (reset) {
+			delete obj[cssProps[i]];
+		}
 	}
 }
 
@@ -734,7 +736,7 @@ function toRgb(color) {
 		multiple = 1;
 	
 	// Deal with hexadecimal colors and color names
-	if (color.match(/^#?[a-z0-9]+$/i)) {
+	if (color.match(/^#?\w+$/i)) {
 		// Deal with complete transparency
 		if (color === 'transparent') {
 			color = 'rgba(0,0,0,0)';
@@ -747,7 +749,7 @@ function toRgb(color) {
 	}
 	// Parse RGB string
 	if (color.match(/^rgb/i)) {
-		rgb = color.match(/[0-9]+/gi);
+		rgb = color.match(/\d+/gi);
 		// Deal with RGB percentages
 		if (color.match(/%/gi)) {
 			multiple = 2.55;
@@ -892,7 +894,7 @@ $.fn.animateLayer = function() {
 				
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(layer);
-				hideProps(args[1]);
+				hideProps(args[1], TRUE);
 				
 				// Fix for jQuery's vendor prefixing support, which affects how width/height/opacity are animated
 				layer.style = cssPropsObj;
@@ -1510,7 +1512,7 @@ $.fn.drawBezier = function self(args) {
 /* Text API: START */
 
 // Measure canvas text
-function measureText(elem, ctx, params, lines) {
+function measureText(elem, e, ctx, params, lines) {
 	var originalSize, sizeMatch,
 		sizeExp = /\b(\d*\.?\d*)\w\w\b/gi,
 		l, curWidth;
@@ -1521,7 +1523,8 @@ function measureText(elem, ctx, params, lines) {
 		params.width = cache.width;
 		params.height = cache.height;
 		
-	} else {
+	} else if (!e) {
+		// Calculate text dimensions only once
 		
 		// Calculate width of first line (for comparison)
 		params.width = ctx.measureText(lines[0]).width;
@@ -1546,7 +1549,6 @@ function measureText(elem, ctx, params, lines) {
 		params.height = parseFloat($.css(elem, 'fontSize')) * lines.length * params.lineHeight;
 		// Reset font size to original size
 		elem.style.fontSize = originalSize;
-		
 	}
 }
 
@@ -1557,6 +1559,7 @@ function wrapText(ctx, params) {
 		words = params.text.split(' '),
 		lines = [],
 		line = "";
+	
 	if (ctx.measureText(text).width < maxWidth) {
 		// If text is short enough initially, do nothing else
 		lines = [text];
@@ -1566,7 +1569,7 @@ function wrapText(ctx, params) {
 			if (ctx.measureText(line + words[0]).width < maxWidth) {
 				line += words.shift() + " ";
 			} else {
-				// When line is too long, break and start a new line
+				// If line is too long, break and start a new line
 				lines.push(line);
 				line = "";
 			}
@@ -1612,7 +1615,7 @@ $.fn.drawText = function self(args) {
 			}
 			
 			// Calculate text's width and height
-			measureText($elems[e], ctx, params, lines);
+			measureText($elems[e], e, ctx, params, lines);
 			transformShape(e, ctx, params, params.width, params.height);
 			
 			// Adjust text position to accomodate different horizontal alignments
@@ -1655,12 +1658,7 @@ $.fn.drawText = function self(args) {
 			
 		}
 	}
-	cache.text = params.text;
-	cache.font = params.font;
-	cache.width = params.width;
-	cache.maxWidth = params.maxWidth;
-	cache.height = params.height;
-	cache.lineHeight = params.lineHeight;
+	cache = params;
 	return $elems;
 };
 
@@ -1680,7 +1678,7 @@ $.fn.measureText = function(args) {
 	ctx = getContext($elems[0]);
 	if (ctx && params.text !== UNDEFINED) {
 		// Calculate width and height of text
-		measureText($elems[0], ctx, params, params.text.split('\n'));
+		measureText($elems[0], e, ctx, params, params.text.split('\n'));
 	}
 	return params;
 };
@@ -1709,7 +1707,7 @@ $.fn.drawImage = function self(args) {
 	// Draw image function
 	function draw(e, ctx) {
 	
-		// Only calculate image width/height once
+		// Calculate image dimensions only once
 		if (!e) {
 		
 			scaleFactor = img.width / img.height;
