@@ -1611,7 +1611,7 @@ $.fn.drawText = function self(args) {
 					.split('\n');
 			} else if (!e) {
 				// Convert string of text to list of lines
-				lines = params.text.split('\n');
+				lines = String(params.text).split('\n');
 			}
 			
 			// Calculate text's width and height
@@ -1630,6 +1630,7 @@ $.fn.drawText = function self(args) {
 			
 			// Draw each line of text separately
 			for (l=0; l<lines.length; l+=1) {
+				ctx.shadowColor = params.shadowColor;
 				// Add line offset to center point, but subtract some to center everything
 				y = params.y + (l * params.height / lines.length) - ((lines.length - 1) * params.height / lines.length) / 2;
 				ctx.fillText(lines[l], x, y);
