@@ -881,6 +881,9 @@ $.fn.animateLayer = function() {
 		};
 	}
 
+	// Do not modify original object
+	args[1] = merge({}, args[1]);
+
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		ctx = getContext($elems[e]);
@@ -891,7 +894,7 @@ $.fn.animateLayer = function() {
 			
 			// Ignore layers that are functions
 			if (layer && layer.method !== $.fn.draw) {
-				
+								
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(layer);
 				hideProps(args[1], TRUE);
