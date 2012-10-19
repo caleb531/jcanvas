@@ -310,25 +310,25 @@ $.fn.getLayers = function() {
 
 // Get a single jCanvas layer
 $.fn.getLayer = function(id) {
-	var layers = this.getLayers(), layer, l;
+	var layers = this.getLayers(),
+		idType = $.type(id),
+		layer, l;
 	
 	if (id && id.layer) {
 		// Return the layer if passed into the method
 		layer = id;
+	} else if (idType === 'number') {
+		layer = layers[id];
 	} else {
-		// Find layer with the given name
-		if (typeof id === 'string') {
-			for (l=0; l<layers.length; l+=1) {
-				// Check if layer matches name
-				if (layers[l].name === id) {
-					id = l;
-					break;
-				}
+		for (l=0; l<layers.length; l+=1) {
+			// Ensure layer's index property is accurate
+			layers[l].index = l;
+			// Check if layer matches name
+			if (layers[l].name === id || (idType === 'regexp' && layers[l].name.match(id))) {
+				layer = layers[l];
+				break;
 			}
 		}
-		// Layer index defaults to 0
-		id = id || 0;
-		layer = layers[id];
 	}
 	return layer;
 };
@@ -338,7 +338,7 @@ $.fn.setLayer = function(id, props) {
 	var $elems = this, e,
 		layer;
 	// Layer identifier defaults to first layer
-	if (!id) {
+	if (id === UNDEFINED) {
 		props = id;
 		id = 0;
 	}
@@ -352,37 +352,20 @@ $.fn.setLayer = function(id, props) {
 
 // Remove a jCanvas layer
 $.fn.removeLayer = function(id) {
-	var $elems = this, e,
-		layers, index, l,
-		idType = typeof id;
-	
+	var $elems = this, $elem, e,
+		layers, layer, index, l;
+		
 	for (e=0; e<$elems.length; e+=1) {
-		layers = $($elems[e]).getLayers();
+		$elem = $($elems[e]);
+		// Retrieve layers array and desired layer
+		layers = $elem.getLayers();
+		layer = $elem.getLayer(id);
 		
-		// Search layers array if layer name is given
-		if (idType === 'string') {
+		// Remove layer if found
+		if (layer) {
+			layers.splice(layer.index, 1);
+		}
 		
-			// Search layers array to find a matching name
-			for (l=0; l<layers.length; l+=1) {
-				// Check to see if name matches
-				if (layers[l].name === id) {
-					index = l;
-					break;
-				}
-			}
-			
-		} else if (idType === 'number') {
-			// Use layer index if given
-			index = id;
-		} else {
-			// Do not remove any layer if no identifier is given
-			index = '';
-		}
-		// Ensure layer index exists in the layers array
-		if (layers[index]) {
-			// If so, remove that layer
-			layers.splice(index, 1);
-		}
 	}
 	return $elems;
 };
@@ -398,31 +381,34 @@ $.fn.removeLayers = function() {
 };
 
 // Get all layers in the given group
-$.fn.getLayerGroup = function(name) {
+$.fn.getLayerGroup = function(id) {
 	var layers = this.getLayers(),
+		idType = $.type(id),
 		group = [], l;
 	
-	if (name !== UNDEFINED) {
-		for (l=0; l<layers.length; l+=1) {
-			// Include layer if associated with group
-			if (layers[l].group === name) {
-				group.push(layers[l]);
-			}
+	for (l=0; l<layers.length; l+=1) {
+		// Ensure layer's index property is accurate
+		layers[l].index = l;
+		// Include layer if associated with group
+		if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
+			group.push(layers[l]);
 		}
 	}
 	return group;
 };
 
 // Set properties of all layers in the given group
-$.fn.setLayerGroup = function(name, props) {
+$.fn.setLayerGroup = function(id, props) {
 	var $elems = this, e,
+		idType = $.type(id),
 		layers, l;
+	
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers();
 		
 		// Find layers in group
 		for (l=0; l<layers.length; l+=1) {
-			if (layers[l].group === name) {
+			if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
 				// Merge properties with layer
 				merge(layers[l], props);
 			}
@@ -433,19 +419,20 @@ $.fn.setLayerGroup = function(name, props) {
 };
 
 // Remove all layers within a specific group
-$.fn.removeLayerGroup = function(name) {
+$.fn.removeLayerGroup = function(id) {
 	var $elems = this, e,
+		idType = $.type(id),
 		layers, l;
 	
-	if (name !== UNDEFINED) {
+	if (id !== UNDEFINED) {
 		for (e=0; e<$elems.length; e+=1) {
 			// Get layers array for each element
 			layers = $($elems[e]).getLayers();
 			
 			// Loop through layers array for each element
 			for (l=0; l<layers.length; l+=1) {
-				// Remove layer if group name matches
-				if (layers[l].group === name) {
+				// Remove layer if group id matches
+				if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
 					layers.splice(l, 1);
 					// Ensure no layers are skipped when one is removed
 					l -= 1;
@@ -918,13 +905,13 @@ $.fn.animateLayer = function() {
 };
 
 // Animate all layers in a layer group
-$.fn.animateLayerGroup = function(name) {
+$.fn.animateLayerGroup = function(id) {
 	var $elems = this, $elem, e,
 		args = ([]).slice.call(arguments, 0),
 		group, g;
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		group = $elem.getLayerGroup(name);
+		group = $elem.getLayerGroup(id);
 		// Animate all layers in the group
 		for (g=0; g<group.length; g+=1) {
 			$elem.animateLayer.apply($elem, [group[g]].concat(args.slice(1)));
@@ -933,55 +920,55 @@ $.fn.animateLayerGroup = function(name) {
 };
 
 // Delay layer animation by a given number of milliseconds
-$.fn.delayLayer = function(name, duration) {
+$.fn.delayLayer = function(id, duration) {
 	var $elems = this, e, layer;
 	duration = duration || 0;
 	
 	for (e=0; e<$elems.length; e+=1) {
-		layer = $($elems[e]).getLayer(name);
+		layer = $($elems[e]).getLayer(id);
 		$(layer).delay(duration);
 	}
 	return $elems;
 };
 
 // Delay animation all layers in a layer group
-$.fn.delayLayerGroup = function(name, duration) {
+$.fn.delayLayerGroup = function(id, duration) {
 	var $elems = this, $elem, e,
 		group, g;
 	duration = duration || 0;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		group = $elem.getLayerGroup(name);
+		group = $elem.getLayerGroup(id);
 		// Delay all layers in the group
 		for (g=0; g<group.length; g+=1) {
-			$elem.delayLayer.call($elem, name, duration);
+			$elem.delayLayer.call($elem, id, duration);
 		}
 	}
 };
 
 // Stop layer animation
-$.fn.stopLayer = function(name, clearQueue) {
+$.fn.stopLayer = function(id, clearQueue) {
 	var $elems = this, e, layer;
 	
 	for (e=0; e<$elems.length; e+=1) {
-		layer = $($elems[e]).getLayer(name);
+		layer = $($elems[e]).getLayer(id);
 		$(layer).stop(clearQueue);
 	}
 	return $elems;
 };
 
 // Stop animation of all layers in a layer group
-$.fn.stopLayerGroup = function(name, clearQueue) {
+$.fn.stopLayerGroup = function(id, clearQueue) {
 	var $elems = this, $elem, e,
 		group, g;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
-		group = $elem.getLayerGroup(name);
+		group = $elem.getLayerGroup(id);
 		// Stop all layers in the group
 		for (g=0; g<group.length; g+=1) {
-			$elem.stopLayer.call($elem, name, clearQueue);
+			$elem.stopLayer.call($elem, id, clearQueue);
 		}
 	}
 };
