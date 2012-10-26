@@ -238,6 +238,14 @@ function transformShape(e, ctx, params, width, height) {
 	}
 }
 
+// Add support for draggable paths
+function makePathDraggable(params) {
+	if (params.draggable) {
+		params.translateX += params.x;
+		params.translateY += params.y;
+	}
+}
+
 /* Plugin API: START */
 
 // Extend jCanvas with custom methods
@@ -517,6 +525,12 @@ $.fn.drawLayers = function(resetFire) {
 					if (layer.mouseout) {
 						layer.mouseout.call($elems[e], layer);
 					}
+					// Revert cursor when mousing off layer
+					if (layer.cursor && layer._cursor) {
+						$elem.css({
+							cursor: layer._cursor
+						});
+					}
 				}
 				
 			}
@@ -527,15 +541,23 @@ $.fn.drawLayers = function(resetFire) {
 			callback = layer[eventType];
 			drag = data.drag;
 
+			// Check events for intersecting layer
 			if (layer._event) {
 														
 				// Detect mouseover events
-				if (layer.mouseover || layer.mouseout) {
+				if (layer.mouseover || layer.mouseout || layer.cursor) {
 					if (!layer._hovered && !layer._fired) {
 						layer._fired = TRUE;
 						layer._hovered = TRUE;
 						if (layer.mouseover) {
 							layer.mouseover.call($elems[e], layer);
+						}
+						// Set cursor when mousing over layer
+						if (layer.cursor) {
+							layer._cursor = $elem.css('cursor');
+							$elem.css({
+								cursor: layer.cursor
+							});
 						}
 					}
 				}
@@ -642,8 +664,8 @@ function addLayer(elem, layer, method) {
 				}
 			}
 	
-			// Enable drag-and-drop support
-			if (layer.draggable) {
+			// Enable drag-and-drop support and cursor support
+			if (layer.draggable || layer.cursor) {
 				layer._event = TRUE;
 				dragHelperEvents = ['mousedown', 'mousemove', 'mouseup'];
 				for (i=0; i<dragHelperEvents.length; i+=1) {
@@ -1376,11 +1398,12 @@ $.fn.drawLine = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-						
+			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			makePathDraggable(params);						
 			transformShape(e, ctx, params, 0);
-								
+				
 			// Draw each point
 			l = 1;
 			ctx.beginPath();
@@ -1418,6 +1441,7 @@ $.fn.drawQuad = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			makePathDraggable(params);
 			transformShape(e, ctx, params, 0);
 			
 			// Draw each point
@@ -1463,6 +1487,7 @@ $.fn.drawBezier = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
+			makePathDraggable(params);
 			transformShape(e, ctx, params, 0);
 			
 			// Draw each point
