@@ -252,7 +252,7 @@ function makePathDraggable(params) {
 jCanvas.extend = function(plugin) {
 	
 	// Merge properties with defaults
-	defaults = merge(defaults, plugin.props);
+	jCanvas.defaults = defaults = merge(defaults, plugin.props);
 	jCanvas();
 	
 	// Create plugin
@@ -265,7 +265,7 @@ jCanvas.extend = function(plugin) {
 				elem = $elems[e];
 				ctx = getContext(elem);
 				if (ctx) {
-					addLayer($elems[e], args, self);
+					addLayer(elem, args, self);
 					setGlobalProps(ctx, params);
 					plugin.fn.call(elem, ctx, params);
 				}
@@ -907,7 +907,7 @@ $.fn.animateLayer = function() {
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(layer);
 				hideProps(args[1], TRUE);
-				
+								
 				// Fix for jQuery's vendor prefixing support, which affects how width/height/opacity are animated
 				layer.style = cssPropsObj;
 				
@@ -1581,7 +1581,9 @@ function wrapText(ctx, params) {
 	} else {
 		// Keep adding words to line until line is too long
 		while (words.length > 0) {
-			if (ctx.measureText(line + words[0]).width < maxWidth) {
+			// Keep adding words to the current line until it is too long
+			// Also ensure that words longer than maxWidth will not crash the script
+			if (ctx.measureText(words[0]).width > maxWidth || ctx.measureText(line + words[0]).width < maxWidth) {
 				line += words.shift() + " ";
 			} else {
 				// If line is too long, break and start a new line
@@ -1694,7 +1696,7 @@ $.fn.measureText = function(args) {
 	ctx = getContext($elems[0]);
 	if (ctx && params.text !== UNDEFINED) {
 		// Calculate width and height of text
-		measureText($elems[0], e, ctx, params, params.text.split('\n'));
+		measureText($elems[0], 0, ctx, params, params.text.split('\n'));
 	}
 	return params;
 };
