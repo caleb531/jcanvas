@@ -33,7 +33,7 @@ function jCanvas(args) {
 	}
 	return this;
 }
-// Make jCanvas function "chainable"
+// Allow jCanvas function to be "chained" to other methods
 $.fn.jCanvas = jCanvas;
 
 jCanvas.version = '6.1b';
@@ -41,7 +41,6 @@ jCanvas.events = {};
 
 // Set jCanvas default property values
 defaults = {
-	angle: 0, // deprecated
 	align: 'center',
 	autosave: TRUE,
 	baseline: 'middle',
@@ -167,14 +166,6 @@ function closePath(ctx, params) {
 
 // Translate canvas (internal)
 function translateCanvas(ctx, params) {
-
-	/* Compatibility check: START */
-	// Maintain compatibility for 'x' and 'y' properties
-	if ((!params.translateX && !params.translateY) && (params.x || params.y)) {
-		params.translateX = params.x;
-		params.translateY = params.y;
-	}
-	/* Compatibility check: END */
 	
 	// Translate both the x- and y-axis using the 'translate' property
 	if (params.translate) {
@@ -186,11 +177,11 @@ function translateCanvas(ctx, params) {
 
 // Scale canvas (internal)
 function scaleCanvas(ctx, params) {
+	
 	// Scale both the x- and y- axis using the 'scale' property
 	if (params.scale !== 1) {
 		params.scaleX = params.scaleY = params.scale;
 	}
-	
 	// Scale shape
 	ctx.translate(params.x, params.y);
 	ctx.scale(params.scaleX, params.scaleY);
@@ -200,11 +191,6 @@ function scaleCanvas(ctx, params) {
 // Rotate canvas (internal)
 function rotateCanvas(ctx, params) {
 	params._toRad = (params.inDegrees ? PI/180 : 1);
-	
-	/* Compatibility fix: START */
-	// Maintain compatibility for 'angle' property
-	params.rotate = params.rotate || params.angle;
-	/* Compatibility fix: END */
 
 	ctx.translate(params.x, params.y);
 	ctx.rotate(params.rotate*params._toRad);
@@ -246,7 +232,7 @@ function makePathDraggable(params) {
 	}
 }
 
-/* Plugin API: START */
+/* Plugin API */
 
 // Extend jCanvas with custom methods
 jCanvas.extend = function(plugin) {
@@ -276,9 +262,7 @@ jCanvas.extend = function(plugin) {
 	return $.fn[plugin.name];
 };
 
-/* Plugin API: END */
-
-/* Layer API: START */
+/* Layer API */
 
 // Keep track of the last two mouse coordinates for each canvas
 function getCanvasData(elem) {
@@ -323,11 +307,13 @@ $.fn.getLayer = function(id) {
 		layer, l;
 	
 	if (id && id.layer) {
-		// Return the layer if passed into the method
+		// Return the layer itself if given
 		layer = id;
 	} else if (idType === 'number') {
+		// Get layer based on given index
 		layer = layers[id];
 	} else {
+		// Get layer based on given layer name
 		for (l=0; l<layers.length; l+=1) {
 			// Ensure layer's index property is accurate
 			layers[l].index = l;
@@ -345,11 +331,6 @@ $.fn.getLayer = function(id) {
 $.fn.setLayer = function(id, props) {
 	var $elems = this, e,
 		layer;
-	// Layer identifier defaults to first layer
-	if (id === UNDEFINED) {
-		props = id;
-		id = 0;
-	}
 	for (e=0; e<$elems.length; e+=1) {
 		layer = $($elems[e]).getLayer(id);
 		// Merge properties with layer
@@ -361,7 +342,7 @@ $.fn.setLayer = function(id, props) {
 // Remove a jCanvas layer
 $.fn.removeLayer = function(id) {
 	var $elems = this, $elem, e,
-		layers, layer, index, l;
+		layers, layer;
 		
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
@@ -380,7 +361,8 @@ $.fn.removeLayer = function(id) {
 
 // Remove all jCanvas layers
 $.fn.removeLayers = function() {
-	var $elems = this, layers, e;
+	var $elems = this, e,
+		layers;
 	for (e=0; e<$elems.length; e+=1) {
 		layers = $($elems[e]).getLayers();
 		layers.length = 0;
@@ -394,12 +376,18 @@ $.fn.getLayerGroup = function(id) {
 		idType = $.type(id),
 		group = [], l;
 	
-	for (l=0; l<layers.length; l+=1) {
-		// Ensure layer's index property is accurate
-		layers[l].index = l;
-		// Include layer if associated with group
-		if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
-			group.push(layers[l]);
+	if (idType === 'array') {
+		// Return layer group if given
+		return id;
+	} else {
+		// Otherwise, find layers in group based on group name
+		for (l=0; l<layers.length; l+=1) {
+			// Ensure layer's index property is accurate
+			layers[l].index = l;
+			// Include layer is associated with group
+			if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
+				group.push(layers[l]);
+			}
 		}
 	}
 	return group;
@@ -407,44 +395,36 @@ $.fn.getLayerGroup = function(id) {
 
 // Set properties of all layers in the given group
 $.fn.setLayerGroup = function(id, props) {
-	var $elems = this, e,
-		idType = $.type(id),
-		layers, l;
+	var $elems = this, $elem, e,
+		group, l;
 	
 	for (e=0; e<$elems.length; e+=1) {
-		layers = $($elems[e]).getLayers();
-		
-		// Find layers in group
-		for (l=0; l<layers.length; l+=1) {
-			if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
-				// Merge properties with layer
-				merge(layers[l], props);
-			}
+		// Get layer group
+		$elem = $($elems[e]);
+		group = $elem.getLayerGroup(id);
+		for (l=0; l<group.length; l+=1) {
+			// Merge given properties with layer
+			merge(group[l], props);
 		}
-		
 	}
 	return $elems;
 };
 
 // Remove all layers within a specific group
 $.fn.removeLayerGroup = function(id) {
-	var $elems = this, e,
+	var $elems = this, $elem, e,
 		idType = $.type(id),
-		layers, l;
+		layers, group, l;
 	
 	if (id !== UNDEFINED) {
 		for (e=0; e<$elems.length; e+=1) {
+			$elem = $($elems[e]);
+			layers = $elem.getLayers();
 			// Get layers array for each element
-			layers = $($elems[e]).getLayers();
-			
-			// Loop through layers array for each element
-			for (l=0; l<layers.length; l+=1) {
-				// Remove layer if group id matches
-				if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
-					layers.splice(l, 1);
-					// Ensure no layers are skipped when one is removed
-					l -= 1;
-				}
+			group = $elem.getLayerGroup(id);
+			// Remove all layers in the group from the layers array
+			for (l=0; l<group.length; l+=1) {
+				layers.splice(group[l].index, 1);
 			}
 		}
 	}
@@ -709,7 +689,7 @@ $.fn.addLayer = function(args) {
 	return $elems;
 };
 
-/* Animation API: START */
+/* Animation API */
 
 // Define properties used in both CSS and jCanvas
 cssProps = [
@@ -720,7 +700,7 @@ cssProps = [
 ];
 cssPropsObj = {};
 
-// Hide/show jCanvas/CSS properties so they can be animated using jCanvas
+// Hide/show jCanvas/CSS properties so they can be animated using jQuery
 function showProps(obj) {
 	var i;
 	for (i=0; i<cssProps.length; i+=1) {
@@ -930,13 +910,13 @@ $.fn.animateLayer = function() {
 $.fn.animateLayerGroup = function(id) {
 	var $elems = this, $elem, e,
 		args = ([]).slice.call(arguments, 0),
-		group, g;
+		group, l;
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		group = $elem.getLayerGroup(id);
 		// Animate all layers in the group
-		for (g=0; g<group.length; g+=1) {
-			$elem.animateLayer.apply($elem, [group[g]].concat(args.slice(1)));
+		for (l=0; l<group.length; l+=1) {
+			$elem.animateLayer.apply($elem, [group[l]].concat(args.slice(1)));
 		}
 	}
 };
@@ -956,15 +936,15 @@ $.fn.delayLayer = function(id, duration) {
 // Delay animation all layers in a layer group
 $.fn.delayLayerGroup = function(id, duration) {
 	var $elems = this, $elem, e,
-		group, g;
+		group, l;
 	duration = duration || 0;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		group = $elem.getLayerGroup(id);
 		// Delay all layers in the group
-		for (g=0; g<group.length; g+=1) {
-			$elem.delayLayer.call($elem, id, duration);
+		for (l=0; l<group.length; l+=1) {
+			$elem.delayLayer.call($elem, group[l], duration);
 		}
 	}
 };
@@ -983,14 +963,14 @@ $.fn.stopLayer = function(id, clearQueue) {
 // Stop animation of all layers in a layer group
 $.fn.stopLayerGroup = function(id, clearQueue) {
 	var $elems = this, $elem, e,
-		group, g;
+		group, l;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
 		group = $elem.getLayerGroup(id);
 		// Stop all layers in the group
-		for (g=0; g<group.length; g+=1) {
-			$elem.stopLayer.call($elem, id, clearQueue);
+		for (l=0; l<group.length; l+=1) {
+			$elem.stopLayer.call($elem, group[l], clearQueue);
 		}
 	}
 };
@@ -1018,9 +998,7 @@ supportColorProps([
 	'shadowColor'
 ]);
 
-/* Animation API: END */
-
-/* Event API: START */
+/* Event API */
 
 // Bind event to jCanvas layer using standard jQuery events
 function createEvent(eventName) {
@@ -1092,9 +1070,7 @@ $.event.fix = function(event) {
 	return event;
 };
 
-/* Event API: END */
-
-/* Layer API: END */
+/* Drawing API */
 
 // Draw on canvas using a function
 $.fn.draw = function self(args) {
@@ -1215,7 +1191,7 @@ $.fn.rotateCanvas = function(args) {
 	return $elems;
 };
 
-/* Shape API: START */
+/* Shape API */
 
 // Draw rectangle
 $.fn.drawRect = function self(args) {
@@ -1270,7 +1246,7 @@ $.fn.drawRect = function self(args) {
 	return $elems;
 };
 
-// Draw arc
+// Draw arc or circle
 $.fn.drawArc = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args);
@@ -1401,7 +1377,7 @@ $.fn.drawLine = function self(args) {
 			
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			makePathDraggable(params);						
+			makePathDraggable(params);
 			transformShape(e, ctx, params, 0);
 				
 			// Draw each point
@@ -1522,9 +1498,7 @@ $.fn.drawBezier = function self(args) {
 	return $elems;
 };
 
-/* Shape API: END */
-
-/* Text API: START */
+/* Text API */
 
 // Measure canvas text
 function measureText(elem, e, ctx, params, lines) {
@@ -1567,13 +1541,13 @@ function measureText(elem, e, ctx, params, lines) {
 	}
 }
 
-// Wrap text within width
+// Wrap a strong of text within a defined width
 function wrapText(ctx, params) {
 	var text = params.text,
 		maxWidth = params.maxWidth,
 		words = params.text.split(' '),
 		lines = [],
-		line = "";
+		line = '';
 	
 	if (ctx.measureText(text).width < maxWidth) {
 		// If text is short enough initially, do nothing else
@@ -1584,11 +1558,11 @@ function wrapText(ctx, params) {
 			// Keep adding words to the current line until it is too long
 			// Also ensure that words longer than maxWidth will not crash the script
 			if (ctx.measureText(words[0]).width > maxWidth || ctx.measureText(line + words[0]).width < maxWidth) {
-				line += words.shift() + " ";
+				line += words.shift() + ' ';
 			} else {
 				// If line is too long, break and start a new line
 				lines.push(line);
-				line = "";
+				line = '';
 			}
 			if (words.length === 0) {
 				// If we reach the last word, break and add new line
@@ -1701,9 +1675,7 @@ $.fn.measureText = function(args) {
 	return params;
 };
 
-/* Text API: END */
-
-/* Image API: START */
+/* Image API */
 
 // Draw image
 $.fn.drawImage = function self(args) {
@@ -2073,8 +2045,6 @@ $.fn.getCanvasImage = function(type, quality) {
 		elem.toDataURL('image/' + type, quality) :
 		NULL);
 };
-
-/* Image API: END */
 
 // Enable canvas feature detection with $.support
 $.support.canvas = (document.createElement('canvas').getContext !== UNDEFINED);
