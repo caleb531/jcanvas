@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>animate jCanvas</title>
+</head>
+<body>
+	<div id="content">
+		<canvas width="1000" height="1000"></canvas>
+	</div>
+		<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+		<script src="../../jcanvas.min.js"></script>
+	<script>
+		$(document).ready(function() {
+			$("canvas").addLayer({
+				method: "drawLine", name: "vertical-beam", strokeStyle: "#f00",
+				strokeWidth: 4, x1: 40, y1: 40, x2: 40, y2: 900, opacity: 0
+			})
+			.animateLayer("vertical-beam", {x1: 500, x2: 500, opacity: 1}, 500);
+		});
+	</script>
+</body>
+</html>
