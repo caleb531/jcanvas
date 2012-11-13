@@ -3,7 +3,7 @@ function AtomicCanvas() {
 	// modeled after QUnit's "Keeping Tests Atomic" cookbook guidance:
 	//    http://qunitjs.com/cookbook/#keeping_tests_atomic
 	this.fixture = $("#qunit-fixture")
-	this.fixture.append("<canvas id='atomic-canvas' width='50' height='50'></canvas>")
+	this.fixture.append("<canvas id='atomic-canvas' width='250' height='250'></canvas>")
 	this.canvas = document.getElementById('atomic-canvas')
 }
 
@@ -12,15 +12,34 @@ module("jCanvas Layers");
 
 test("addLayer, method drawRect", function () {
 	var ac = new AtomicCanvas()
-	addLayerDrawRect("#atomic-canvas")
+	addLayer_DrawRect("#atomic-canvas")
 	QUnit.pixelEqual(ac.canvas, 2, 2, 0, 255, 0, 255)
 })
 
-asyncTest("animateLayer, layer method drawRect", function () {
+asyncTest("animateLayer, method drawRect", 1, function () {
 	var ac = new AtomicCanvas()
-	animateLayerDrawRect("#atomic-canvas", 0,
+	animateLayer_DrawRect("#atomic-canvas", 0,
 		function () {
 			QUnit.pixelEqual(ac.canvas, 45, 5, 0, 255, 0, 255)
-			start()
+			QUnit.start()
+		})
+})
+
+asyncTest("animateLayer, methods drawRect, drawArc", 2, function() {
+	var ac = new AtomicCanvas()
+	animateLayer_TwoAddLayers("#atomic-canvas", 0,
+		function () {
+			QUnit.pixelEqual(ac.canvas,  70, 100, 0, 255, 0, 255)  // rectangle
+			QUnit.pixelEqual(ac.canvas, 125, 100, 0, 255, 0, 255)  // circle
+			QUnit.start()
+		})
+})
+
+asyncTest("animateLayerGroup, methods drawRect, drawArc", 1, function() {
+	var ac = new AtomicCanvas()
+	animateLayerGroup_CircleRect("#atomic-canvas", 0,
+		function () {
+			QUnit.pixelEqual(ac.canvas,  70, 100, 0, 255, 0, 255)  // rectangle
+			QUnit.start()
 		})
 })

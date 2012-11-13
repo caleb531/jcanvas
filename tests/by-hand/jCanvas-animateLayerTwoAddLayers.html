@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>jCanvas trivial addLayer, drawRect demo</title>
+	<title>jCanvas animateLayerGroup demo</title>
 	<style>
 		html, body { width:100%; height:100%; margin: 0px;}
 		canvas { display:block; }
@@ -16,9 +16,7 @@
 	<script src="../../jcanvas.min.js"></script>
 	<script src="../unit/test-jcanvas-units.js"></script>
 	<script>
-		$(document).ready(function() {
-			addLayer_DrawRect("#bg")
-		});
+		animateLayer_TwoAddLayers("#bg", 500)
 	</script>
 </body>
 </html>
