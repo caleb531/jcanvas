@@ -12,15 +12,15 @@ module("jCanvas Layers");
 
 test("addLayer, method drawRect", function () {
 	var ac = new AtomicCanvas()
-	addLayer_DrawRect("#atomic-canvas")
-	QUnit.pixelEqual(ac.canvas, 2, 2, 0, 255, 0, 255)
+	addLayer_drawRect("#atomic-canvas")
+	QUnit.pixelEqual(ac.canvas, 55, 55, 0, 255, 0, 255)
 })
 
 asyncTest("animateLayer, method drawRect", 1, function () {
 	var ac = new AtomicCanvas()
-	animateLayer_DrawRect("#atomic-canvas", 0,
+	animateLayer_drawRect("#atomic-canvas", 0,
 		function () {
-			QUnit.pixelEqual(ac.canvas, 45, 5, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 115, 65, 0, 255, 0, 255)
 			QUnit.start()
 		})
 })
