@@ -26,7 +26,7 @@ function animateLayer_TwoAddLayers(canvasName, msecShift, afterFn) {
 		})
 }
 
-function animateLayerGroup_CircleRect(canvasName, msecShift, afterFn) {
+function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 	$(canvasName).addLayer({method: "drawRect", fillStyle: "#f00",
 		group: "circleAndRect", opacity: 0.1, x: 70, y: 10,
 		width: 40.0, height: 20})

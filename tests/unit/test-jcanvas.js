@@ -37,7 +37,7 @@ asyncTest("animateLayer, methods drawRect, drawArc", 2, function() {
 
 asyncTest("animateLayerGroup, methods drawRect, drawArc", 1, function() {
 	var ac = new AtomicCanvas()
-	animateLayerGroup_CircleRect("#atomic-canvas", 0,
+	animateLayerGroup_circleRect("#atomic-canvas", 0,
 		function () {
 			QUnit.pixelEqual(ac.canvas,  70, 100, 0, 255, 0, 255)  // rectangle
 			QUnit.start()
