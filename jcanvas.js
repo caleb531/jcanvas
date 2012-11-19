@@ -1,4 +1,4 @@
-/** @license jCanvas v6.1b
+/** @license jCanvas
 Copyright 2012, Caleb Evans
 Licensed under the MIT license
 */
@@ -36,7 +36,6 @@ function jCanvas(args) {
 // Allow jCanvas function to be "chained" to other methods
 $.fn.jCanvas = jCanvas;
 
-jCanvas.version = '6.1b';
 jCanvas.events = {};
 
 // Set jCanvas default property values
@@ -520,10 +519,10 @@ $.fn.drawLayers = function(resetFire) {
 			eventType = eventCache.type;
 			callback = layer[eventType];
 			drag = data.drag;
-
+			
 			// Check events for intersecting layer
 			if (layer._event) {
-														
+													
 				// Detect mouseover events
 				if (layer.mouseover || layer.mouseout || layer.cursor) {
 					if (!layer._hovered && !layer._fired) {
@@ -550,7 +549,7 @@ $.fn.drawLayers = function(resetFire) {
 				
 				// Use the mousedown event to start drag
 				if (layer.draggable && !layer.disableDrag && eventType === 'mousedown') {
-					
+								
 					// Being layer to front when drag starts (if chosen)
 					if (layer.bringToFront) {
 						layers.splice(layer.index, 1);
@@ -630,7 +629,7 @@ function addLayer(elem, layer, method) {
 		
 		// Detect events for non-function layers
 		if (!isFn) {
-			
+						
 			// Associate a jCanvas method with layer
 			layer.method = $.fn[layer.method] || method;
 			// Retrieve canvas data
@@ -2051,6 +2050,7 @@ $.support.canvas = (document.createElement('canvas').getContext !== UNDEFINED);
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
+jCanvas.checkEvents = checkEvents;
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Image, Math, parseFloat, true, false, null));
