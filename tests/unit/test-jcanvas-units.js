@@ -36,3 +36,8 @@ function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 	.animateLayerGroup("circleAndRect", {y: 100, opacity: 1,
 		fillStyle: "#0f0"},	msecShift, afterFn)
 }
+
+function drawArc_simplest(canvasName) {
+	$(canvasName).drawArc({fillStyle: "#0f0", x: 50, y: 50, radius: 50})
+}
+
