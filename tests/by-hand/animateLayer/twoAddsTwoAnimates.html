@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>jCanvas trivial addLayer, drawRect demo</title>
+	<title>jCanvas two addLayers, two animateLayers</title>
 	<style>
 		html, body { width:100%; height:100%; margin: 0px;}
 		canvas { display:block; }
@@ -13,13 +13,10 @@
 		<canvas id="bg"></canvas>
 	</div>
 	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
-	<script src="../../jcanvas.min.js"></script>
+	<script src="../../../jcanvas.min.js"></script>
+	<script src="../../unit/test-jcanvas-units.js"></script>
 	<script>
-		$(document).ready(function() {
-			$("#bg").addLayer({method: "drawRect", fillStyle: "green",
-				x: 10, y: 10, width: 40, height: 95, fromCenter: false})
-			.drawLayers();
-		});
+		animateLayer_twoAddsTwoAnimates("#bg", 500)
 	</script>
 </body>
 </html>
