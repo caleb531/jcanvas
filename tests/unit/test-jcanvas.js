@@ -25,9 +25,9 @@ asyncTest("animateLayer, method drawRect", 1, function () {
 		})
 })
 
-asyncTest("animateLayer, methods drawRect, drawArc", 2, function() {
+asyncTest("animateLayer, two addLayers & two animateLayers", 2, function() {
 	var ac = new AtomicCanvas()
-	animateLayer_TwoAddLayers("#atomic-canvas", 0,
+	animateLayer_twoAddsTwoAnimates("#atomic-canvas", 0,
 		function () {
 			QUnit.pixelEqual(ac.canvas,  70, 100, 0, 255, 0, 255)  // rectangle
 			QUnit.pixelEqual(ac.canvas, 125, 100, 0, 255, 0, 255)  // circle

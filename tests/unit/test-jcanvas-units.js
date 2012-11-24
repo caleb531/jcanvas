@@ -14,7 +14,7 @@ function animateLayer_drawRect(canvasName, msecShift, afterFn) {
 		strokeStyle: "#0f0", fillStyle: "#0f0"}, msecShift, afterFn)
 }
 
-function animateLayer_TwoAddLayers(canvasName, msecShift, afterFn) {
+function animateLayer_twoAddsTwoAnimates(canvasName, msecShift, afterFn) {
 	$(canvasName).addLayer({method: "drawRect", fillStyle: "#f00", name: "theR",
 		opacity: 0.1, x: 70, y: 10, width: 40.0, height: 20})
 	.addLayer({method: "drawArc", fillStyle: "#f00", name: "theC",
