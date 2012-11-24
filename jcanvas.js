@@ -419,11 +419,15 @@ $.fn.removeLayerGroup = function(id) {
 		for (e=0; e<$elems.length; e+=1) {
 			$elem = $($elems[e]);
 			layers = $elem.getLayers();
-			// Get layers array for each element
-			group = $elem.getLayerGroup(id);
-			// Remove all layers in the group from the layers array
-			for (l=0; l<group.length; l+=1) {
-				layers.splice(group[l].index, 1);
+			// Get layer based on given layer name
+			for (l=0; l<layers.length; l+=1) {
+				// Ensure layer's index property is accurate
+				layers[l].index = l;
+				// Check if layer matches name
+				if (layers[l].group === id || (idType === 'regexp' && layers[l].group.match(id))) {
+					layers.splice(l, 1);
+					l -= 1;
+				}
 			}
 		}
 	}
