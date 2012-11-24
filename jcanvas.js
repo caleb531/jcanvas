@@ -56,6 +56,7 @@ defaults = {
 	fillStyle: 'transparent',
 	font: '12pt sans-serif',
 	fromCenter: TRUE,
+	fromPoint: NULL,
 	height: NULL,
 	inDegrees: TRUE,
 	lineHeight: 1,
@@ -203,11 +204,23 @@ function transformShape(e, ctx, params, width, height) {
 	params._toRad = (params.inDegrees ? PI/180 : 1);
 	ctx.save();
 	
-	// Always draw from center unless otherwise specified
+	// Draw from center unless otherwise specified
+	// Valid points are tl, tc, tr, cl, cc, cr, bl, bc, br
 	height = height || width;
-	if (!e && !params.fromCenter) {
-		params.x += width/2;
-		params.y += height/2;
+	if (!e) {
+		if (!params.fromPoint) params.fromPoint = params.fromCenter ? 'cc' : 'tl'; // backwards compatible
+		if (params.fromPoint[0] == 't') {
+			params.y += height/2;
+		}
+		else if (params.fromPoint[0] == 'b') {
+			params.y -= height/2;
+		}
+		if (params.fromPoint[1] == 'l') {
+			params.x += width/2;
+		}
+		else if (params.fromPoint[1] == 'r') {
+			params.x -= width/2;
+		}
 	}
 	
 	// Rotate shape if chosen
