@@ -8,12 +8,29 @@ function AtomicCanvas() {
 }
 
 /* jCanvas tests */
+module("jCanvas Arcs");
+
+test("drawArc, simplest possible", function() {
+	var ac = new AtomicCanvas()
+	drawArc_simplest("#atomic-canvas")
+	QUnit.pixelEqual(ac.canvas, 50, 50, 0, 255, 0, 255)
+})
+
 module("jCanvas Layers");
 
 test("addLayer, method drawRect", function () {
 	var ac = new AtomicCanvas()
 	addLayer_drawRect("#atomic-canvas")
 	QUnit.pixelEqual(ac.canvas, 55, 55, 0, 255, 0, 255)
+})
+
+asyncTest("animateLayer, method drawLine", 1, function () {
+	var ac = new AtomicCanvas()
+	animateLayer_drawLine("#atomic-canvas", 0,
+		function () {
+			QUnit.pixelEqual(ac.canvas, 200, 50, 0, 255, 0, 255)
+			QUnit.start()
+		})
 })
 
 asyncTest("animateLayer, method drawRect", 1, function () {
@@ -23,12 +40,6 @@ asyncTest("animateLayer, method drawRect", 1, function () {
 			QUnit.pixelEqual(ac.canvas, 115, 65, 0, 255, 0, 255)
 			QUnit.start()
 		})
-})
-
-test("drawArc, simplest possible", function() {
-	var ac = new AtomicCanvas()
-	drawArc_simplest("#atomic-canvas")
-	QUnit.pixelEqual(ac.canvas, 50, 50, 0, 255, 0, 255)
 })
 
 // DKS (2012-11-24) - not working on Chromium, but simpler tests are also failing

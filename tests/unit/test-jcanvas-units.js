@@ -5,6 +5,15 @@ function addLayer_drawRect(canvasName) {
 	.drawLayers()
 }
 
+function animateLayer_drawLine(canvasName, msecShift, afterFn) {
+	$(canvasName).addLayer({method: "drawLine", name: "vertical-beam",
+		strokeStyle: "#f00", strokeWidth: 8, x1: 20, y1: 10, x2: 20, y2: 200,
+		opacity: 0
+	})
+	.animateLayer("vertical-beam", {x1: 200, x2: 200, opacity: 1,
+		strokeStyle: "#0f0"}, msecShift, afterFn)
+}
+
 function animateLayer_drawRect(canvasName, msecShift, afterFn) {
 	$(canvasName).addLayer({method: "drawRect", name: "shift-box",
 		strokeStyle: "#f00", fillStyle: "#f00", x: 50, y: 50,
@@ -34,7 +43,7 @@ function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 		opacity: 0.1, x: 125, y: 50, radius: 20})
 	.drawLayers()
 	.animateLayerGroup("circleAndRect", {y: 100, opacity: 1,
-		fillStyle: "#0f0"},	msecShift, afterFn)
+		fillStyle: "#0f0"}, msecShift, afterFn)
 }
 
 function drawArc_simplest(canvasName) {
