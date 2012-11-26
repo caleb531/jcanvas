@@ -47,6 +47,9 @@ function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 }
 
 function drawArc_simplest(canvasName) {
+	// draw a red circle behind to illustrate the issue #44 problem on Linux
+	$(canvasName).drawArc({fillStyle: "#f00", x: 50, y: 50, radius: 50,
+		start: -Math.PI, end: 3*Math.PI/2, inDegrees: false})
 	$(canvasName).drawArc({fillStyle: "#0f0", x: 50, y: 50, radius: 50})
 }
 
