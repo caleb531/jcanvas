@@ -26,7 +26,9 @@ function animateLayer_drawRect(canvasName, msecShift, afterFn) {
 function animateLayer_twoAddsTwoAnimates(canvasName, msecShift, afterFn) {
 	$(canvasName).addLayer({method: "drawRect", fillStyle: "#f00", name: "theR",
 		opacity: 0.1, x: 70, y: 10, width: 40.0, height: 20})
+	// use a workaround for the Linux Chromium bug underlying issue #44
 	.addLayer({method: "drawArc", fillStyle: "#f00", name: "theC",
+		start: -Math.PI+0.01, end: 3*Math.PI/2+0.01, inDegrees: false,
 		opacity: 0.1, x: 125, y: 50, radius: 20})
 	.animateLayer("theR", {y: 100, opacity: 1, fillStyle: "#0f0"}, msecShift,
 		function () {
@@ -39,7 +41,9 @@ function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 	$(canvasName).addLayer({method: "drawRect", fillStyle: "#f00",
 		group: "circleAndRect", opacity: 0.1, x: 70, y: 10,
 		width: 40.0, height: 20})
+	// use a workaround for the Linux Chromium bug underlying issue #44
 	.addLayer({method: "drawArc", fillStyle: "#f00", group: "circleAndRect",
+		start: -Math.PI+0.01, end: 3*Math.PI/2+0.01, inDegrees: false,
 		opacity: 0.1, x: 125, y: 50, radius: 20})
 	.drawLayers()
 	.animateLayerGroup("circleAndRect", {y: 100, opacity: 1,
@@ -47,7 +51,8 @@ function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 }
 
 function drawArc_simplest(canvasName) {
-	// draw a red circle behind to illustrate the issue #44 problem on Linux
+	// draw a red circle behind to illustrate the GitHub issue #44 on Linux:
+	//    https://github.com/caleb531/jcanvas/issues/44
 	// 2012-11-26 - confirmed that this is a Linux-only, Chromium-only problem,
 	//    submitted Chromium issue, closed the jCanvas issue #44:
 	//    http://code.google.com/p/chromium/issues/detail?id=162635
