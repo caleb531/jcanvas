@@ -585,8 +585,8 @@ $.fn.drawLayers = function(resetFire) {
 					drag.dragging = TRUE;
 					drag.startX = layer.x;
 					drag.startY = layer.y;
-					drag.endX = layer.mouseX;
-					drag.endY = layer.mouseY;
+					drag.endX = layer._mouseX;
+					drag.endY = layer._mouseY;
 					
 					// Trigger dragstart event if defined
 					if (layer.dragstart) {
@@ -609,8 +609,8 @@ $.fn.drawLayers = function(resetFire) {
 				}
 				// Regardless of whether the cursor is on the layer, drag the layer until drag stops
 				if (drag.dragging && eventType === 'mousemove') {
-					drag.layer.x = drag.layer.mouseX - (drag.endX - drag.startX);
-					drag.layer.y = drag.layer.mouseY - (drag.endY - drag.startY);
+					drag.layer.x = drag.layer._mouseX - (drag.endX - drag.startX);
+					drag.layer.y = drag.layer._mouseY - (drag.endY - drag.startY);
 					// Trigger drag event if defined
 					if (drag.layer.drag) {
 						drag.layer.drag.call($elems[e], drag.layer);
@@ -1078,12 +1078,12 @@ function checkEvents(elem, ctx, layer) {
 	y = layer.mouseY;
 
 	// Rotate coordinates
-	layer.mouseX = (x * cos(-angle)) - (y * sin(-angle));
-	layer.mouseY = (y * cos(-angle)) + (x * sin(-angle));
+	layer._mouseX = (x * cos(-angle)) - (y * sin(-angle));
+	layer._mouseY = (y * cos(-angle)) + (x * sin(-angle));
 	
 	// Scale coordinates
-	layer.mouseX /= transforms.scaleX;
-	layer.mouseY /= transforms.scaleY;
+	layer._mouseX /= transforms.scaleX;
+	layer._mouseY /= transforms.scaleY;
 	
 	// Detect mouseout events
 	if (!over && layer._hovered && !layer._fired) {
