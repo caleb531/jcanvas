@@ -18,7 +18,7 @@ var defaults,
 	cache = {},
 	cssProps,
 	cssPropsObj;
-	
+		
 // Preferences constructor (which inherits from the defaults object)
 function Prefs() {}
 
@@ -164,7 +164,7 @@ function closePath(ctx, params) {
 }
 
 // Translate canvas (internal)
-function translateCanvas(ctx, params) {
+function translateCanvas(ctx, params, transforms) {
 	
 	// Translate both the x- and y-axis using the 'translate' property
 	if (params.translate) {
@@ -172,10 +172,12 @@ function translateCanvas(ctx, params) {
 	}
 	// Translate shape
 	ctx.translate(params.translateX, params.translateY);
+	transforms.translateX += params.translateX;
+	transforms.translateY += params.translateY;
 }
 
 // Scale canvas (internal)
-function scaleCanvas(ctx, params) {
+function scaleCanvas(ctx, params, transforms) {
 	
 	// Scale both the x- and y- axis using the 'scale' property
 	if (params.scale !== 1) {
@@ -185,15 +187,20 @@ function scaleCanvas(ctx, params) {
 	ctx.translate(params.x, params.y);
 	ctx.scale(params.scaleX, params.scaleY);
 	ctx.translate(-params.x, -params.y);
+	// Update transformation data
+	transforms.scaleX *= params.scaleX;
+	transforms.scaleY *= params.scaleY;
 }
 
 // Rotate canvas (internal)
-function rotateCanvas(ctx, params) {
+function rotateCanvas(ctx, params, transforms) {
 	params._toRad = (params.inDegrees ? PI/180 : 1);
 
 	ctx.translate(params.x, params.y);
 	ctx.rotate(params.rotate*params._toRad);
 	ctx.translate(-params.x, -params.y);
+	// Update transformation data
+	transforms.rotate += params.rotate;
 }
 
 // Rotate/scale individual shape and/or position it correctly
@@ -204,22 +211,24 @@ function transformShape(e, ctx, params, width, height) {
 	ctx.save();
 	
 	// Always draw from center unless otherwise specified
-	height = height || width;
+	if (height === UNDEFINED) {
+		height = width;
+	}
 	if (!e && !params.fromCenter) {
 		params.x += width/2;
 		params.y += height/2;
 	}
 	
 	// Rotate shape if chosen
-	if (params.rotate || params.angle) {
-		rotateCanvas(ctx, params);
+	if (params.rotate) {
+		rotateCanvas(ctx, params, {});
 	}
 	// Scale shape if chosen
 	if (params.scale !== 1 || params.scaleX !== 1 || params.scaleY !== 1) {
-		scaleCanvas(ctx, params);
+		scaleCanvas(ctx, params, {});
 	}
 	if (params.translate || params.translateX || params.translateY) {
-		translateCanvas(ctx, params);
+		translateCanvas(ctx, params, {});
 	}
 }
 
@@ -274,12 +283,21 @@ function getCanvasData(elem) {
 		data = $.data(elem, 'jCanvas');
 		// Create canvas data object if it does not already exist
 		if (!data) {
-			data = $.data(elem, 'jCanvas', {
+			data = {
 				layers: [],
 				intersects: [],
 				drag: {},
-				event: {}
-			});
+				event: {},
+				transforms: {
+					rotate: 0,
+					scaleX: 1,
+					scaleY: 1,
+					translateX: 0,
+					translateY: 0
+				}
+			};
+			data.savedTransforms = data.transforms;
+			$.data(elem, 'jCanvas', data);
 		}
 		// Cache canvas data
 		cache.elem = elem;
@@ -413,7 +431,7 @@ $.fn.setLayerGroup = function(id, props) {
 $.fn.removeLayerGroup = function(id) {
 	var $elems = this, $elem, e,
 		idType = $.type(id),
-		layers, group, l;
+		layers, l;
 	
 	if (id !== UNDEFINED) {
 		for (e=0; e<$elems.length; e+=1) {
@@ -473,9 +491,10 @@ $.fn.drawLayers = function(resetFire) {
 		$elem = $($elems[e]);
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+			data = getCanvasData($elems[e]);
+
 			// Clear canvas first
-			ctx.clearRect(0, 0, $elems[e].width, $elems[e].height);
+			$elem.clearCanvas();
 			
 			// Retrieve canvas data from cache
 			if (cache.elem === $elems[e]) {
@@ -550,7 +569,7 @@ $.fn.drawLayers = function(resetFire) {
 					layer._fired = TRUE;
 					callback.call($elems[e], layer);
 				}
-				
+								
 				// Use the mousedown event to start drag
 				if (layer.draggable && !layer.disableDrag && eventType === 'mousedown') {
 								
@@ -566,8 +585,8 @@ $.fn.drawLayers = function(resetFire) {
 					drag.dragging = TRUE;
 					drag.startX = layer.x;
 					drag.startY = layer.y;
-					drag.endX = layer.mouseX;
-					drag.endY = layer.mouseY;
+					drag.endX = layer._mouseX;
+					drag.endY = layer._mouseY;
 					
 					// Trigger dragstart event if defined
 					if (layer.dragstart) {
@@ -590,8 +609,8 @@ $.fn.drawLayers = function(resetFire) {
 				}
 				// Regardless of whether the cursor is on the layer, drag the layer until drag stops
 				if (drag.dragging && eventType === 'mousemove') {
-					drag.layer.x = drag.layer.mouseX - (drag.endX - drag.startX);
-					drag.layer.y = drag.layer.mouseY - (drag.endY - drag.startY);
+					drag.layer.x = drag.layer._mouseX - (drag.endX - drag.startX);
+					drag.layer.y = drag.layer._mouseY - (drag.endY - drag.startY);
 					// Trigger drag event if defined
 					if (drag.layer.drag) {
 						drag.layer.drag.call($elems[e], drag.layer);
@@ -685,6 +704,7 @@ $.fn.addLayer = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
+			
 			args.layer = TRUE;
 			addLayer($elems[e], args);
 		}
@@ -803,6 +823,7 @@ function animateColor(fx) {
 $.fn.animateLayer = function() {
 	var $elems = this, $elem, e, ctx,
 		args = ([]).slice.call(arguments, 0),
+		data,
 		layer;
 		
 	// Deal with all cases of argument placement
@@ -880,7 +901,8 @@ $.fn.animateLayer = function() {
 		$elem = $($elems[e]);
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+			data = getCanvasData($elems[e]);
+
 			// If a layer object was passed, use it the layer to be animated
 			layer = $elem.getLayer(args[0]);
 			
@@ -1040,11 +1062,28 @@ createEvent('mouseout');
 function checkEvents(elem, ctx, layer) {
 	var data = getCanvasData(elem),
 		eventCache = data.event,
-		over = ctx.isPointInPath(eventCache.x, eventCache.y);
+		over = ctx.isPointInPath(eventCache.x, eventCache.y),
+		transforms = data.transforms,
+		x, y, angle;
 		
 	// Allow callback functions to retrieve the mouse coordinates
 	layer.mouseX = eventCache.x;
 	layer.mouseY = eventCache.y;
+	
+	// Adjust coordinates to match current canvas transformation
+	
+	// Keep track of some transformation values
+	angle = data.transforms.rotate * PI / 180;
+	x = layer.mouseX;
+	y = layer.mouseY;
+
+	// Rotate coordinates
+	layer._mouseX = (x * cos(-angle)) - (y * sin(-angle));
+	layer._mouseY = (y * cos(-angle)) + (x * sin(-angle));
+	
+	// Scale coordinates
+	layer._mouseX /= transforms.scaleX;
+	layer._mouseY /= transforms.scaleY;
 	
 	// Detect mouseout events
 	if (!over && layer._hovered && !layer._fired) {
@@ -1105,9 +1144,13 @@ $.fn.clearCanvas = function(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
+			// Save current transformation
 			transformShape(e, ctx, params, params.width, params.height);
 			
+			// Reset current transformation temporarily to ensure the entire canvas is cleared
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
+					
 			// Clear entire canvas if any area properties are not given
 			if (!params.x || !params.y || !params.width || !params.height) {
 				ctx.clearRect(0, 0, $elems[e].width, $elems[e].height);
@@ -1115,6 +1158,8 @@ $.fn.clearCanvas = function(args) {
 				// Otherwise, clear the defined section of the canvas
 				ctx.clearRect(params.x-params.width/2, params.y-params.height/2, params.width, params.height);
 			}
+			// Restore previous transformation
+			ctx.restore();
 			
 		}
 	}
@@ -1125,12 +1170,16 @@ $.fn.clearCanvas = function(args) {
 
 // Save canvas
 $.fn.saveCanvas = function() {
-	var $elems = this, e, ctx;
+	var $elems = this, e, ctx,
+		data;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
+			data = getCanvasData($elems[e]);
+			
 			ctx.save();
+			data.savedTransforms = merge({}, data.transforms);
 		}
 	}
 	return $elems;
@@ -1138,12 +1187,16 @@ $.fn.saveCanvas = function() {
 
 // Restore canvas
 $.fn.restoreCanvas = function() {
-	var $elems = this, e, ctx;
+	var $elems = this, e, ctx,
+		data;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
+			data = getCanvasData($elems[e]);
+			
 			ctx.restore();
+			data.transforms = data.savedTransforms;
 		}
 	}
 	return $elems;
@@ -1152,13 +1205,16 @@ $.fn.restoreCanvas = function() {
 // Translate canvas
 $.fn.translateCanvas = function(args) {
 	var $elems = this, e, ctx,
-		params = merge(new Prefs(), args);
+		params = merge(new Prefs(), args),
+		data;
 
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
+			data = getCanvasData($elems[e]);
+			
 			if (params.autosave) {ctx.save();}
-			translateCanvas(ctx, params);
+			translateCanvas(ctx, params, data.transforms);
 		}
 	}
 	return $elems;
@@ -1167,13 +1223,16 @@ $.fn.translateCanvas = function(args) {
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
 	var $elems = this, e, ctx,
-		params = merge(new Prefs(), args);
+		params = merge(new Prefs(), args),
+		data;
 		
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
+			data = getCanvasData($elems[e]);
+			
 			if (params.autosave) {ctx.save();}
-			scaleCanvas(ctx, params);
+			scaleCanvas(ctx, params, data.transforms);
 		}
 	}
 	return $elems;
@@ -1182,13 +1241,16 @@ $.fn.scaleCanvas = function(args) {
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
 	var $elems = this, e, ctx,
-		params = merge(new Prefs(), args);
+		params = merge(new Prefs(), args),
+		data;
 	
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
+			data = getCanvasData($elems[e]);
+			
 			if (params.autosave) {ctx.save();}
-			rotateCanvas(ctx, params);
+			rotateCanvas(ctx, params, data.transforms);
 		}
 	}
 	return $elems;
@@ -1226,14 +1288,14 @@ $.fn.drawRect = function self(args) {
 				if ((y2 - y1) - (2 * r) < 0) {
 					r = (y2 - y1) / 2;
 				}
-				ctx.moveTo(x1+r,y1);
-				ctx.lineTo(x2-r,y1);
+				ctx.moveTo(x1+r, y1);
+				ctx.lineTo(x2-r, y1);
 				ctx.arc(x2-r, y1+r, r, 3*PI/2, PI*2, FALSE);
-				ctx.lineTo(x2,y2-r);
+				ctx.lineTo(x2, y2-r);
 				ctx.arc(x2-r, y2-r, r, 0, PI/2, FALSE);
-				ctx.lineTo(x1+r,y2);
+				ctx.lineTo(x1+r, y2);
 				ctx.arc(x1+r, y2-r, r, PI/2, PI, FALSE);
-				ctx.lineTo(x1,y1+r);
+				ctx.lineTo(x1, y1+r);
 				ctx.arc(x1+r, y1+r, r, PI, 3*PI/2, FALSE);
 			} else {
 				ctx.rect(x1, y1, params.width, params.height);
@@ -1263,7 +1325,7 @@ $.fn.drawArc = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			transformShape(e, ctx, params, params.radius*2);
@@ -1293,7 +1355,7 @@ $.fn.drawEllipse = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			transformShape(e, ctx, params, params.width, params.height);
@@ -1334,7 +1396,7 @@ $.fn.drawPolygon = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			transformShape(e, ctx, params, params.radius*2);
@@ -1377,7 +1439,7 @@ $.fn.drawLine = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			makePathDraggable(params);
@@ -1417,7 +1479,7 @@ $.fn.drawQuad = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			makePathDraggable(params);
@@ -1463,7 +1525,7 @@ $.fn.drawBezier = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			makePathDraggable(params);
@@ -1586,7 +1648,7 @@ $.fn.drawText = function self(args) {
 		$elem = $($elems[e]);
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			
@@ -1827,7 +1889,7 @@ $.fn.drawImage = function self(args) {
 		elem = $elems[e];
 		ctx = getContext($elems[e]);
 		if (ctx) {
-			
+
 			addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 				
@@ -1837,6 +1899,8 @@ $.fn.drawImage = function self(args) {
 					onload(elem, e, ctx)();
 				} else {
 					img.onload = onload(elem, e, ctx);
+					// Fix onload() bug in IE9
+					img.src = img.src;
 				}
 			}
 				
