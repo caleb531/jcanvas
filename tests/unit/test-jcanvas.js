@@ -8,7 +8,7 @@ function AtomicCanvas() {
 }
 
 /* jCanvas tests */
-module("jCanvas Arcs");
+module("jCanvas Arcs")
 
 test("drawArc, simplest possible", function() {
 	var ac = new AtomicCanvas()
@@ -16,7 +16,7 @@ test("drawArc, simplest possible", function() {
 	QUnit.pixelEqual(ac.canvas, 50, 50, 0, 255, 0, 255)
 })
 
-module("jCanvas Layers");
+module("jCanvas Layers")
 
 test("addLayer, method drawRect", function () {
 	var ac = new AtomicCanvas()
@@ -61,3 +61,23 @@ asyncTest("animateLayer, two addLayers & two animateLayers", 2, function() {
 //			QUnit.start()
 //		})
 //})
+
+module("jCanvas Transformation")
+
+test("transformation, rotateCanvas", function () {
+	var ac = new AtomicCanvas()
+	transformation_rotateCanvas("#atomic-canvas", 100, 0)
+	// unspecified x, y in above function, so rotation occurs around x:0, y:0
+	//    clockwise
+	// center of box should be at:
+	//    x = cos(30)*100 ~= 87
+	//    y = sin(30)*100 ~= 50
+	QUnit.pixelEqual(ac.canvas, 87, 50, 0, 255, 0, 255)
+})
+
+test("transformation, scaleCanvas", function () {
+	var ac = new AtomicCanvas()
+	transformation_scaleCanvas("#atomic-canvas", 100, 20)
+	// scaling should both shift and balloon the shape
+	QUnit.pixelEqual(ac.canvas, 193, 72, 0, 255, 0, 255)
+})
