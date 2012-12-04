@@ -69,10 +69,34 @@ function transformation_rotateCanvas(canvasName, x, y) {
 	transformation_simpleBox(canvasName, x, y)
 }
 
+function transformation_rotateScaleCanvas(canvasName, x, y) {
+	$(canvasName).rotateCanvas({
+		rotate: 10
+	})
+	.scaleCanvas({
+		scaleX: 2, scaleY: 3
+	})
+	
+	transformation_contextBox(canvasName, x)
+	transformation_simpleBox(canvasName, x, y)
+}
+
 function transformation_scaleCanvas(canvasName, x, y) {
 	$(canvasName).scaleCanvas({
 		scaleX: 2, scaleY: 3
 	})
+	transformation_contextBox(canvasName, x)
+	transformation_simpleBox(canvasName, x, y)
+}
+
+function transformation_scaleRotateCanvas(canvasName, x, y) {
+	$(canvasName).scaleCanvas({
+		scaleX: 2, scaleY: 3
+	})
+	.rotateCanvas({
+		rotate: 10
+	})
+	transformation_contextBox(canvasName, x)
 	transformation_simpleBox(canvasName, x, y)
 }
 
