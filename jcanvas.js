@@ -296,7 +296,7 @@ function getCanvasData(elem) {
 					translateY: 0
 				}
 			};
-			data.savedTransforms = data.transforms;
+			data.savedTransforms = merge({}, data.transforms);
 			$.data(elem, 'jCanvas', data);
 		}
 		// Cache canvas data
@@ -1858,21 +1858,22 @@ $.fn.drawImage = function self(args) {
 			params.width,
 			params.height
 		);
-		// Draw invisible rectangle to allow for events
+		// Ensure the rectangle below is actually invisible
+		ctx.fillStyle = ctx.strokeStyle = 'transparent';
+		// Draw invisible rectangle to allow for events and masking
+		ctx.beginPath();
+		ctx.rect(
+			params.x - params.width / 2,
+			params.y - params.height / 2,
+			params.width,
+			params.height
+		);
+		// Check for jCanvas events
 		if (params._event) {
-			ctx.beginPath();
-			ctx.rect(
-				params.x - params.width / 2,
-				params.y - params.height / 2,
-				params.width,
-				params.height
-			);
-			ctx.restore();
 			checkEvents($elems[e], ctx, args);
-			ctx.closePath();
-		} else {
-			ctx.restore();
 		}
+		// Close path and mask (if chosen)
+		closePath(ctx, params);
 	}
 	// On load function
 	function onload(elem, e, ctx) {
