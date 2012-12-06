@@ -1858,6 +1858,8 @@ $.fn.drawImage = function self(args) {
 			params.width,
 			params.height
 		);
+		// Ensure the rectangle below is actually invisible
+		ctx.fillStyle = ctx.strokeStyle = 'transparent';
 		// Draw invisible rectangle to allow for events and masking
 		ctx.beginPath();
 		ctx.rect(
