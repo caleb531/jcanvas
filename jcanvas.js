@@ -350,8 +350,33 @@ $.fn.setLayer = function(id, props) {
 		layer;
 	for (e=0; e<$elems.length; e+=1) {
 		layer = $($elems[e]).getLayer(id);
-		// Merge properties with layer
-		merge(layer, props);
+		if (layer) {
+			// Merge properties with layer
+			merge(layer, props);
+		}
+	}
+	return $elems;
+};
+
+// Move a layer's placement in the layers array
+$.fn.moveLayer = function(id, index) {
+	var $elems = this, $elem, e,
+		layers, layer;
+		
+	for (e=0; e<$elems.length; e+=1) {
+		$elem = $($elems[e]);
+		// Retrieve layers array and desired layer
+		layers = $elem.getLayers();
+		layer = $elem.getLayer(id);
+		if (layer) {
+			// Remove layer from its current placement
+			layers.splice(layer.index, 1);
+			// Add layer in its new placement
+			layers.splice(index, 0, layer);
+			// Update layer's stored index
+			layer.index = index;
+		}
+	
 	}
 	return $elems;
 };
