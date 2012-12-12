@@ -1719,7 +1719,7 @@ $.fn.drawText = function self(args) {
 				if (params.fillStyle !== 'transparent') {
 					ctx.shadowColor = 'transparent';
 				}
-				ctx.strokeText(lines[l], params.x, y);
+				ctx.strokeText(lines[l], x, y);
 			}
 						
 			// Detect jCanvas events
