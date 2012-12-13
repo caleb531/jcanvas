@@ -1667,7 +1667,7 @@ function wrapText(ctx, params) {
 $.fn.drawText = function self(args) {
 	var $elems = this, $elem, e, ctx,
 		params = merge(new Prefs(), args),
-		lines, l, x, y;
+		lines, l, words, x, y;
 
 	for (e=0; e<$elems.length; e+=1) {
 		$elem = $($elems[e]);
@@ -1681,13 +1681,11 @@ $.fn.drawText = function self(args) {
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
 			ctx.font = params.font;
+			
+			// Parse words in text string
+			words = params.text.split(' ');
 					
-			// Convert string of text to list of lines
-			if (!e) {
-				lines = String(params.text).split('\n');
-			}
-						
-			if (!e && params.maxWidth !== NULL && lines.length > 1) {
+			if (!e && params.maxWidth !== NULL && words.length > 1) {
 				// Wrap text using an internal function
 				lines = wrapText(ctx, params);
 				// Remove unnecessary white space
@@ -1695,6 +1693,9 @@ $.fn.drawText = function self(args) {
 					.join('\n')
 					.replace(/( (\n))|( $)/gi, '$2')
 					.split('\n');
+			} else if (!e) {
+				// Convert string of text to list of lines
+				lines = String(params.text).split('\n');
 			}
 			
 			// Calculate text's width and height
