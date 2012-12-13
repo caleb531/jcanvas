@@ -1639,8 +1639,9 @@ function wrapText(ctx, params) {
 		lines = [],
 		line = '';
 	
-	if (ctx.measureText(text).width < maxWidth) {
+	if (ctx.measureText(text).width < maxWidth || words.length === 1) {
 		// If text is short enough initially, do nothing else
+		// Or, if the text consists of only one word, do nothing else
 		lines = [text];
 	} else {
 		// Keep adding words to line until line is too long
@@ -1681,11 +1682,8 @@ $.fn.drawText = function self(args) {
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
 			ctx.font = params.font;
-			
-			// Parse words in text string
-			words = params.text.split(' ');
 					
-			if (!e && params.maxWidth !== NULL && words.length > 1) {
+			if (!e && params.maxWidth !== NULL) {
 				// Wrap text using an internal function
 				lines = wrapText(ctx, params);
 				// Remove unnecessary white space
