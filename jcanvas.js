@@ -1639,8 +1639,9 @@ function wrapText(ctx, params) {
 		lines = [],
 		line = '';
 	
-	if (ctx.measureText(text).width < maxWidth) {
+	if (ctx.measureText(text).width < maxWidth || words.length == 1) {
 		// If text is short enough initially, do nothing else
+		// Or there is just one word, then just silently ignore maxWidth parameter.
 		lines = [text];
 	} else {
 		// Keep adding words to line until line is too long
