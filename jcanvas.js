@@ -51,6 +51,7 @@ defaults = {
 	cropFromCenter: TRUE,
 	draggable: FALSE,
 	disableDrag: FALSE,
+	disableEvents: FALSE,
 	each: NULL,
 	end: 360,
 	fillStyle: 'transparent',
@@ -163,17 +164,15 @@ function closePath(ctx, params) {
 	}
 }
 
-// Translate canvas (internal)
-function translateCanvas(ctx, params, transforms) {
-	
-	// Translate both the x- and y-axis using the 'translate' property
-	if (params.translate) {
-		params.translateX = params.translateY = params.translate;
-	}
-	// Translate shape
-	ctx.translate(params.translateX, params.translateY);
-	transforms.translateX += params.translateX;
-	transforms.translateY += params.translateY;
+// Rotate canvas (internal)
+function rotateCanvas(ctx, params, transforms) {
+	params._toRad = (params.inDegrees ? PI/180 : 1);
+
+	ctx.translate(params.x, params.y);
+	ctx.rotate(params.rotate * params._toRad);
+	ctx.translate(-params.x, -params.y);
+	// Update transformation data
+	transforms.rotate += params.rotate * params._toRad;
 }
 
 // Scale canvas (internal)
@@ -192,15 +191,17 @@ function scaleCanvas(ctx, params, transforms) {
 	transforms.scaleY *= params.scaleY;
 }
 
-// Rotate canvas (internal)
-function rotateCanvas(ctx, params, transforms) {
-	params._toRad = (params.inDegrees ? PI/180 : 1);
-
-	ctx.translate(params.x, params.y);
-	ctx.rotate(params.rotate*params._toRad);
-	ctx.translate(-params.x, -params.y);
-	// Update transformation data
-	transforms.rotate += params.rotate;
+// Translate canvas (internal)
+function translateCanvas(ctx, params, transforms) {
+	
+	// Translate both the x- and y-axis using the 'translate' property
+	if (params.translate) {
+		params.translateX = params.translateY = params.translate;
+	}
+	// Translate shape
+	ctx.translate(params.translateX, params.translateY);
+	transforms.translateX += params.translateX;
+	transforms.translateY += params.translateY;
 }
 
 // Rotate/scale individual shape and/or position it correctly
@@ -542,6 +543,9 @@ $.fn.drawLayers = function(resetFire) {
 				if (resetFire) {
 					layer._fired = FALSE;
 				}
+				// Disable events temporarily if chosen
+				layer._event = !layer.disableEvents;
+				// Draw layer
 				drawLayer($elem, ctx, layer);
 				
 				// Trigger mouseout event if necessary
@@ -1098,7 +1102,7 @@ function checkEvents(elem, ctx, layer) {
 	// Adjust coordinates to match current canvas transformation
 	
 	// Keep track of some transformation values
-	angle = data.transforms.rotate * PI / 180;
+	angle = data.transforms.rotate;
 	x = layer.mouseX;
 	y = layer.mouseY;
 
