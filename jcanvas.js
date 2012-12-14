@@ -137,34 +137,37 @@ function getContext(elem) {
 }
 
 // Close path
-function closePath(ctx, params) {
+function closePath(elem, ctx, args) {
 	
 	// Check for jCanvas events
-	if (params._event) {
-		detectEvents($elems[e], ctx, args);
+	if (args._event) {
+		detectEvents(elem, ctx, args);
 	}
 	
 	// Close path if chosen
-	if (params.closed) {
+	if (args.closed) {
 		ctx.closePath();
 	}
 	ctx.fill();
 	// Prevent extra shadow created by stroke (but only when fill is present)
-	if (params.fillStyle !== 'transparent') {
+	if (args.fillStyle !== 'transparent') {
 		ctx.shadowColor = 'transparent';
 	}
-	ctx.stroke();
+	// Only stroke if the stroke
+	if (args.strokeWidth !== 0) {
+		ctx.stroke();
+	}
 	// Close path if chosen
-	if (!params.closed) {
+	if (!args.closed) {
 		ctx.closePath();
 	}
 	// Restore transformation if transformShape() was called
-	if (params._toRad) {
+	if (args._toRad) {
 		ctx.restore();
 	}
 	// Mask shape if chosen
-	if (params.mask) {
-		if (params.autosave) {ctx.save();}
+	if (args.mask) {
+		if (args.autosave) {ctx.save();}
 		ctx.clip();
 	}
 }
@@ -260,8 +263,6 @@ jCanvas.extend = function(plugin) {
 		$.fn[plugin.name] = function self(args) {
 			var $elems = this, elem, e, ctx,
 				params = merge(new Prefs(), args);
-			// Make layer object available to user
-			params.args = args;
 			
 			for (e=0; e<$elems.length; e+=1) {
 				elem = $elems[e];
@@ -269,7 +270,7 @@ jCanvas.extend = function(plugin) {
 				if (ctx) {
 					addLayer(elem, args, self);
 					setGlobalProps(ctx, params);
-					plugin.fn.call(elem, ctx, params);
+					plugin.fn.call(elem, ctx, args);
 				}
 			}
 			return $elems;
@@ -1341,7 +1342,7 @@ $.fn.drawRect = function self(args) {
 				ctx.rect(x1, y1, params.width, params.height);
 			}
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		}
 	}
 	return $elems;
@@ -1370,7 +1371,7 @@ $.fn.drawArc = function self(args) {
 			ctx.beginPath();
 			ctx.arc(params.x, params.y, params.radius, (params.start*params._toRad)-(PI/2), (params.end*params._toRad)-(PI/2), params.ccw);
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		}
 	}
 	return $elems;
@@ -1400,7 +1401,7 @@ $.fn.drawEllipse = function self(args) {
 			// Right side
 			ctx.bezierCurveTo(params.x+controlW/2, params.y+controlH/2, params.x+controlW/2, params.y-controlH/2, params.x, params.y-controlH/2);
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		}
 	}
 	return $elems;
@@ -1446,7 +1447,7 @@ $.fn.drawPolygon = function self(args) {
 				theta += dtheta;
 			}
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		}
 	}
 	return $elems;
@@ -1483,7 +1484,7 @@ $.fn.drawLine = function self(args) {
 				}
 			}
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		
 		}
 	}
@@ -1522,7 +1523,7 @@ $.fn.drawQuad = function self(args) {
 				}
 			}
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		
 		}
 	}
@@ -1568,7 +1569,7 @@ $.fn.drawBezier = function self(args) {
 				}
 			}
 			// Close path if chosen
-			closePath(ctx, params);
+			closePath($elems[e], ctx, args);
 		
 		}
 	}
@@ -1882,7 +1883,7 @@ $.fn.drawImage = function self(args) {
 			params.height
 		);
 		// Close path and mask (if chosen)
-		closePath(ctx, params);
+		closePath($elems[e], ctx, args);
 	}
 	// On load function
 	function onload(elem, e, ctx) {
@@ -2129,6 +2130,7 @@ $.support.canvas = (document.createElement('canvas').getContext !== UNDEFINED);
 // Export jCanvas functions
 jCanvas.defaults = defaults;
 jCanvas.detectEvents = detectEvents;
+jCanvas.closePath = closePath;
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Image, Math, parseFloat, true, false, null));
