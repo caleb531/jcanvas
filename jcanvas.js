@@ -161,10 +161,8 @@ function closePath(elem, ctx, args) {
 	if (!args.closed) {
 		ctx.closePath();
 	}
-	// Restore transformation if transformShape() was called
-	if (args._toRad) {
-		ctx.restore();
-	}
+	// Restore individual shape transformation
+	ctx.restore();
 	// Mask shape if chosen
 	if (args.mask) {
 		if (args.autosave) {ctx.save();}
@@ -213,7 +211,7 @@ function translateCanvas(ctx, params, transforms) {
 }
 
 // Rotate/scale individual shape and/or position it correctly
-function transformShape(e, ctx, params, width, height) {
+function transformShape(e, ctx, params, args, width, height) {
 	
 	// Measure angles in chosen units
 	params._toRad = (params.inDegrees ? PI/180 : 1);
@@ -224,8 +222,8 @@ function transformShape(e, ctx, params, width, height) {
 		height = width;
 	}
 	if (!e && !params.fromCenter) {
-		params.x += width/2;
-		params.y += height/2;
+		params.x += width / 2;
+		params.y += height / 2;
 	}
 	
 	// Rotate shape if chosen
@@ -263,12 +261,12 @@ jCanvas.extend = function(plugin) {
 		$.fn[plugin.name] = function self(args) {
 			var $elems = this, elem, e, ctx,
 				params = merge(new Prefs(), args);
-			
+						
 			for (e=0; e<$elems.length; e+=1) {
 				elem = $elems[e];
 				ctx = getContext(elem);
 				if (ctx) {
-					addLayer(elem, args, self);
+					args = addLayer(elem, args, self);
 					setGlobalProps(ctx, params);
 					plugin.fn.call(elem, ctx, args);
 				}
@@ -732,6 +730,7 @@ function addLayer(elem, layer, method) {
 		// Add layer to layers array at specified index
 		layers.splice(layer.index, 0, layer);
 	}
+	return layer;
 }
 
 // Add a jCanvas layer
@@ -744,7 +743,7 @@ $.fn.addLayer = function(args) {
 		if (ctx) {
 			
 			args.layer = TRUE;
-			addLayer($elems[e], args);
+			args = addLayer($elems[e], args);
 		}
 	}
 	return $elems;
@@ -1167,7 +1166,7 @@ $.fn.draw = function self(args) {
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
 		if (ctx && args.fn) {
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			args.fn.call($elems[e], ctx);
 		}
 	}
@@ -1184,7 +1183,7 @@ $.fn.clearCanvas = function(args) {
 		if (ctx) {
 
 			// Save current transformation
-			transformShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, args, params.width, params.height);
 			
 			// Reset current transformation temporarily to ensure the entire canvas is cleared
 			ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1234,7 +1233,7 @@ $.fn.restoreCanvas = function() {
 			data = getCanvasData($elems[e]);
 			
 			ctx.restore();
-			data.transforms = data.savedTransforms;
+			data.transforms = merge({}, data.savedTransforms);
 		}
 	}
 	return $elems;
@@ -1309,9 +1308,9 @@ $.fn.drawRect = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 		
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			transformShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, args, params.width, params.height);
 			
 			ctx.beginPath();
 			x1 = params.x - params.width/2;
@@ -1363,9 +1362,9 @@ $.fn.drawArc = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			transformShape(e, ctx, params, params.radius*2);
+			transformShape(e, ctx, params, args, params.radius*2);
 			
 			// Draw arc
 			ctx.beginPath();
@@ -1389,9 +1388,9 @@ $.fn.drawEllipse = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			transformShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, args, params.width, params.height);
 			
 			// Create ellipse using curves
 			ctx.beginPath();
@@ -1426,9 +1425,9 @@ $.fn.drawPolygon = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
-			transformShape(e, ctx, params, params.radius*2);
+			transformShape(e, ctx, params, args, params.radius*2);
 
 			// Calculate points and draw
 			ctx.beginPath();
@@ -1465,10 +1464,10 @@ $.fn.drawLine = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			makePathDraggable(params);
-			transformShape(e, ctx, params, 0);
+			transformShape(e, ctx, params, args, 0);
 				
 			// Draw each point
 			l = 1;
@@ -1501,10 +1500,10 @@ $.fn.drawQuad = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			makePathDraggable(params);
-			transformShape(e, ctx, params, 0);
+			transformShape(e, ctx, params, args, 0);
 			
 			// Draw each point
 			l = 2;
@@ -1543,10 +1542,10 @@ $.fn.drawBezier = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			makePathDraggable(params);
-			transformShape(e, ctx, params, 0);
+			transformShape(e, ctx, params, args, 0);
 			
 			// Draw each point
 			l = 2;
@@ -1663,7 +1662,7 @@ $.fn.drawText = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 			
 			// Set text-specific properties
@@ -1686,7 +1685,7 @@ $.fn.drawText = function self(args) {
 			
 			// Calculate text's width and height
 			measureText($elems[e], e, ctx, params, lines);
-			transformShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, args, params.width, params.height);
 			
 			// Adjust text position to accomodate different horizontal alignments
 			if (!e) {
@@ -1858,7 +1857,7 @@ $.fn.drawImage = function self(args) {
 		}
 		
 		// Only position image
-		transformShape(e, ctx, params, params.width, params.height);
+		transformShape(e, ctx, params, args, params.width, params.height);
 							
 		// Draw image
 		ctx.drawImage(
@@ -1901,7 +1900,7 @@ $.fn.drawImage = function self(args) {
 		ctx = getContext($elems[e]);
 		if (ctx) {
 
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			setGlobalProps(ctx, params);
 				
 			// Draw image if already loaded
@@ -2078,9 +2077,9 @@ $.fn.setPixels = function self(args) {
 		ctx = getContext(elem);
 		if (ctx) {
 			
-			addLayer($elems[e], args, self);
+			args = addLayer($elems[e], args, self);
 			// Measure (x, y) from center of region
-			transformShape(e, ctx, params, params.width, params.height);
+			transformShape(e, ctx, params, args, params.width, params.height);
 			
 			if (!params.x || !params.y || !params.width || !params.height) {
 				params.width = elem.width;
