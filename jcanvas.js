@@ -139,6 +139,11 @@ function getContext(elem) {
 // Close path
 function closePath(ctx, params) {
 	
+	// Check for jCanvas events
+	if (params._event) {
+		detectEvents($elems[e], ctx, args);
+	}
+	
 	// Close path if chosen
 	if (params.closed) {
 		ctx.closePath();
@@ -255,6 +260,8 @@ jCanvas.extend = function(plugin) {
 		$.fn[plugin.name] = function self(args) {
 			var $elems = this, elem, e, ctx,
 				params = merge(new Prefs(), args);
+			// Make layer object available to user
+			params.args = args;
 			
 			for (e=0; e<$elems.length; e+=1) {
 				elem = $elems[e];
@@ -574,7 +581,8 @@ $.fn.drawLayers = function(resetFire) {
 			
 			// Check events for intersecting layer
 			if (layer._event) {
-													
+				
+												
 				// Detect mouseover events
 				if (layer.mouseover || layer.mouseout || layer.cursor) {
 					if (!layer._hovered && !layer._fired) {
@@ -598,10 +606,10 @@ $.fn.drawLayers = function(resetFire) {
 					layer._fired = TRUE;
 					callback.call($elems[e], layer);
 				}
-								
+							
 				// Use the mousedown event to start drag
 				if (layer.draggable && !layer.disableDrag && eventType === 'mousedown') {
-								
+						
 					// Being layer to front when drag starts (if chosen)
 					if (layer.bringToFront) {
 						layers.splice(layer.index, 1);
@@ -1088,7 +1096,7 @@ createEvent('mouseover');
 createEvent('mouseout');
 
 // Check if event fires when a drawing is drawn
-function checkEvents(elem, ctx, layer) {
+function detectEvents(elem, ctx, layer) {
 	var data = getCanvasData(elem),
 		eventCache = data.event,
 		over = ctx.isPointInPath(eventCache.x, eventCache.y),
@@ -1098,7 +1106,7 @@ function checkEvents(elem, ctx, layer) {
 	// Allow callback functions to retrieve the mouse coordinates
 	layer.mouseX = eventCache.x;
 	layer.mouseY = eventCache.y;
-	
+		
 	// Adjust coordinates to match current canvas transformation
 	
 	// Keep track of some transformation values
@@ -1242,6 +1250,7 @@ $.fn.translateCanvas = function(args) {
 		if (ctx) {
 			data = getCanvasData($elems[e]);
 			
+			// Autosave transformation state by default
 			if (params.autosave) {ctx.save();}
 			translateCanvas(ctx, params, data.transforms);
 		}
@@ -1260,6 +1269,7 @@ $.fn.scaleCanvas = function(args) {
 		if (ctx) {
 			data = getCanvasData($elems[e]);
 			
+			// Autosave transformation state by default
 			if (params.autosave) {ctx.save();}
 			scaleCanvas(ctx, params, data.transforms);
 		}
@@ -1278,6 +1288,7 @@ $.fn.rotateCanvas = function(args) {
 		if (ctx) {
 			data = getCanvasData($elems[e]);
 			
+			// Autosave transformation state by default
 			if (params.autosave) {ctx.save();}
 			rotateCanvas(ctx, params, data.transforms);
 		}
@@ -1329,10 +1340,6 @@ $.fn.drawRect = function self(args) {
 			} else {
 				ctx.rect(x1, y1, params.width, params.height);
 			}
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
-			}
 			// Close path if chosen
 			closePath(ctx, params);
 		}
@@ -1362,10 +1369,6 @@ $.fn.drawArc = function self(args) {
 			// Draw arc
 			ctx.beginPath();
 			ctx.arc(params.x, params.y, params.radius, (params.start*params._toRad)-(PI/2), (params.end*params._toRad)-(PI/2), params.ccw);
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
-			}
 			// Close path if chosen
 			closePath(ctx, params);
 		}
@@ -1396,10 +1399,6 @@ $.fn.drawEllipse = function self(args) {
 			ctx.bezierCurveTo(params.x-controlW/2, params.y-controlH/2, params.x-controlW/2, params.y+controlH/2, params.x, params.y+controlH/2);
 			// Right side
 			ctx.bezierCurveTo(params.x+controlW/2, params.y+controlH/2, params.x+controlW/2, params.y-controlH/2, params.x, params.y-controlH/2);
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
-			}
 			// Close path if chosen
 			closePath(ctx, params);
 		}
@@ -1411,13 +1410,13 @@ $.fn.drawEllipse = function self(args) {
 $.fn.drawPolygon = function self(args) {
 	var $elems = this, e, ctx,
 		params = merge(new Prefs(), args),
-		// dtheta is polygon's central angle
+		// Polygon's central angle
 		dtheta = (2 * PI) / params.sides,
-		// hdtheta is half of dtheta
+		// Half of dtheta
 		hdtheta = PI / params.sides,
-		// theta is polygon's starting angle
+		// Polygon's starting angle
 		theta = hdtheta + (PI / 2),
-		// apothem is distance from polygon's center to the middle of its side
+		// Distance from polygon's center to the middle of its side
 		apothem = params.radius * cos(dtheta / 2),
 		x, y, i;
 	params.closed = TRUE;
@@ -1445,10 +1444,6 @@ $.fn.drawPolygon = function self(args) {
 					ctx.lineTo(x, y);
 				}
 				theta += dtheta;
-			}
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
 			closePath(ctx, params);
@@ -1486,10 +1481,6 @@ $.fn.drawLine = function self(args) {
 				} else {
 					break;
 				}
-			}
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
 			closePath(ctx, params);
@@ -1529,10 +1520,6 @@ $.fn.drawQuad = function self(args) {
 				} else {
 					break;
 				}
-			}
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
 			closePath(ctx, params);
@@ -1579,10 +1566,6 @@ $.fn.drawBezier = function self(args) {
 				} else {
 					break;
 				}
-			}
-			// Check for jCanvas events
-			if (params._event) {
-				checkEvents($elems[e], ctx, args);
 			}
 			// Close path if chosen
 			closePath(ctx, params);
@@ -1651,7 +1634,7 @@ function wrapText(ctx, params) {
 		// Keep adding words to line until line is too long
 		while (words.length > 0) {
 			// Keep adding words to the current line until it is too long
-			// Also ensure that words longer than maxWidth will not crash the script
+			// Also ensure that words longer than maxWidth will not cause an infinite loop
 			if (ctx.measureText(words[0]).width > maxWidth || ctx.measureText(line + words[0]).width < maxWidth) {
 				line += words.shift() + ' ';
 			} else {
@@ -1737,7 +1720,7 @@ $.fn.drawText = function self(args) {
 					params.height
 				);
 				ctx.restore();
-				checkEvents($elems[e], ctx, args);
+				detectEvents($elems[e], ctx, args);
 				ctx.closePath();
 			} else {
 				ctx.restore();
@@ -1898,10 +1881,6 @@ $.fn.drawImage = function self(args) {
 			params.width,
 			params.height
 		);
-		// Check for jCanvas events
-		if (params._event) {
-			checkEvents($elems[e], ctx, args);
-		}
 		// Close path and mask (if chosen)
 		closePath(ctx, params);
 	}
@@ -2149,7 +2128,7 @@ $.support.canvas = (document.createElement('canvas').getContext !== UNDEFINED);
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
-jCanvas.checkEvents = checkEvents;
+jCanvas.detectEvents = detectEvents;
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Image, Math, parseFloat, true, false, null));
