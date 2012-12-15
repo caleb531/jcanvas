@@ -138,6 +138,7 @@ function getContext(elem) {
 
 // Close path
 function closePath(elem, ctx, args) {
+	var data;
 	
 	// Check for jCanvas events
 	if (args._event) {
@@ -165,7 +166,13 @@ function closePath(elem, ctx, args) {
 	ctx.restore();
 	// Mask shape if chosen
 	if (args.mask) {
-		if (args.autosave) {ctx.save();}
+		if (args.autosave) {
+			// Automatically save transformation state by default
+			ctx.save();
+			data = getCanvasData(elem);
+			data.transforms.mask = TRUE;
+			data.savedTransforms = merge({}, data.transforms);
+		}
 		ctx.clip();
 	}
 }
@@ -300,7 +307,8 @@ function getCanvasData(elem) {
 					scaleX: 1,
 					scaleY: 1,
 					translateX: 0,
-					translateY: 0
+					translateY: 0,
+					mask: FALSE
 				}
 			};
 			data.savedTransforms = merge({}, data.transforms);
@@ -1419,7 +1427,7 @@ $.fn.drawPolygon = function self(args) {
 		// Distance from polygon's center to the middle of its side
 		apothem = params.radius * cos(dtheta / 2),
 		x, y, i;
-	params.closed = TRUE;
+	args.closed = params.closed = TRUE;
 		
 	for (e=0; e<$elems.length; e+=1) {
 		ctx = getContext($elems[e]);
