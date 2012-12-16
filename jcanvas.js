@@ -1583,6 +1583,50 @@ $.fn.drawBezier = function self(args) {
 	return $elems;
 };
 
+// Draw vector
+$.fn.drawVector = function self(args) {
+	var $elems = this, e, ctx,
+		params = merge(new Prefs(), args),
+		i, angle, length, x, y;
+
+	for (e=0; e<$elems.length; e+=1) {
+		ctx = getContext($elems[e]);
+		if (ctx) {
+
+			args = addLayer($elems[e], args, self);
+			setGlobalProps(ctx, params);
+			transformShape(e, ctx, params, args, 0);
+			
+			// Draw each point
+			i = 1;
+			ctx.beginPath();
+			x = params.x;
+			y = params.y;
+			// The vector starts at the given (x, y) coordinates
+			ctx.moveTo(params.x, params.y);
+			while (TRUE) {
+				angle = params['a' + i];
+				length = params['l' + i];
+				if (angle !== UNDEFINED && length !== UNDEFINED) {
+					// Convert the angle to radians with 0deg starting at north
+					angle = (angle * params._toRad) - (PI / 2);
+					// Compute (x, y) coordinates from angle and length
+					x += (length * Math.cos(angle));
+					y += (length * Math.sin(angle));
+					ctx.lineTo(x, y);
+					i += 1;
+				} else {
+					break;
+				}
+			}
+			// Close path if chosen
+			closePath($elems[e], ctx, args);
+		
+		}
+	}
+	return $elems;
+};
+
 /* Text API */
 
 // Measure canvas text
