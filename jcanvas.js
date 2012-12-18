@@ -1087,6 +1087,7 @@ function createEvent(eventName) {
 				eventCache.x = event.offsetX;
 				eventCache.y = event.offsetY;
 				eventCache.type = helperEventName;
+				eventCache.jquery_event = event
 				$elem.drawLayers(TRUE);
 				event.preventDefault();
 			});
@@ -1114,6 +1115,9 @@ function detectEvents(elem, ctx, layer) {
 	// Allow callback functions to retrieve the mouse coordinates
 	layer.mouseX = eventCache.x;
 	layer.mouseY = eventCache.y;
+
+	// Add native jquery event data in the fired event
+	layer.event = eventCache.jquery_event
 		
 	// Adjust coordinates to match current canvas transformation
 	
