@@ -713,11 +713,12 @@ function addLayer(canvas, params, layer, method) {
 			// Check for any associated jCanvas events and enable them
 			for (event in jCanvas.events) {
 				if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
+					event = getTouchEventName(event);
 					jCanvas.events[event]($canvas, data);
 					layer._event = TRUE;
 				}
 			}
-	
+			
 			// Enable drag-and-drop support and cursor support
 			if (layer.draggable || layer.cursor) {
 				layer._event = TRUE;
@@ -1111,11 +1112,11 @@ function getMouseEventName(eventName) {
 
 // Bind event to jCanvas layer using standard jQuery events
 function createEvent(eventName) {
-
-	// Use touch events instead of mouse events for mobile devices
-	eventName = getTouchEventName(eventName);
 	
 	jCanvas.events[eventName] = function($canvas, data) {
+		
+		// Use touch events instead of mouse events for mobile devices
+		eventName = getTouchEventName(eventName);
 		
 		// Both mouseover/mouseout events will be managed by a single mousemove event
 		var helperEventName = (eventName === 'mouseover' || eventName === 'mouseout') ? 'mousemove' : eventName,
