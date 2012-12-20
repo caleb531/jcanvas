@@ -14,7 +14,7 @@ var defaults,
 	PI = Math.PI,
 	sin = Math.sin,
 	cos = Math.cos,
-	originalEventFix = $.event.fix,
+	jQueryEventFix = $.event.fix,
 	mouseEventMap,
 	touchEventMap,
 	cache = {},
@@ -1201,24 +1201,31 @@ function detectEvents(canvas, ctx, params) {
 // Normalize offsetX and offsetY for all browsers
 $.event.fix = function(event) {
 	var offset, originalEvent, touches;
-	event = originalEventFix.call($.event, event);
-	originalEvent = event.originalEvent;
-	touches = originalEvent.changedTouches;
 	
-	// If offsetX and offsetY are not supported, define them
-	if (event.pageX !== UNDEFINED && event.offsetX === UNDEFINED) {
-		offset = $(event.target).offset();
-		if (offset) {
-			event.offsetX = event.pageX - offset.left;
-			event.offsetY = event.pageY - offset.top;
+	event = jQueryEventFix.call($.event, event);
+	originalEvent = event.originalEvent;
+	
+	// originalEvent does not exist for manually-triggered events
+	if (originalEvent) {
+		
+		touches = originalEvent.changedTouches;
+		
+		// If offsetX and offsetY are not supported, define them
+		if (event.pageX !== UNDEFINED && event.offsetX === UNDEFINED) {
+			offset = $(event.target).offset();
+			if (offset) {
+				event.offsetX = event.pageX - offset.left;
+				event.offsetY = event.pageY - offset.top;
+			}
+		} else if (touches) {
+			// Enable offsetX and offsetY for mobile devices
+			offset = $(originalEvent.target).offset();
+			if (offset) {
+				event.offsetX = touches[0].pageX - offset.left;
+				event.offsetY = touches[0].pageY - offset.top;
+			}
 		}
-	} else if (touches) {
-		// Enable offsetX and offsetY for mobile devices
-		offset = $(originalEvent.target).offset();
-		if (offset) {
-			event.offsetX = touches[0].pageX - offset.left;
-			event.offsetY = touches[0].pageY - offset.top;
-		}
+	
 	}
 	return event;
 };
