@@ -17,10 +17,11 @@ var defaults,
 	jQueryEventFix = $.event.fix,
 	mouseEventMap,
 	touchEventMap,
+	drawingMap,
 	cache = {},
 	cssProps,
 	cssPropsObj;
-		
+
 // Preferences constructor (which inherits from the defaults object)
 function Prefs() {}
 
@@ -101,6 +102,7 @@ defaults = {
 	translate: 0,
 	translateX: 0,
 	translateY: 0,
+	type: NULL,
 	visible: TRUE,
 	width: NULL,
 	x: 0,
@@ -618,6 +620,8 @@ $.fn.drawLayers = function(resetFire) {
 				if (callback && !layer._fired) {
 					layer._fired = TRUE;
 					callback.call($canvases[e], layer);
+					// Prevent event from being "transferred" to another layer
+					eventCache.type = NULL;
 				}
 				
 				// Use the mousedown event to start drag
@@ -752,15 +756,18 @@ function addLayer(canvas, params, layer, method) {
 
 // Add a jCanvas layer
 $.fn.addLayer = function(args) {
-	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args);
+	var $canvases = this, e, ctx;
 	args = args || {};
 
 	for (e=0; e<$canvases.length; e+=1) {
 		ctx = getContext($canvases[e]);
 		if (ctx) {
 			args.layer = TRUE;
-			args = addLayer($canvases[e], params, args);
+			// Find the method that corresponds with the given drawing type
+			if (args.type && !args.method) {
+				args.method = $.fn[drawingMap[args.type]];
+			}
+			args = addLayer($canvases[e], {}, args, args.method);
 		}
 	}
 	return $canvases;
@@ -1094,8 +1101,8 @@ touchEventMap = {
 
 // Convert mouse event name to a corresponding touch event name (if possible)
 function getTouchEventName(eventName) {
-	// Detect iOS
-	if (navigator.userAgent.match(/iphone|ipad|ipod/i)) {
+	// Detect touch event support
+	if ('ontouchstart' in window) {
 		if (mouseEventMap[eventName]) {
 			eventName = mouseEventMap[eventName];
 		}
@@ -1233,10 +1240,25 @@ $.event.fix = function(event) {
 
 /* Drawing API */
 
+// Map drawing names with their respective methods
+drawingMap = {
+	'arc': 'drawArc',
+	'bezier': 'drawBezier',
+	'circle': 'drawArc',
+	'ellipse': 'drawEllipse',
+	'function': 'draw',
+	'image': 'drawImage',
+	'line': 'drawLine',
+	'polygon': 'drawPolygon',
+	'quadratic': 'drawQuadratic',
+	'rectangle': 'drawRect',
+	'text': 'drawText',
+	'vector': 'drawVector'
+};
+
 // Draw on canvas using a function
 $.fn.draw = function self(args) {
-	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args);
+	var $canvases = this, e, ctx;
 	args = args || {};
 	
 	// Convert single function argument to object
@@ -1249,8 +1271,9 @@ $.fn.draw = function self(args) {
 	for (e=0; e<$canvases.length; e+=1) {
 		ctx = getContext($canvases[e]);
 		if (ctx && args.fn) {
-			args = addLayer($canvases[e], params, args, self);
-			args.fn.call($canvases[e], ctx, params);
+			args = addLayer($canvases[e], {}, args, self);
+			// Call any given user-defined function
+			args.fn.call($canvases[e], ctx);
 		}
 	}
 	return $canvases;
@@ -1604,7 +1627,7 @@ $.fn.drawLine = function self(args) {
 };
 
 // Draw quadratic curve
-$.fn.drawQuad = function self(args) {
+$.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 	var $canvases = this, e, ctx,
 		params = merge(new Prefs(), args),
 		l, lx, ly, lcx, lcy;
