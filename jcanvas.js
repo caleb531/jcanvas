@@ -23,7 +23,7 @@ var defaults,
 	cssPropsObj;
 
 // Preferences constructor (which inherits from the defaults object)
-function Prefs() {}
+function jCanvasObject() {}
 
 // jCanvas function
 function jCanvas(args) {
@@ -32,7 +32,7 @@ function jCanvas(args) {
 		merge(prefs, args);
 	} else {
 		// Reset preferences to defaults if nothing is passed
-		jCanvas.prefs = prefs = Prefs.prototype = merge({}, defaults);
+		jCanvas.prefs = prefs = jCanvasObject.prototype = merge({}, defaults);
 	}
 	return this;
 }
@@ -59,7 +59,10 @@ defaults = {
 	each: NULL,
 	end: 360,
 	fillStyle: 'transparent',
-	font: '12pt sans-serif',
+	font: '',
+	fontStyle: '',
+	fontSize: '12pt',
+	fontFamily: 'sans-serif',
 	fromCenter: TRUE,
 	fn: NULL,
 	graph: 'y',
@@ -271,7 +274,7 @@ jCanvas.extend = function(plugin) {
 	if (plugin.name) {
 		$.fn[plugin.name] = function self(args) {
 			var $canvases = this, canvas, e, ctx,
-				params = merge(new Prefs(), args);
+				params = merge(new jCanvasObject(), args);
 						
 			for (e=0; e<$canvases.length; e+=1) {
 				canvas = $canvases[e];
@@ -346,6 +349,12 @@ $.fn.getLayer = function(id) {
 		// Return the layer itself if given
 		layer = id;
 	} else if (idType === 'number') {
+		// Retrieve the layer using the given index
+			
+		// Allow for negative indices
+		if (id < 0) {
+			id = layers.length + id;
+		}
 		// Get layer based on given index
 		layer = layers[id];
 	} else {
@@ -672,9 +681,9 @@ $.fn.drawLayers = function(resetFire) {
 				}
 			}
 			
+			data.intersects = [];
 		}
 	}
-	data.intersects = [];
 	return $canvases;
 };
 
@@ -704,7 +713,7 @@ function addLayer(canvas, params, layer, method) {
 		}
 		
 		// Ensure layers are unique across canvases by cloning them
-		layer = merge(new Prefs(), layer);
+		layer = merge(new jCanvasObject(), layer);
 		
 		// Detect events for non-function layers
 		if (!isFn) {
@@ -1282,7 +1291,7 @@ $.fn.draw = function self(args) {
 // Clear canvas
 $.fn.clearCanvas = function(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args);
+		params = merge(new jCanvasObject(), args);
 
 	for (e=0; e<$canvases.length; e+=1) {
 		ctx = getContext($canvases[e]);
@@ -1358,7 +1367,7 @@ $.fn.restoreCanvasOnRedraw = function() {
 // Translate canvas
 $.fn.translateCanvas = function(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		data;
 
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1377,7 +1386,7 @@ $.fn.translateCanvas = function(args) {
 // Scale canvas
 $.fn.scaleCanvas = function(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		data;
 		
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1396,7 +1405,7 @@ $.fn.scaleCanvas = function(args) {
 // Rotate canvas
 $.fn.rotateCanvas = function(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		data;
 	
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1417,7 +1426,7 @@ $.fn.rotateCanvas = function(args) {
 // Draw rectangle
 $.fn.drawRect = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		x1, y1, x2, y2, r;
 
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1470,7 +1479,7 @@ $.fn.drawRect = function self(args) {
 // Draw arc or circle
 $.fn.drawArc = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args);
+		params = merge(new jCanvasObject(), args);
 	args = args || {};
 
 	// Change default end angle to radians if necessary
@@ -1503,7 +1512,7 @@ $.fn.drawArc = function self(args) {
 // Draw ellipse
 $.fn.drawEllipse = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		controlW = params.width * 4/3,
 		controlH = params.height;
 	params.closed = TRUE;
@@ -1537,7 +1546,7 @@ $.fn.drawEllipse = function self(args) {
 // Draw a regular (equal-angled) polygon
 $.fn.drawPolygon = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		// Polygon's central angle
 		dtheta = (2 * PI) / params.sides,
 		// Half of dtheta
@@ -1589,7 +1598,7 @@ $.fn.drawPolygon = function self(args) {
 // Draw line
 $.fn.drawLine = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		l, lx, ly;
 
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1629,7 +1638,7 @@ $.fn.drawLine = function self(args) {
 // Draw quadratic curve
 $.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		l, lx, ly, lcx, lcy;
 
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1672,7 +1681,7 @@ $.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 // Draw Bezier curve
 $.fn.drawBezier = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		l , lc,
 		lx, ly,
 		lcx1, lcy1,
@@ -1722,7 +1731,7 @@ $.fn.drawBezier = function self(args) {
 // Draw vector
 $.fn.drawVector = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		i, angle, length, x, y;
 
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1793,7 +1802,7 @@ function closeGraphPath(canvas, ctx, params) {
 // Graph a mathematical function as a path
 $.fn.drawGraph = function self(args) {
 	var $canvases = this, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		graph, domain, range,
 		canvasWidth, canvasHeight,
 		x, y, r, t;
@@ -1899,6 +1908,21 @@ $.fn.drawGraph = function self(args) {
 
 /* Text API */
 
+// Calculate font string and set it as the canvas font
+function setCanvasFont(ctx, params) {
+	if (params.font) {
+		// Prefer the font string if given
+		ctx.font = params.font;
+	} else {
+		// Otherwise, use the given font attributes
+		if (!isNaN(Number(params.fontSize))) {
+			// Pixels are the default units
+			params.fontSize += 'px';
+		}
+		ctx.font = params.fontStyle + ' ' + params.fontSize + ' ' + params.fontFamily;
+	}
+}
+
 // Measure canvas text
 function measureText(canvas, e, ctx, params, lines) {
 	var originalSize, sizeMatch,
@@ -1906,14 +1930,14 @@ function measureText(canvas, e, ctx, params, lines) {
 		l, curWidth;
 	
 	// Used cached width/height if possible
-	if (cache.text === params.text && cache.font === params.font && cache.maxWidth === params.maxWidth && cache.lineHeight === params.lineHeight) {
+	if (cache.text === params.text && cache.font === params.font && cache.fontStyle === params.fontStyle && cache.fontSize === params.fontSize && cache.fontFamily === params.fontFamily && cache.maxWidth === params.maxWidth && cache.lineHeight === params.lineHeight) {
 		
 		params.width = cache.width;
 		params.height = cache.height;
 		
 	} else if (!e) {
 		// Calculate text dimensions only once
-		
+								
 		// Calculate width of first line (for comparison)
 		params.width = ctx.measureText(lines[0]).width;
 		
@@ -1928,10 +1952,15 @@ function measureText(canvas, e, ctx, params, lines) {
 		
 		// Save original font size
 		originalSize = canvas.style.fontSize;
-		// Get specified font size
-		sizeMatch = params.font.match(sizeExp);
-		if (sizeMatch) {
-			canvas.style.fontSize = params.font.match(sizeExp)[0];
+		if (params.font) {
+			// Get specified font size using pattern
+			sizeMatch = params.font.match(sizeExp);
+			if (sizeMatch) {
+				canvas.style.fontSize = params.font.match(sizeExp)[0];
+			}
+		} else {
+			// Otherwise, use the given font size
+			canvas.style.fontSize = params.fontSize;
 		}
 		// Save text width and height in parameters object
 		params.height = parseFloat($.css(canvas, 'fontSize')) * lines.length * params.lineHeight;
@@ -1940,35 +1969,41 @@ function measureText(canvas, e, ctx, params, lines) {
 	}
 }
 
-// Wrap a strong of text within a defined width
+// Wrap a string of text within a defined width
 function wrapText(ctx, params) {
 	var text = params.text,
 		maxWidth = params.maxWidth,
-		words = params.text.split(' '),
+		words = text.split(' '),
 		lines = [],
 		line = '';
-	
+		
 	if (ctx.measureText(text).width < maxWidth || words.length === 1) {
 		// If text is short enough initially, do nothing else
 		// Or, if the text consists of only one word, do nothing else
 		lines = [text];
 	} else {
-		// Keep adding words to line until line is too long
-		while (words.length > 0) {
-			// Keep adding words to the current line until it is too long
-			// Also ensure that words longer than maxWidth will not cause an infinite loop
-			if (ctx.measureText(words[0]).width > maxWidth || ctx.measureText(line + words[0]).width < maxWidth) {
-				line += words.shift() + ' ';
-			} else {
-				// If line is too long, break and start a new line
-				lines.push(line);
+		// Wrap lines 
+		for (w=0; w<words.length; w+=1) {
+			
+			// Once line gets too wide, push word to next line
+			if (ctx.measureText(line + words[w]).width > maxWidth) {
+				// This check prevents empty lines from being created
+				if (line !== '') {
+					lines.push(line);
+				}
+				// Start new line and repeat process
 				line = '';
 			}
-			if (words.length === 0) {
-				// If we reach the last word, break and add new line
-				lines.push(line);
-			}
+			// Add words to line until the line is too wide
+			line += words[w];
+			// Do not add a space after the last word
+			if (w !== words.length-1) {
+				line += ' ';
+			}			
 		}
+		// The last word should always be pushed
+		lines.push(line);
+		
 	}
 	return lines;
 }
@@ -1976,7 +2011,7 @@ function wrapText(ctx, params) {
 // Draw text
 $.fn.drawText = function self(args) {
 	var $canvases = this, $canvas, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		lines, l, x, y;
 
 	for (e=0; e<$canvases.length; e+=1) {
@@ -1990,8 +2025,10 @@ $.fn.drawText = function self(args) {
 			// Set text-specific properties
 			ctx.textBaseline = params.baseline;
 			ctx.textAlign = params.align;
-			ctx.font = params.font;
-					
+			
+			// Set canvas font using given properties
+			setCanvasFont(ctx, params);
+									
 			if (!e && params.maxWidth !== NULL) {
 				// Wrap text using an internal function
 				lines = wrapText(ctx, params);
@@ -2059,16 +2096,18 @@ $.fn.measureText = function(args) {
 	var $canvases = this, ctx,
 		params;
 	
-	if (args !== UNDEFINED && typeof args !== 'object') {
+	if (args !== UNDEFINED && (typeof args !== 'object' || args.layer)) {
 		// If layer identifier is given, get that layer
 		params = $canvases.getLayer(args);
 	} else {
 		// If object is given, just use that
-		params = merge(new Prefs(), args);
+		params = merge(new jCanvasObject(), args);
 	}
-	
+		
 	ctx = getContext($canvases[0]);
 	if (ctx && params.text !== UNDEFINED) {
+		// Set canvas font using given properties
+		setCanvasFont(ctx, params);
 		// Calculate width and height of text
 		measureText($canvases[0], 0, ctx, params, params.text.split('\n'));
 	}
@@ -2080,7 +2119,7 @@ $.fn.measureText = function(args) {
 // Draw image
 $.fn.drawImage = function self(args) {
 	var $canvases = this, canvas, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		img, imgCtx, scaleFactor;
 	
 	// Use image or canvas element, if not, an image URL
@@ -2248,7 +2287,7 @@ $.fn.drawImage = function self(args) {
 // Create canvas pattern
 $.fn.createPattern = $.fn.pattern = function(args) {
 	var $canvases = this,
-		ctx, params = merge(new Prefs(), args),
+		ctx, params = merge(new jCanvasObject(), args),
 		img, pattern, imgCtx;
 
 	// Create pattern when image loads
@@ -2305,7 +2344,7 @@ $.fn.createPattern = $.fn.pattern = function(args) {
 // Create a canvas gradient object
 $.fn.createGradient = $.fn.gradient = function(args) {
 	var $canvases = this, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		gradient,
 		stops = [], nstops,
 		start, end,
@@ -2394,7 +2433,7 @@ $.fn.createGradient = $.fn.gradient = function(args) {
 $.fn.setPixels = function self(args) {
 	var $canvases = this,
 		canvas, e, ctx,
-		params = merge(new Prefs(), args),
+		params = merge(new jCanvasObject(), args),
 		px = {},
 		imgData, data, i, len;
 	
