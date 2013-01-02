@@ -401,6 +401,10 @@ $.fn.moveLayer = function(id, index) {
 			layers.splice(layer.index, 1);
 			// Add layer in its new placement
 			layers.splice(index, 0, layer);
+			// Handle negative indices
+			if (index < 0) {
+				index = layers.length + index;
+			}
 			// Update layer's stored index
 			layer.index = index;
 		}
@@ -1355,13 +1359,15 @@ $.fn.restoreCanvas = function() {
 };
 
 // Restore canvas
-$.fn.restoreCanvasOnRedraw = function() {
-	return this.draw({
+$.fn.restoreCanvasOnRedraw = function(args) {
+	var params = {
 		layer: TRUE,
 		fn: function() {
 			$(this).restoreCanvas();
 		}
-	});
+	};
+	merge(params, args);
+	return this.draw(params);
 };
 
 // Translate canvas
@@ -2126,8 +2132,6 @@ $.fn.drawImage = function self(args) {
 	imgCtx = params.source.getContext;
 	if (params.source.src || imgCtx) {
 		img = params.source;
-		params.width = img.width;
-		params.height = img.height;
 	} else if (params.source) {
 		img = new Image();
 		img.src = params.source;
