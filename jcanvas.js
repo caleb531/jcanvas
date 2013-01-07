@@ -1,5 +1,5 @@
-/** @license jCanvas
-Copyright 2012, Caleb Evans
+/**@license jCanvas v13.01.05
+Copyright 2013, Caleb Evans
 Licensed under the MIT license
 */
 
@@ -150,7 +150,7 @@ function getContext(canvas) {
 // Close path
 function closePath(canvas, ctx, params) {
 	var data;
-			
+	
 	// Close path if chosen
 	if (params.closed) {
 		ctx.closePath();
@@ -169,8 +169,10 @@ function closePath(canvas, ctx, params) {
 		ctx.closePath();
 	}
 	// Restore individual shape transformation
-	ctx.restore();
-	// Mask shape if chosen
+	if (params._transformed) {
+		ctx.restore();
+	}
+	// Enable masking support for this path if chosen
 	if (params.mask) {
 		if (params.autosave) {
 			// Automatically save transformation state by default
@@ -228,6 +230,7 @@ function transformShape(ctx, params, width, height) {
 			
 	// Measure angles in chosen units
 	params._toRad = (params.inDegrees ? PI/180 : 1);
+	params._transformed = TRUE;
 	ctx.save();
 	
 	// Always draw from center unless otherwise specified
@@ -267,7 +270,7 @@ function makePathDraggable(params) {
 jCanvas.extend = function(plugin) {
 	
 	// Merge properties with defaults
-	jCanvas.defaults = defaults = merge(defaults, plugin.props);
+	jCanvas.defaults = merge(defaults, plugin.props);
 	jCanvas();
 	
 	// Create plugin
@@ -316,7 +319,9 @@ function getCanvasData(canvas) {
 					translateX: 0,
 					translateY: 0,
 					mask: FALSE
-				}
+				},
+				animating: FALSE,
+				animated: NULL
 			};
 			data.savedTransforms = merge({}, data.transforms);
 			$.data(canvas, 'jCanvas', data);
@@ -609,8 +614,7 @@ $.fn.drawLayers = function(resetFire) {
 			
 			// Check events for intersecting layer
 			if (layer._event) {
-				
-												
+										
 				// Detect mouseover events
 				if (layer.mouseover || layer.mouseout || layer.cursor) {
 					if (!layer._hovered && !layer._fired) {
@@ -897,9 +901,8 @@ function animateColor(fx) {
 $.fn.animateLayer = function() {
 	var $canvases = this, $canvas, e, ctx,
 		args = ([]).slice.call(arguments, 0),
-		data,
-		layer;
-		
+		data, layer;
+			
 	// Deal with all cases of argument placement
 	/*
 		0. layer name/index
@@ -947,20 +950,38 @@ $.fn.animateLayer = function() {
 	}
 	
 	// Run callback function when animation completes
-	function complete($canvas, layer) {
+	function complete($canvas, data, layer) {
 		return function() {
+			// Prevent multiple redraw loops
+			if (!data.animating || data.animated === layer) {
+				// Redraw layers on last frame
+				$canvas.drawLayers();
+			}
 			showProps(layer);
-			$canvas.drawLayers();
 			if (args[4]) {
 				args[4].call($canvas[0], layer);
 			}
+			// Signify the end of an animation loop
+			layer._animating = FALSE;
+			data.animating = FALSE;
+			data.animated = NULL;
 		};
 	}
 	// Redraw layers on every frame of the animation
-	function step($canvas, layer) {
+	function step($canvas, data, layer) {
 		return function(now, fx) {
+			// Signify the start of an animation loop
+			if (!layer._animating && !data.animating) {
+				layer._animating = TRUE;
+				data.animating = TRUE;
+				data.animated = layer;
+			}
+			// Prevent multiple redraw loops
+			if (!data.animating || data.animated === layer) {
+				// Redraw layers for every frame
+				$canvas.drawLayers();
+			}
 			showProps(layer);
-			$canvas.drawLayers();
 			// Run callback function for every frame (if specified)
 			if (args[5]) {
 				args[5].call($canvas[0], now, fx, layer);
@@ -976,7 +997,7 @@ $.fn.animateLayer = function() {
 		ctx = getContext($canvases[e]);
 		if (ctx) {
 			data = getCanvasData($canvases[e]);
-
+			
 			// If a layer object was passed, use it the layer to be animated
 			layer = $canvas.getLayer(args[0]);
 			
@@ -989,15 +1010,15 @@ $.fn.animateLayer = function() {
 								
 				// Fix for jQuery's vendor prefixing support, which affects how width/height/opacity are animated
 				layer.style = cssPropsObj;
-				
+									
 				// Animate layer
 				$(layer).animate(args[1], {
 					duration: args[2],
 					easing: ($.easing[args[3]] ? args[3] : NULL),
 					// When animation completes
-					complete: complete($canvas, layer),
+					complete: complete($canvas, data, layer),
 					// Redraw canvas for every animation frame
-					step: step($canvas, layer)
+					step: step($canvas, data, layer)
 				});
 			}
 		}
@@ -1153,6 +1174,7 @@ function createEvent(eventName) {
 				eventCache.type = helperEventName;
 				eventCache.event = event;
 				$canvas.drawLayers(TRUE);
+				// startRedraw($canvas, data);
 				event.preventDefault();
 			});
 			data[helperEventName] = TRUE;
@@ -1979,7 +2001,7 @@ function measureText(canvas, e, ctx, params, lines) {
 function wrapText(ctx, params) {
 	var text = params.text,
 		maxWidth = params.maxWidth,
-		words = text.split(' '),
+		words = text.split(' '), w,
 		lines = [],
 		line = '';
 		
@@ -1988,7 +2010,7 @@ function wrapText(ctx, params) {
 		// Or, if the text consists of only one word, do nothing else
 		lines = [text];
 	} else {
-		// Wrap lines 
+		// Wrap lines
 		for (w=0; w<words.length; w+=1) {
 			
 			// Once line gets too wide, push word to next line
@@ -2005,7 +2027,7 @@ function wrapText(ctx, params) {
 			// Do not add a space after the last word
 			if (w !== words.length-1) {
 				line += ' ';
-			}			
+			}
 		}
 		// The last word should always be pushed
 		lines.push(line);
@@ -2487,9 +2509,7 @@ $.fn.setPixels = function self(args) {
 // Get canvas image as data URL
 $.fn.getCanvasImage = function(type, quality) {
 	var canvas = this[0];
-	return (canvas && canvas.toDataURL ?
-		canvas.toDataURL('image/' + type, quality) :
-		NULL);
+	return (canvas && canvas.toDataURL ? canvas.toDataURL('image/' + type, quality) : NULL);
 };
 
 // Enable canvas feature detection with $.support
