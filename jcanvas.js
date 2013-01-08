@@ -1,7 +1,8 @@
-/**@license jCanvas v13.01.05
-Copyright 2013, Caleb Evans
-Licensed under the MIT license
-*/
+/**
+ * @license jCanvas v13.01.08
+ * Copyright 2013 Caleb Evans
+ * Released under the MIT license
+ */
 
 // Import frequently used globals
 (function($, document, Image, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
@@ -25,7 +26,7 @@ var defaults,
 // Preferences constructor (which inherits from the defaults object)
 function jCanvasObject() {}
 
-// jCanvas function
+// jCanvas function for setting property defaults (it's also an object)
 function jCanvas(args) {
 	if (args) {
 		// Merge arguments with preferences
@@ -39,9 +40,10 @@ function jCanvas(args) {
 // Allow jCanvas function to be "chained" to other methods
 $.fn.jCanvas = jCanvas;
 
+// Events object for maintaining jCanvas event initiation functions
 jCanvas.events = {};
 
-// Set jCanvas default property values
+// jCanvas default property values
 defaults = {
 	align: 'center',
 	autosave: TRUE,
@@ -60,7 +62,7 @@ defaults = {
 	end: 360,
 	fillStyle: 'transparent',
 	font: '',
-	fontStyle: '',
+	fontStyle: 'normal',
 	fontSize: '12pt',
 	fontFamily: 'sans-serif',
 	fromCenter: TRUE,
@@ -115,7 +117,14 @@ defaults = {
 // Copy defaults to preferences object
 jCanvas();
 
-// Set global properties
+/* Internal helper methods */
+
+// Get canvas context
+function getContext(canvas) {
+	return (canvas && canvas.getContext ? canvas.getContext('2d') : NULL);
+}
+
+// Set canvas context properties
 function setGlobalProps(ctx, params) {
 	// Fill/stroke styles
 	ctx.fillStyle = params.fillStyle;
@@ -140,14 +149,7 @@ function setGlobalProps(ctx, params) {
 	ctx.globalCompositeOperation = params.compositing;
 }
 
-/* Internal helper methods */
-
-// Get canvas context
-function getContext(canvas) {
-	return (canvas && canvas.getContext ? canvas.getContext('2d') : NULL);
-}
-
-// Close path
+// Close current canvas path
 function closePath(canvas, ctx, params) {
 	var data;
 	
@@ -225,11 +227,12 @@ function translateCanvas(ctx, params, transforms) {
 	transforms.translateY += params.translateY;
 }
 
-// Rotate/scale individual shape and/or position it correctly
+// Transform (translate, scale, or rotate) shape
 function transformShape(ctx, params, width, height) {
 			
 	// Measure angles in chosen units
 	params._toRad = (params.inDegrees ? PI/180 : 1);
+	
 	params._transformed = TRUE;
 	ctx.save();
 	
@@ -266,7 +269,7 @@ function makePathDraggable(params) {
 
 /* Plugin API */
 
-// Extend jCanvas with custom methods
+// Extend jCanvas with user-defined methods
 jCanvas.extend = function(plugin) {
 	
 	// Merge properties with defaults
@@ -296,7 +299,7 @@ jCanvas.extend = function(plugin) {
 
 /* Layer API */
 
-// Keep track of the last two mouse coordinates for each canvas
+// Retrieved the stored jCanvas data for a canvas element
 function getCanvasData(canvas) {
 	var data;
 	if (cache.canvas === canvas) {
@@ -333,7 +336,7 @@ function getCanvasData(canvas) {
 	return data;
 }
 
-// Get jCanvas layers
+// Get jCanvas layers array
 $.fn.getLayers = function() {
 	var canvas = this[0], layers;
 	if (!canvas || !canvas.getContext) {
@@ -344,7 +347,7 @@ $.fn.getLayers = function() {
 	return layers;
 };
 
-// Get a single jCanvas layer
+// Get a single jCanvas layer object
 $.fn.getLayer = function(id) {
 	var layers = this.getLayers(),
 		idType = $.type(id),
@@ -444,6 +447,7 @@ $.fn.removeLayers = function() {
 		layers;
 	for (e=0; e<$canvases.length; e+=1) {
 		layers = $($canvases[e]).getLayers();
+		// Setting an array's length to 0 will empty the array
 		layers.length = 0;
 	}
 	return $canvases;
@@ -543,7 +547,7 @@ $.fn.drawLayer = function(name) {
 };
 
 // Draw all layers (or only the given layers)
-$.fn.drawLayers = function(resetFire) {
+$.fn.drawLayers = function() {
 	var $canvases = this, $canvas, e, ctx,
 		layers, layer, l,
 		data, eventCache, eventType,
@@ -576,9 +580,7 @@ $.fn.drawLayers = function(resetFire) {
 				layer.index = l;
 									
 				// Prevent any one event from firing excessively
-				if (resetFire) {
-					layer._fired = FALSE;
-				}
+				layer._fired = FALSE;
 				// Disable events temporarily if chosen
 				layer._event = !layer.disableEvents;
 				// Draw layer
@@ -702,10 +704,11 @@ function addLayer(canvas, params, layer, method) {
 		data, dragHelperEvents, i;
 	layer = layer || {};
 	
+	// Store arguments object for later use
 	params._args = layer;
 	
 	// Only add layer if it hasn't been added before
-	if (layer.layer && !layer._layer) {
+	if (params.layer && !params._layer) {
 		
 		$canvas = $(canvas);
 		layers = $canvas.getLayers();
@@ -1173,8 +1176,7 @@ function createEvent(eventName) {
 				eventCache.y = event.offsetY;
 				eventCache.type = helperEventName;
 				eventCache.event = event;
-				$canvas.drawLayers(TRUE);
-				// startRedraw($canvas, data);
+				$canvas.drawLayers();
 				event.preventDefault();
 			});
 			data[helperEventName] = TRUE;
@@ -1664,6 +1666,7 @@ $.fn.drawLine = function self(args) {
 };
 
 // Draw quadratic curve
+// The drawQuad() method has been deprecated
 $.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 	var $canvases = this, e, ctx,
 		params = merge(new jCanvasObject(), args),
@@ -2148,47 +2151,53 @@ $.fn.measureText = function(args) {
 $.fn.drawImage = function self(args) {
 	var $canvases = this, canvas, e, ctx,
 		params = merge(new jCanvasObject(), args),
-		img, imgCtx, scaleFactor;
+		img, imgCtx, source, scaleFactor;
+	
+	// Cache the given source
+	source = params.source;
 	
 	// Use image or canvas element, if not, an image URL
-	imgCtx = params.source.getContext;
-	if (params.source.src || imgCtx) {
-		img = params.source;
-	} else if (params.source) {
+	imgCtx = source.getContext;
+	if (source.src || imgCtx) {
+		img = source;
+	} else if (source) {
 		img = new Image();
-		img.src = params.source;
+		img.src = source;
 	}
 	
 	// Draw image function
 	function draw(e, ctx) {
 	
 		// Calculate image dimensions only once
-		if (!e) {
+		if (e === 0) {
 		
 			scaleFactor = img.width / img.height;
-			
+						
 			// Show entire image if no cropping region is defined
 			
-			// If width/sWidth or height/sHeight is not defined
+			// If width and sWidth are not defined, use image width
 			if (params.width === NULL && params.sWidth === NULL) {
 				args.width = params.width = params.sWidth = img.width;
 			}
+			// If width and sHeight are not defined, use image height
 			if (params.height === NULL && params.sHeight === NULL) {
 				args.height = params.height = params.sHeight = img.height;
 			}
 			
-			// If width or height is not defined
+			// If width is not defined, use the given sWidth
 			if (params.width === NULL && params.sWidth !== NULL) {
 				params.width = params.sWidth;
 			}
+			// If height is not defined, use the given sHeight
 			if (params.height === NULL && params.sHeight !== NULL) {
 				params.height = params.sHeight;
 			}
 			
-			// If sWidth or sHeight is not defined
+			// If sWidth is not defined, use image width
 			if (params.sWidth === NULL && params.width !== NULL) {
 				args.sWidth = params.sWidth = img.width;
 			}
+			// If sHeight is not defined, use image height
 			if (params.sHeight === NULL && params.height !== NULL) {
 				args.sHeight = params.sHeight = img.height;
 			}
@@ -2311,10 +2320,11 @@ $.fn.drawImage = function self(args) {
 };
 
 // Create canvas pattern
+// The pattern() method has been deprecated
 $.fn.createPattern = $.fn.pattern = function(args) {
 	var $canvases = this,
 		ctx, params = merge(new jCanvasObject(), args),
-		img, pattern, imgCtx;
+		img, pattern, imgCtx, source;
 
 	// Create pattern when image loads
 	function create() {
@@ -2332,25 +2342,28 @@ $.fn.createPattern = $.fn.pattern = function(args) {
 	ctx = getContext($canvases[0]);
 	if (ctx) {
 	
+		// Cache the given source
+		source = params.source;
+		
 		// Draw when image is loaded (if load() callback function is defined)
-		if (typeof params.source === 'function') {
+		if (typeof source === 'function') {
 			
 			img = document.createElement('canvas');
 			img.width = params.width;
 			img.height = params.height;
 			imgCtx = getContext(img);
-			params.source.call(img, imgCtx);
+			source.call(img, imgCtx);
 			onload();
 			
 		} else {
 			
 			// Use image element, if not, a image URL
-			imgCtx = params.source.getContext;
-			if (params.source.src || imgCtx) {
-				img = params.source;
+			imgCtx = source.getContext;
+			if (source.src || imgCtx) {
+				img = source;
 			} else {
 				img = new Image();
-				img.src = params.source;
+				img.src = source;
 			}
 			
 			// Draw image if already loaded
@@ -2358,6 +2371,8 @@ $.fn.createPattern = $.fn.pattern = function(args) {
 				onload();
 			} else {
 				img.onload = onload;
+				// Fix onload() bug in IE9
+				img.src = img.src;
 			}
 			
 		}
@@ -2368,6 +2383,7 @@ $.fn.createPattern = $.fn.pattern = function(args) {
 };
 
 // Create a canvas gradient object
+// The gradient() method has been deprecated
 $.fn.createGradient = $.fn.gradient = function(args) {
 	var $canvases = this, ctx,
 		params = merge(new jCanvasObject(), args),
@@ -2389,7 +2405,7 @@ $.fn.createGradient = $.fn.gradient = function(args) {
 			// Create radial gradient if chosen
 			gradient = ctx.createRadialGradient(params.x1, params.y1, params.r1, params.x2, params.y2, params.r2);
 		} else {
-			// By default, create a linear gradient
+			// Otherwise, create a linear gradient by default
 			gradient = ctx.createLinearGradient(params.x1, params.y1, params.x2, params.y2);
 		}
 
@@ -2413,7 +2429,7 @@ $.fn.createGradient = $.fn.gradient = function(args) {
 		
 		// Loop through color stops to fill in the blanks
 		for (i=0; i<nstops; i+=1) {
-			// A progression, in this case, is defined as all of the color stops between and including two known color stops
+			// A progression, in this context, is defined as all of the color stops between and including two known color stops
 			
 			// If stop is a number, start a new progression
 			if (stops[i] !== NULL) {
@@ -2468,10 +2484,11 @@ $.fn.setPixels = function self(args) {
 		ctx = getContext(canvas);
 		if (ctx) {
 			
-			args = addLayer($canvases[e], params, args, self);
-			// Measure (x, y) from center of region
+			args = addLayer(canvas, params, args, self);
+			// Measure (x, y) from center of region by default
 			transformShape(ctx, params, params.width, params.height);
 			
+			// Use entire canvas of x, y, width, or height is not defined
 			if (!params.x || !params.y || !params.width || !params.height) {
 				params.width = canvas.width;
 				params.height = canvas.height;
@@ -2483,7 +2500,7 @@ $.fn.setPixels = function self(args) {
 			len = data.length;
 			px = [];
 						
-			// Loop through pixels with the "each" method
+			// Loop through pixels with the "each" callback function
 			if (params.each) {
 				for (i=0; i<len; i+=4) {
 					px.r = data[i];
