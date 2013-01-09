@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8">
-	<title>jCanvas rotate canvas</title>
+	<title>jCanvas scale & rotate canvas</title>
 	<style>
 		html, body { width:100%; height:100%; margin: 0px;}
 		canvas { display:block; }
@@ -11,8 +11,8 @@
 <body>
 	<div id="content">
 		<canvas id="control" width="300" height="100"></canvas>
-		<canvas id="rotated" width="300" height="100"></canvas>
-		Two canvases above.  Top is unrotated.  Bottom has identical geometry on rotated canvas.
+		<canvas id="scaledRotated" width="300" height="100"></canvas>
+		Two canvases above.  Top is unscaled, unrotated.  Bottom has identical geometry on scaled, rotated canvas.
 	</div>
 	<script src="http://code.jquery.com/jquery.min.js"></script>
 	<script src="../../../jcanvas.min.js"></script>
@@ -21,7 +21,7 @@
 		// contextBox makes it easier to see what's going on in by-hand tests
 		transformation_contextBox('#control', 100)
 		transformation_simpleBox('#control', 100, 0)
-		transformation_rotateCanvas('#rotated', 100, 0)
+		transformation_scaleRotateCanvas('#scaledRotated', 100, 0)
 	</script>
 </body>
 </html>
