@@ -8,7 +8,7 @@ def compress(source):
 	minified = re.sub('(\.\w+)$', '.min\\1', source)
 		
 	# Compress source file using Google Closure Compiler
-	os.system('java -jar closurecompiler.jar --js ' + source + ' --js_output_file ' + minified + ' --compilation_level SIMPLE_OPTIMIZATIONS')
+	os.system('java -jar closure-compiler.jar --js ' + source + ' --js_output_file ' + minified + ' --compilation_level SIMPLE_OPTIMIZATIONS')
 
 # Update version in given source file
 def update_version(source, version):

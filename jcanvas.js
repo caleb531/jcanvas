@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.01.08
+ * @license jCanvas v13.01.09
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -776,18 +776,19 @@ function addLayer(canvas, params, layer, method) {
 
 // Add a jCanvas layer
 $.fn.addLayer = function(args) {
-	var $canvases = this, e, ctx;
+	var $canvases = this, e, ctx,
+		params = {};
 	args = args || {};
 
 	for (e=0; e<$canvases.length; e+=1) {
 		ctx = getContext($canvases[e]);
 		if (ctx) {
-			args.layer = TRUE;
+			args.layer = params.layer = TRUE;
 			// Find the method that corresponds with the given drawing type
 			if (args.type && !args.method) {
 				args.method = $.fn[drawingMap[args.type]];
 			}
-			args = addLayer($canvases[e], {}, args, args.method);
+			args = addLayer($canvases[e], params, args, args.method);
 		}
 	}
 	return $canvases;
@@ -1164,9 +1165,9 @@ function createEvent(eventName) {
 		
 		// Both mouseover/mouseout events will be managed by a single mousemove event
 		var helperEventName = (eventName === 'mouseover' || eventName === 'mouseout') ? 'mousemove' : eventName,
-			// Retrieve canvas's event cache
-			eventCache = data.event;
-				
+		// Retrieve canvas's event cache
+		eventCache = data.event;
+		
 		// Ensure a single DOM event is not bound more than once
 		if (!data[helperEventName]) {
 			// Bind one canvas event which handles all layer events of that type
