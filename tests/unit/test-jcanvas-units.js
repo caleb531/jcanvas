@@ -14,6 +14,36 @@ function animateLayer_drawLine(canvasName, msecShift, afterFn) {
 		strokeStyle: "#0f0"}, msecShift, afterFn)
 }
 
+function animateLayer_drawLinesInstantShiftVariedOpacity(canvasName, afterFn) {
+	$(canvasName).addLayer({method: "drawRect", name: "context-box",
+		strokeStyle: "#00f", fillStyle: "#00f", x: 0, y: 0,
+		width: 250, height: 200, fromCenter: false, opacity: 1
+	})
+	$(canvasName).addLayer({method: "drawLine", name: "vertical-beamA",
+		strokeStyle: "#f00", strokeWidth: 8, x1: 20, y1: 5, x2: 20, y2: 30,
+		opacity: 1
+	})
+	.addLayer({method: "drawLine", name: "vertical-beamB",
+		strokeStyle: "#f00", strokeWidth: 8, x1: 20, y1: 35, x2: 20, y2: 60,
+		opacity: 0.8
+	})
+	.addLayer({method: "drawLine", name: "vertical-beamC",
+		strokeStyle: "#f00", strokeWidth: 8, x1: 20, y1: 65, x2: 20, y2: 90,
+		opacity: 0.6
+	})
+	.addLayer({method: "drawLine", name: "vertical-beamD",
+		strokeStyle: "#f00", strokeWidth: 8, x1: 20, y1: 95, x2: 20, y2: 120,
+		opacity: 0.4
+	})
+	.animateLayer("vertical-beamA", {x1: 200, x2: 200, opacity: 1,
+		strokeStyle: "#0f0"}, 0)
+	.animateLayer("vertical-beamB", {x1: 200, x2: 200, opacity: 1,
+		strokeStyle: "#0f0"}, 0)
+	.animateLayer("vertical-beamC", {x1: 200, x2: 200, opacity: 1,
+		strokeStyle: "#0f0"}, 0)
+	.animateLayer("vertical-beamD", {x1: 200, x2: 200, opacity: 1,
+		strokeStyle: "#0f0"}, 0, afterFn)
+}
 function animateLayer_drawRect(canvasName, msecShift, afterFn) {
 	$(canvasName).addLayer({method: "drawRect", name: "shift-box",
 		strokeStyle: "#f00", fillStyle: "#f00", x: 50, y: 50,
@@ -69,10 +99,34 @@ function transformation_rotateCanvas(canvasName, x, y) {
 	transformation_simpleBox(canvasName, x, y)
 }
 
+function transformation_rotateScaleCanvas(canvasName, x, y) {
+	$(canvasName).rotateCanvas({
+		rotate: 10
+	})
+	.scaleCanvas({
+		scaleX: 2, scaleY: 3
+	})
+	
+	transformation_contextBox(canvasName, x)
+	transformation_simpleBox(canvasName, x, y)
+}
+
 function transformation_scaleCanvas(canvasName, x, y) {
 	$(canvasName).scaleCanvas({
 		scaleX: 2, scaleY: 3
 	})
+	transformation_contextBox(canvasName, x)
+	transformation_simpleBox(canvasName, x, y)
+}
+
+function transformation_scaleRotateCanvas(canvasName, x, y) {
+	$(canvasName).scaleCanvas({
+		scaleX: 2, scaleY: 3
+	})
+	.rotateCanvas({
+		rotate: 10
+	})
+	transformation_contextBox(canvasName, x)
 	transformation_simpleBox(canvasName, x, y)
 }
 
