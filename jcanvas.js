@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.01.09
+ * @license jCanvas v13.01.10
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -956,12 +956,12 @@ $.fn.animateLayer = function() {
 	// Run callback function when animation completes
 	function complete($canvas, data, layer) {
 		return function() {
+			showProps(layer);
 			// Prevent multiple redraw loops
 			if (!data.animating || data.animated === layer) {
 				// Redraw layers on last frame
 				$canvas.drawLayers();
 			}
-			showProps(layer);
 			if (args[4]) {
 				args[4].call($canvas[0], layer);
 			}
@@ -974,6 +974,7 @@ $.fn.animateLayer = function() {
 	// Redraw layers on every frame of the animation
 	function step($canvas, data, layer) {
 		return function(now, fx) {
+			showProps(layer);
 			// Signify the start of an animation loop
 			if (!layer._animating && !data.animating) {
 				layer._animating = TRUE;
@@ -985,7 +986,6 @@ $.fn.animateLayer = function() {
 				// Redraw layers for every frame
 				$canvas.drawLayers();
 			}
-			showProps(layer);
 			// Run callback function for every frame (if specified)
 			if (args[5]) {
 				args[5].call($canvas[0], now, fx, layer);
