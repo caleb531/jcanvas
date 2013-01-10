@@ -33,6 +33,18 @@ asyncTest("animateLayer, method drawLine", 1, function () {
 		})
 })
 
+asyncTest("animateLayer, four opacity and position animations", 4, function () {
+	var ac = new AtomicCanvas()
+	animateLayer_drawLinesInstantShiftVariedOpacity("#atomic-canvas",
+		function () {
+			QUnit.pixelEqual(ac.canvas, 200, 20, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 200, 50, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 200, 80, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 200, 110, 0, 255, 0, 255)
+			QUnit.start()
+		})
+})
+
 asyncTest("animateLayer, method drawRect", 1, function () {
 	var ac = new AtomicCanvas()
 	animateLayer_drawRect("#atomic-canvas", 0,
