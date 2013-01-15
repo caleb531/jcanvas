@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.01.10
+ * @license jCanvas v13.01.14
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -256,14 +256,6 @@ function transformShape(ctx, params, width, height) {
 	}
 	if (params.translate || params.translateX || params.translateY) {
 		translateCanvas(ctx, params, {});
-	}
-}
-
-// Add support for draggable paths
-function makePathDraggable(params) {
-	if (params.draggable) {
-		params.translateX += params.x;
-		params.translateY += params.y;
 	}
 }
 
@@ -1638,7 +1630,6 @@ $.fn.drawLine = function self(args) {
 
 			args = addLayer($canvases[e], params, args, self);
 			setGlobalProps(ctx, params);
-			makePathDraggable(params);
 			transformShape(ctx, params, 0);
 				
 			// Draw each point
@@ -1648,7 +1639,7 @@ $.fn.drawLine = function self(args) {
 				lx = params['x' + l];
 				ly = params['y' + l];
 				if (lx !== UNDEFINED && ly !== UNDEFINED) {
-					ctx.lineTo(lx, ly);
+					ctx.lineTo(lx+params.x, ly+params.y);
 					l += 1;
 				} else {
 					break;
@@ -1671,7 +1662,7 @@ $.fn.drawLine = function self(args) {
 $.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 	var $canvases = this, e, ctx,
 		params = merge(new jCanvasObject(), args),
-		l, lx, ly, lcx, lcy;
+		l, lx, ly, lcx, lcy, dx, dy;
 
 	for (e=0; e<$canvases.length; e+=1) {
 		ctx = getContext($canvases[e]);
@@ -1679,20 +1670,19 @@ $.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 
 			args = addLayer($canvases[e], params, args, self);
 			setGlobalProps(ctx, params);
-			makePathDraggable(params);
 			transformShape(ctx, params, 0);
 			
 			// Draw each point
 			l = 2;
 			ctx.beginPath();
-			ctx.moveTo(params.x1, params.y1);
+			ctx.moveTo(params.x1+params.x, params.y1+params.y);
 			while (TRUE) {
 				lx = params['x' + l];
 				ly = params['y' + l];
 				lcx = params['cx' + (l-1)];
 				lcy = params['cy' + (l-1)];
 				if (lx !== UNDEFINED && ly !== UNDEFINED && lcx !== UNDEFINED && lcy !== UNDEFINED) {
-					ctx.quadraticCurveTo(lcx, lcy, lx, ly);
+					ctx.quadraticCurveTo(lcx+params.x, lcy+params.y, lx+params.x, ly+params.y);
 					l += 1;
 				} else {
 					break;
@@ -1725,14 +1715,13 @@ $.fn.drawBezier = function self(args) {
 
 			args = addLayer($canvases[e], params, args, self);
 			setGlobalProps(ctx, params);
-			makePathDraggable(params);
 			transformShape(ctx, params, 0);
 			
 			// Draw each point
 			l = 2;
 			lc = 1;
 			ctx.beginPath();
-			ctx.moveTo(params.x1, params.y1);
+			ctx.moveTo(params.x1+params.x, params.y1+params.y);
 			while (TRUE) {
 				lx = params['x' + l];
 				ly = params['y' + l];
@@ -1741,7 +1730,7 @@ $.fn.drawBezier = function self(args) {
 				lcx2 = params['cx' + (lc+1)];
 				lcy2 = params['cy' + (lc+1)];
 				if (lx !== UNDEFINED && ly !== UNDEFINED && lcx1 !== UNDEFINED && lcy1 !== UNDEFINED && lcx2 !== UNDEFINED && lcy2 !== UNDEFINED) {
-					ctx.bezierCurveTo(lcx1, lcy1, lcx2, lcy2, lx, ly);
+					ctx.bezierCurveTo(lcx1+params.x, lcy1+params.y, lcx2+params.x, lcy2+params.y, lx+params.x, ly+params.y);
 					l += 1;
 					lc += 2;
 				} else {
