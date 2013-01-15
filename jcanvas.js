@@ -54,6 +54,7 @@ defaults = {
 	compositing: 'source-over',
 	cornerRadius: 0,
 	cropFromCenter: TRUE,
+	data: "",
 	disableDrag: FALSE,
 	disableEvents: FALSE,
 	domain: NULL,
