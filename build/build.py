@@ -19,7 +19,7 @@ def update_version(source, version):
 	f.close()
 		
 	# Update source version
-	contents = re.sub(' v([\d\.]+)', (' v' + version), contents, 1)
+	contents = re.sub(r'\bv([\d\.]+)', ('v' + version), contents, 1)
 	
 	# Write updated source to source file
 	f = open(source, 'w+')
@@ -38,10 +38,12 @@ def main():
 	version = now.strftime('%y.%m.%d')
 	
 	source = '../jcanvas.js'
+	manifest = '../jcanvas.jquery.json'
 	readme = '../README.md'
 	
 	# Update version in source and readme files
 	update_version(source, version)
+	update_version(manifest, version)
 	
 	# Compress jCanvas source
 	compress(source)
