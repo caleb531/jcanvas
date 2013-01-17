@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.01.14
+ * @license jCanvas v13.01.17
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -58,6 +58,7 @@ defaults = {
 	disableEvents: FALSE,
 	domain: NULL,
 	draggable: FALSE,
+	data: {},
 	each: NULL,
 	end: 360,
 	fillStyle: 'transparent',
@@ -539,7 +540,7 @@ $.fn.drawLayer = function(name) {
 };
 
 // Draw all layers (or only the given layers)
-$.fn.drawLayers = function() {
+$.fn.drawLayers = function(_resetFire) {
 	var $canvases = this, $canvas, e, ctx,
 		layers, layer, l,
 		data, eventCache, eventType,
@@ -554,25 +555,19 @@ $.fn.drawLayers = function() {
 			// Clear canvas first
 			$canvas.clearCanvas();
 			
-			// Retrieve canvas data from cache
-			if (cache.canvas === $canvases[e]) {
-				data = cache.data;
-			} else {
-				// Get canvas data and cache it
-				data = getCanvasData($canvases[e]);
-				cache.canvas = $canvases[e];
-				cache.data = data;
-			}
 			layers = data.layers;
 			
 			// Draw layers from first to last (bottom to top)
 			for (l=0; l<layers.length; l+=1) {
 				layer = layers[l];
+				
 				// Ensure layer index is up-to-date
 				layer.index = l;
 									
 				// Prevent any one event from firing excessively
-				layer._fired = FALSE;
+				if (_resetFire) {
+					layer._fired = FALSE;
+				}
 				// Disable events temporarily if chosen
 				layer._event = !layer.disableEvents;
 				// Draw layer
@@ -648,10 +643,10 @@ $.fn.drawLayers = function() {
 					// Keep track of drag state
 					drag.layer = layer;
 					drag.dragging = TRUE;
-					drag.startX = layer.x;
-					drag.startY = layer.y;
-					drag.endX = layer._eventX;
-					drag.endY = layer._eventY;
+					drag.startX = layer.startX = layer.x;
+					drag.startY = layer.startY = layer.y;
+					drag.endX = layer.endX = layer._eventX;
+					drag.endY = layer.endY = layer._eventY;
 					
 					// Trigger dragstart event if defined
 					if (layer.dragstart) {
@@ -725,7 +720,10 @@ function addLayer(canvas, params, layer, method) {
 			layer.method = $.fn[layer.method] || method;
 			// Retrieve canvas data
 			data = getCanvasData(canvas);
-				
+			// Give layer access to canvas element and its data
+			layer._data = data;
+			layer.canvas = canvas;
+			
 			// Check for any associated jCanvas events and enable them
 			for (event in jCanvas.events) {
 				if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
@@ -954,6 +952,7 @@ $.fn.animateLayer = function() {
 				// Redraw layers on last frame
 				$canvas.drawLayers();
 			}
+			// Run callback function at the end of the animation
 			if (args[4]) {
 				args[4].call($canvas[0], layer);
 			}
@@ -987,6 +986,7 @@ $.fn.animateLayer = function() {
 
 	// Do not modify original object
 	args[1] = merge({}, args[1]);
+	hideProps(args[1], TRUE);
 
 	for (e=0; e<$canvases.length; e+=1) {
 		$canvas = $($canvases[e]);
@@ -996,17 +996,16 @@ $.fn.animateLayer = function() {
 			
 			// If a layer object was passed, use it the layer to be animated
 			layer = $canvas.getLayer(args[0]);
-			
+				
 			// Ignore layers that are functions
 			if (layer && layer.method !== $.fn.draw) {
-								
+				
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				hideProps(layer);
-				hideProps(args[1], TRUE);
 								
 				// Fix for jQuery's vendor prefixing support, which affects how width/height/opacity are animated
 				layer.style = cssPropsObj;
-									
+													
 				// Animate layer
 				$(layer).animate(args[1], {
 					duration: args[2],
@@ -1169,7 +1168,7 @@ function createEvent(eventName) {
 				eventCache.y = event.offsetY;
 				eventCache.type = helperEventName;
 				eventCache.event = event;
-				$canvas.drawLayers();
+				$canvas.drawLayers(TRUE);
 				event.preventDefault();
 			});
 			data[helperEventName] = TRUE;
@@ -1199,7 +1198,7 @@ function detectEvents(canvas, ctx, params) {
 	// Canvas must have event bindings
 	if (layer._event) {
 		
-		data = getCanvasData(canvas);
+		data = layer._data;
 		eventCache = data.event;
 		over = ctx.isPointInPath(eventCache.x, eventCache.y);
 		transforms = data.transforms;
@@ -1631,7 +1630,7 @@ $.fn.drawLine = function self(args) {
 			args = addLayer($canvases[e], params, args, self);
 			setGlobalProps(ctx, params);
 			transformShape(ctx, params, 0);
-				
+												
 			// Draw each point
 			l = 1;
 			ctx.beginPath();
@@ -1662,7 +1661,7 @@ $.fn.drawLine = function self(args) {
 $.fn.drawQuadratic = $.fn.drawQuad = function self(args) {
 	var $canvases = this, e, ctx,
 		params = merge(new jCanvasObject(), args),
-		l, lx, ly, lcx, lcy, dx, dy;
+		l, lx, ly, lcx, lcy;
 
 	for (e=0; e<$canvases.length; e+=1) {
 		ctx = getContext($canvases[e]);
@@ -1716,7 +1715,7 @@ $.fn.drawBezier = function self(args) {
 			args = addLayer($canvases[e], params, args, self);
 			setGlobalProps(ctx, params);
 			transformShape(ctx, params, 0);
-			
+
 			// Draw each point
 			l = 2;
 			lc = 1;
