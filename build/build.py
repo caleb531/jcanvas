@@ -11,7 +11,7 @@ def compress(source):
 	os.system('java -jar closure-compiler.jar --js ' + source + ' --js_output_file ' + minified + ' --compilation_level SIMPLE_OPTIMIZATIONS')
 
 # Update version in given source file
-def update_version(source, version_prefix, version):
+def update_version(source, version):
 	# Open source file for reading and writing
 	f = open(source, 'r+')
 	# Read contents from source file
@@ -19,7 +19,7 @@ def update_version(source, version_prefix, version):
 	f.close()
 		
 	# Update source version
-	contents = re.sub(version_prefix + '([\d\.]+)', (version_prefix + version), contents, 1)
+	contents = re.sub('\d{2}\.\d{2}\.\d{2}', version, contents, 1)
 	
 	# Write updated source to source file
 	f = open(source, 'w+')
@@ -42,8 +42,8 @@ def main():
 	readme = '../README.md'
 	
 	# Update version in source and readme files
-	update_version(source, ' v', version)
-	update_version(manifest, '"version": "', version)
+	update_version(source, version)
+	update_version(manifest, version)
 	
 	# Compress jCanvas source
 	compress(source)

@@ -22,7 +22,7 @@
 	"docs": "http://calebevans.me/projects/jcanvas/docs.php",
 	"download": "http://calebevans.me/projects/jcanvas/downloads.php",
 	"bugs": "https://github.com/caleb531/jcanvas/issues",
-	"manitainers": {
+	"manitainers": [
 		{
 			"name": "Caleb Evans",
 			"email": "calebevans.me@gmail.com",
@@ -31,5 +31,5 @@
 		{
 			"name": "Dave Smith"
 		}
-	}	
+	]	
 }
