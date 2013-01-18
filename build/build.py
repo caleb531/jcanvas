@@ -17,7 +17,7 @@ def update_version(source, version):
 	# Read contents from source file
 	contents = f.read()
 	f.close()
-		
+	
 	# Update source version
 	contents = re.sub('\d{2}\.\d{2}\.\d{2}', version, contents, 1)
 	
