@@ -1,0 +1,42 @@
+{
+	"name": "jcanvas",
+	"title": "jCanvas",
+	"version": "13.01.17",
+	"author": {
+		"name": "Caleb Evans",
+		"email": "calebevans.me@gmail.com",
+		"url": "http://calebevans.me/"
+	},
+	"licenses": [
+		{
+			"type": "MIT",
+			"url": "https://github.com/caleb531/jcanvas/blob/master/license.txt"
+		}
+	],
+	"dependencies": {
+		"jquery": ">=1.4"
+	},
+	"description": "jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.",
+	"keywords": [
+		"jcanvas",
+		"jquery",
+		"html5",
+		"canvas",
+		"javascript"
+	],
+	"homepage": "http://calebevans.me/projects/jcanvas/",
+	"docs": "http://calebevans.me/projects/jcanvas/docs.php",
+	"download": "http://calebevans.me/projects/jcanvas/downloads.php",
+	"bugs": "https://github.com/caleb531/jcanvas/issues",
+	"maintainers": [
+		{
+			"name": "Caleb Evans",
+			"email": "calebevans.me@gmail.com",
+			"url": "http://calebevans.me/"
+		},
+		{
+			"name": "Dave Smith",
+			"url": "https://twitter.com/dave_k_smith"
+		}
+	]
+}
