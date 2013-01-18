@@ -1,7 +1,7 @@
 {
 	"name": "jcanvas",
 	"title": "jCanvas",
-	"version": "13.01.17",
+	"version": "13.01.18",
 	"author": {
 		"name": "Caleb Evans",
 		"email": "calebevans.me@gmail.com",
@@ -10,7 +10,7 @@
 	"licenses": [
 		{
 			"type": "MIT",
-			"url": "https://github.com/caleb531/jcanvas/blob/master/license.txt"
+			"url": "https://github.com/caleb531/jcanvas/blob/master/LICENSE.txt"
 		}
 	],
 	"dependencies": {
