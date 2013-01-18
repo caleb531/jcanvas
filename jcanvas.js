@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.01.17
+ * @license jCanvas v13.01.18
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -70,6 +70,7 @@ defaults = {
 	fn: NULL,
 	graph: 'y',
 	height: NULL,
+	imageSmoothing: TRUE,
 	inDegrees: TRUE,
 	lineHeight: 1,
 	load: NULL,
@@ -127,6 +128,7 @@ function getContext(canvas) {
 
 // Set canvas context properties
 function setGlobalProps(ctx, params) {
+	var imageSmoothingEnabled, imageSmoothing;
 	// Fill/stroke styles
 	ctx.fillStyle = params.fillStyle;
 	ctx.strokeStyle = params.strokeStyle;
@@ -148,6 +150,11 @@ function setGlobalProps(ctx, params) {
 	// Opacity and composite operation
 	ctx.globalAlpha = params.opacity;
 	ctx.globalCompositeOperation = params.compositing;
+	// Support cross-browser toggling of image smoothing
+	if (params.imageSmoothing) {
+		imageSmoothingEnabled = 'imageSmoothingEnabled';
+		ctx['webkit' + imageSmoothingEnabled] = ctx['webkit' + imageSmoothingEnabled] = params.imageSmoothing;
+	}
 }
 
 // Close current canvas path
@@ -2515,6 +2522,10 @@ $.fn.setPixels = function self(args) {
 // Get canvas image as data URL
 $.fn.getCanvasImage = function(type, quality) {
 	var canvas = this[0];
+	// JPEG quality defaults to 1
+	if (quality === UNDEFINED) {
+		quality = 1;
+	}
 	return (canvas && canvas.toDataURL ? canvas.toDataURL('image/' + type, quality) : NULL);
 };
 
