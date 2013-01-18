@@ -22,7 +22,9 @@
 		"jquery",
 		"html5",
 		"canvas",
-		"javascript"
+		"javascript",
+		"event",
+		"animation"
 	],
 	"homepage": "http://calebevans.me/projects/jcanvas/",
 	"docs": "http://calebevans.me/projects/jcanvas/docs.php",
