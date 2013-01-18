@@ -17,19 +17,26 @@
 		"jquery": ">=1.4"
 	},
 	"description": "jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.",
-	"keywords": ["jcanvas", "jquery", "html5", "canvas", "javascript"],
+	"keywords": [
+		"jcanvas",
+		"jquery",
+		"html5",
+		"canvas",
+		"javascript"
+	],
 	"homepage": "http://calebevans.me/projects/jcanvas/",
 	"docs": "http://calebevans.me/projects/jcanvas/docs.php",
 	"download": "http://calebevans.me/projects/jcanvas/downloads.php",
 	"bugs": "https://github.com/caleb531/jcanvas/issues",
-	"manitainers": [
+	"maintainers": [
 		{
 			"name": "Caleb Evans",
 			"email": "calebevans.me@gmail.com",
 			"url": "http://calebevans.me/"
 		},
 		{
-			"name": "Dave Smith"
+			"name": "Dave Smith",
+			"url": "https://twitter.com/dave_k_smith"
 		}
 	]
 }
