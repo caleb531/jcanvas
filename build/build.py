@@ -20,7 +20,7 @@ def update_version(source, version):
 	
 	# Update source version
 	contents = re.sub('\d{2}\.\d{2}\.\d{2}', version, contents, 1)
-	
+
 	# Write updated source to source file
 	f = open(source, 'w+')
 	f.write(contents)
