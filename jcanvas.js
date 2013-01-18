@@ -304,7 +304,7 @@ function getCanvasData(canvas) {
 	var data;
 	if (cache.canvas === canvas) {
 		// Retrieve canvas data from cache
-		data = cache.data;
+		data = cache._data;
 	} else {
 		// Get canvas data
 		data = $.data(canvas, 'jCanvas');
@@ -331,7 +331,7 @@ function getCanvasData(canvas) {
 		}
 		// Cache canvas data
 		cache.canvas = canvas;
-		cache.data = data;
+		cache._data = data;
 	}
 	return data;
 }
