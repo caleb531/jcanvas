@@ -7,15 +7,15 @@ import datetime, sys, os, subprocess, re
 def run_cmd(cmd):
 	process = subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE)
 	out, err = process.communicate()
-	return out
+	return out.decode('utf-8')
 
 # Compress source file
-def compress(source):
+def compress_file(source):
 	# Create path to minified file from source path
-	minified = re.sub('(\.\w+)$', '.min\\1', source)
+	compressed = re.sub('(\.\w+)$', '.min\\1', source)
 	
 	# Compress source file using Google Closure Compiler
-	run_cmd('java -jar build/closure-compiler.jar --js ' + source + ' --js_output_file ' + minified + ' --compilation_level SIMPLE_OPTIMIZATIONS')
+	run_cmd('java -jar build/closure-compiler.jar --js ' + source + ' --js_output_file ' + compressed + ' --compilation_level SIMPLE_OPTIMIZATIONS')
 
 # Update version in given source file
 def replace_in_file(path, expression, version):
@@ -54,10 +54,14 @@ def main():
 	readme = 'README.md'
 	license = 'LICENSE.txt'
 	
+	print('Updating version in source files...')
+	
 	# Update version in source and readme files
 	version_re = '\d{2}\.\d{2}\.\d{2}'
 	replace_in_file(source, version_re, version)
 	replace_in_file(manifest, version_re, version)
+	
+	print('Updating year in copyright notices...')
 	
 	# Update year in copyright license
 	year_re = '\d{4}'
@@ -69,13 +73,15 @@ def main():
 	tags = run_cmd('git tag -l')
 	
 	# Create tag for this version if it doesn't exist
-	if ((version in tags) == False):
+	if (version not in tags):
 		run_cmd('git tag ' + version)
 		print('Added new tag: ' + version)
-		
-	# Compress jCanvas source
-	compress(source)
 	
+	print('Compressing jCanvas for production...')
+	
+	# Compress jCanvas source
+	compress_file(source)
+		
 	# Inform user when build process has finished
 	print('Done.')
 	

@@ -1,7 +1,7 @@
 {
 	"name": "jcanvas",
 	"title": "jCanvas",
-	"version": "13.01.18",
+	"version": "13.01.19",
 	"author": {
 		"name": "Caleb Evans",
 		"email": "calebevans.me@gmail.com",
@@ -16,13 +16,16 @@
 	"dependencies": {
 		"jquery": ">=1.4"
 	},
-	"description": "jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.",
+	"description": "jCanvas brings the flexible power of jQuery's syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
 	"keywords": [
 		"jcanvas",
 		"jquery",
 		"html5",
 		"canvas",
-		"javascript"
+		"javascript",
+		"event",
+		"animation",
+		"touch"
 	],
 	"homepage": "http://calebevans.me/projects/jcanvas/",
 	"docs": "http://calebevans.me/projects/jcanvas/docs.php",
@@ -36,6 +39,7 @@
 		},
 		{
 			"name": "Dave Smith",
+			"email": "dave.k.smith@gmail.com",
 			"url": "https://twitter.com/dave_k_smith"
 		}
 	]
