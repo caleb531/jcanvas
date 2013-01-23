@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.01.19
+ * @license jCanvas v13.01.23
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -76,7 +76,6 @@ defaults = {
 	load: NULL,
 	mask: FALSE,
 	maxWidth: NULL,
-	method: NULL,
 	miterLimit: 10,
 	opacity: 1,
 	projection: 0,
@@ -248,12 +247,13 @@ function transformShape(ctx, params, width, height) {
 	if (height === UNDEFINED) {
 		height = width;
 	}
+	
 	if (!params.fromCenter && !params._centered) {
 		params.x += width / 2;
 		params.y += height / 2;
 		params._centered = TRUE;
 	}
-	
+		
 	// Rotate shape if chosen
 	if (params.rotate) {
 		rotateCanvas(ctx, params, {});
@@ -532,7 +532,7 @@ function drawLayer($canvas, ctx, layer) {
 }
 
 // Draw an individual layer
-$.fn.drawLayer = function(name) {
+$.fn.drawLayer = function(id) {
 	var $canvases = this, e, ctx,
 		$canvas, layer;
 		
@@ -540,7 +540,7 @@ $.fn.drawLayer = function(name) {
 		$canvas = $($canvases[e]);
 		ctx = getContext($canvases[e]);
 		// Retrieve the specified layer
-		layer = $canvas.getLayer(name);
+		layer = $canvas.getLayer(id);
 		drawLayer($canvas, ctx, layer);
 	}
 	return $canvases;
@@ -692,28 +692,32 @@ $.fn.drawLayers = function(_resetFire) {
 };
 
 // Add a jCanvas layer (internal)
-function addLayer(canvas, params, layer, method) {
-	var $canvas, layers, event,
+function addLayer(canvas, params, args, method) {
+	var $canvas, layers, layer = {}, event,
 		data, dragHelperEvents, i;
-	layer = layer || {};
 	
 	// Store arguments object for later use
-	params._args = layer;
-	layer.canvas = params.canvas = canvas;
-	
+	params._args = args;
+	params.canvas = canvas;
+		
 	// Only add layer if it hasn't been added before
 	if (params.layer && !params._layer) {
 		
 		$canvas = $(canvas);
 		layers = $canvas.getLayers();
 				
-		// Associate a jCanvas method with layer
-		layer.method = $.fn[layer.method] || method;
+		// Find the method that corresponds with the given drawing type
+		if (!params.method && params.type) {
+			params.method = $.fn[drawingMap[params.type]];
+		} else {
+			// Associate a jCanvas method with layer
+			params.method = $.fn[params.method] || method;
+		}
 		data = getCanvasData(canvas);
-		
+						
 		// Ensure layers are unique across canvases by cloning them
-		layer = merge(new jCanvasObject(), layer);
-		
+		layer = merge(new jCanvasObject(), params);
+				
 		// Check for any associated jCanvas events and enable them
 		for (event in jCanvas.events) {
 			if (jCanvas.events.hasOwnProperty(event) && layer[event]) {
@@ -764,11 +768,7 @@ $.fn.addLayer = function(args) {
 		ctx = getContext($canvases[e]);
 		if (ctx) {
 			params.layer = TRUE;
-			// Find the method that corresponds with the given drawing type
-			if (params.type && !params.method) {
-				params.method = $.fn[drawingMap[params.type]];
-			}
-			args = addLayer($canvases[e], params, args, params.method);
+			args = addLayer($canvases[e], params, args);
 		}
 	}
 	return $canvases;
@@ -1152,12 +1152,14 @@ function createEvent(eventName) {
 		// Ensure a single DOM event is not bound more than once
 		if (!data[helperEventName]) {
 			// Bind one canvas event which handles all layer events of that type
+			
 			$canvas.bind(helperEventName + '.jCanvas', function(event) {
 				// Cache current mouse position and redraw layers
 				eventCache.x = event.offsetX;
 				eventCache.y = event.offsetY;
 				eventCache.type = helperEventName;
 				eventCache.event = event;
+				console.log('FIRE');
 				$canvas.drawLayers(TRUE);
 				event.preventDefault();
 			});
@@ -1181,18 +1183,18 @@ createEvent('touchend');
 function detectEvents(canvas, ctx, params) {
 	var layer, data, eventCache, over,
 		transforms, x, y, angle;
-	
+		
 	// Use the layer object stored by the given parameters object
 	layer = params._args;
-	
+		
 	// Canvas must have event bindings
 	if (layer._event) {
-		
+				
 		data = getCanvasData(canvas);
 		eventCache = data.event;
 		over = ctx.isPointInPath(eventCache.x, eventCache.y);
 		transforms = data.transforms;
-			
+							
 		// Allow callback functions to retrieve the mouse coordinates
 		layer.eventX = layer.mouseX = eventCache.x;
 		layer.eventY = layer.mouseY = eventCache.y;
@@ -1315,7 +1317,7 @@ $.fn.clearCanvas = function(args) {
 		if (ctx) {
 
 			// Save current transformation
-			transformShape(ctx, params, params.width, params.height);
+			// transformShape(ctx, params, params.width, params.height);
 			
 			// Reset current transformation temporarily to ensure the entire canvas is cleared
 			ctx.setTransform(1, 0, 0, 1, 0, 0);

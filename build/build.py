@@ -37,7 +37,7 @@ def replace_in_file(path, expression, version):
 def main():
 	
 	# Inform user when build process has started
-	print('Running...')
+	print('Building...')
 	
 	# Change directory to jcanvas/ directory
 	os.chdir('../')
@@ -54,30 +54,16 @@ def main():
 	readme = 'README.md'
 	license = 'LICENSE.txt'
 	
-	print('Updating version in source files...')
-	
 	# Update version in source and readme files
 	version_re = '\d{2}\.\d{2}\.\d{2}'
 	replace_in_file(source, version_re, version)
 	replace_in_file(manifest, version_re, version)
-	
-	print('Updating year in copyright notices...')
 	
 	# Update year in copyright license
 	year_re = '\d{4}'
 	replace_in_file(source, year_re, year)
 	replace_in_file(readme, year_re, year)
 	replace_in_file(license, year_re, year)
-	
-	# Get a list of existing git tags
-	tags = run_cmd('git tag -l')
-	
-	# Create tag for this version if it doesn't exist
-	if (version not in tags):
-		run_cmd('git tag ' + version)
-		print('Added new tag: ' + version)
-	
-	print('Compressing jCanvas for production...')
 	
 	# Compress jCanvas source
 	compress_file(source)
