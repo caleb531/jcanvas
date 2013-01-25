@@ -7,15 +7,15 @@ import datetime, sys, os, subprocess, re
 def run_cmd(cmd):
 	process = subprocess.Popen(cmd.split(' '), stdout=subprocess.PIPE)
 	out, err = process.communicate()
-	return out
+	return out.decode('utf-8')
 
 # Compress source file
-def compress(source):
+def compress_file(source):
 	# Create path to minified file from source path
-	minified = re.sub('(\.\w+)$', '.min\\1', source)
+	compressed = re.sub('(\.\w+)$', '.min\\1', source)
 	
 	# Compress source file using Google Closure Compiler
-	run_cmd('java -jar build/closure-compiler.jar --js ' + source + ' --js_output_file ' + minified + ' --compilation_level SIMPLE_OPTIMIZATIONS')
+	run_cmd('java -jar build/closure-compiler.jar --js ' + source + ' --js_output_file ' + compressed + ' --compilation_level SIMPLE_OPTIMIZATIONS')
 
 # Update version in given source file
 def replace_in_file(path, expression, version):
@@ -37,7 +37,7 @@ def replace_in_file(path, expression, version):
 def main():
 	
 	# Inform user when build process has started
-	print('Running...')
+	print('Building...')
 	
 	# Change directory to jcanvas/ directory
 	os.chdir('../')
@@ -65,17 +65,9 @@ def main():
 	replace_in_file(readme, year_re, year)
 	replace_in_file(license, year_re, year)
 	
-	# Get a list of existing git tags
-	tags = run_cmd('git tag -l')
-	
-	# Create tag for this version if it doesn't exist
-	if ((version in tags) == False):
-		run_cmd('git tag ' + version)
-		print('Added new tag: ' + version)
-		
 	# Compress jCanvas source
-	compress(source)
-	
+	compress_file(source)
+		
 	# Inform user when build process has finished
 	print('Done.')
 	
