@@ -7,6 +7,7 @@ function AtomicCanvas() {
 	this.canvas = document.getElementById('atomic-canvas')
 }
 
+
 /* jCanvas tests */
 module("jCanvas Arcs")
 
@@ -16,6 +17,7 @@ test("drawArc, simplest possible", function() {
 	QUnit.pixelEqual(ac.canvas, 50, 50, 0, 255, 0, 255)
 })
 
+// -----
 module("jCanvas Layers")
 
 test("addLayer, method drawRect", function () {
@@ -77,6 +79,15 @@ asyncTest("animateLayer, two addLayers, two animateLayers", 2, function() {
 //		})
 //})
 
+test("removeLayer, single layer at a time", 2, function () {
+	var ac = new AtomicCanvas()
+	removeLayer_byIndex("#atomic-canvas")
+	removeLayer_byName("#atomic-canvas")
+	QUnit.pixelEqual(ac.canvas, 55, 55, 0, 255, 0, 255)
+	QUnit.pixelEqual(ac.canvas, 155, 55, 0, 255, 0, 255)
+}) 
+
+// -----
 module("Canvas Rotate")
 
 test("rotateCanvas", function () {
@@ -90,6 +101,7 @@ test("rotateCanvas", function () {
 	QUnit.pixelEqual(ac.canvas, 87, 50, 0, 255, 0, 255)
 })
 
+// -----
 module("Canvas Scale")
 
 test("scaleCanvas", function () {
