@@ -11,16 +11,14 @@
 		<script src="http://code.jquery.com/jquery.min.js"></script>
 		<script src="../../../jcanvas.min.js"></script>
 		<script>
-			$(document).ready(function() {
-				function test(outer) {
-					$("canvas").addLayer(function(ctx) {
-						alert("Demonstrating access to >>>" + outer + "<<< from inner fn.  This" +
-							" works again after Caleb's issue #24 fix on 2012-07-20.");
-					});
-					$("canvas").drawLayers();
-				}
-				test("outerValue");
-			});
+			function test(outer) {
+				$("canvas").addLayer(function(ctx) {
+					alert("Demonstrating access to >>>" + outer + "<<< from inner fn.  This" +
+						" works again after Caleb's issue #24 fix on 2012-07-20.");
+				});
+				$("canvas").drawLayers();
+			}
+			test("outerValue");
 		</script>
 	</body>
 </html>

@@ -18,7 +18,7 @@ def compress_file(source):
 	run_cmd('java -jar build/closure-compiler.jar --js ' + source + ' --js_output_file ' + compressed + ' --compilation_level SIMPLE_OPTIMIZATIONS')
 
 # Update version in given source file
-def replace_in_file(path, expression, version):
+def replace_in_file(path, expression, version, count=0):
 	# Open source file for reading and writing
 	f = open(path, 'r')
 	# Read contents from source file
@@ -26,7 +26,7 @@ def replace_in_file(path, expression, version):
 	f.close()
 	
 	# Update source version
-	contents = re.sub(expression, version, contents, 1)
+	contents = re.sub(expression, version, contents, count)
 	
 	# Write updated source to source file
 	f = open(path, 'w')
@@ -56,8 +56,8 @@ def main():
 	
 	# Update version in source and readme files
 	version_re = '\d{2}\.\d{2}\.\d{2}'
-	replace_in_file(source, version_re, version)
-	replace_in_file(manifest, version_re, version)
+	replace_in_file(source, version_re, version, 1)
+	replace_in_file(manifest, version_re, version, 1)
 	
 	# Update year in copyright license
 	year_re = '\d{4}'
