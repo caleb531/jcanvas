@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>jCanvas layers iteration</title>
+</head>
+<body>
+	<div id="content">
+		<canvas id="canvas" height="450" width="400"></canvas>
+	</div>
+	<script src="http://code.jquery.com/jquery.min.js"></script>
+	<script src="../../../jcanvas.min.js"></script>
+	<script>
+		$(document).ready(function(){
+			$("canvas").addLayer({
+				name: "aRect", method: "drawRect", fillStyle: "#61c",
+				x: 210, y: 123.4, width: 75, height: 40.3})
+			.addLayer({
+				name: "aCircle", method: "drawArc", fillStyle: "#1e6",
+				opacity: 0.4, x: 200, y: 130, radius: 25})
+			// add layer with my favorite Xenoblade Chronicles line
+			.addLayer({
+				name: "aText", method: "drawText", fillStyle: "red",
+				x: 234, y: 122, fromCenter: false, text: "Riki sneaky!",
+				opacity: 0.7})
+			.addLayer({
+				name: "horizontal-beam", method: "drawLine", strokeStyle: "purple",
+				strokeWidth: 4, x1: 0, y1: 200, x2: 200, y2: 200})
+			// Draw each layer onto the canvas
+			.drawLayers()
+			.animateLayer("horizontal-beam", {x1: 50, y1: 175, x2: 275}, 4000)
+			.animateLayer("aText", {rotate: 45}, 7000)
+			.animateLayer("aCircle", {x: 100, y: 200, radius: 45}, 3000)
+			.animateLayer("aRect", {x: 45, y: 75, rotate: -720}, 8000);
+			var layers = $("canvas").getLayers();
+			// comment out the following line to allow animations to complete
+			stopAnimationsSlowly(layers, 0);
+
+			function stopAnimationsSlowly(layers, LL) {
+				if (LL<layers.length) {
+					setTimeout(function() {
+						$("canvas").stopLayer(layers[LL].name, true);
+						stopAnimationsSlowly(layers, ++LL);
+					}, 500*(LL+1));
+				}
+			}
+		});
+	</script>
+</body>
+</html>

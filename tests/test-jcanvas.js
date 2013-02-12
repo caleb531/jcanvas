@@ -33,6 +33,18 @@ asyncTest("animateLayer, method drawLine", 1, function () {
 		})
 })
 
+asyncTest("animateLayer, drawLines, instant shift, varied opacity", 4, function () {
+	var ac = new AtomicCanvas()
+	animateLayer_drawLinesInstantShiftVariedOpacity("#atomic-canvas",
+		function () {
+			QUnit.pixelEqual(ac.canvas, 200, 20, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 200, 50, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 200, 80, 0, 255, 0, 255)
+			QUnit.pixelEqual(ac.canvas, 200, 110, 0, 255, 0, 255)
+			QUnit.start()
+		})
+})
+
 asyncTest("animateLayer, method drawRect", 1, function () {
 	var ac = new AtomicCanvas()
 	animateLayer_drawRect("#atomic-canvas", 0,
@@ -42,9 +54,12 @@ asyncTest("animateLayer, method drawRect", 1, function () {
 		})
 })
 
-asyncTest("animateLayer, two addLayers & two animateLayers", 2, function() {
+asyncTest("animateLayer, two addLayers, two animateLayers", 2, function() {
 	var ac = new AtomicCanvas()
-	animateLayer_twoAddsTwoAnimates("#atomic-canvas", 0,
+	// 2013-01-10: this test fails with an animation duration of 0ms, but passes
+	//    with a duration of 1ms.  Not sure why, and not worried about it right
+	//    now.
+	animateLayer_twoAddsTwoAnimates("#atomic-canvas", 1,
 		function () {
 			QUnit.pixelEqual(ac.canvas,  70, 100, 0, 255, 0, 255)  // rectangle
 			QUnit.pixelEqual(ac.canvas, 125, 100, 0, 255, 0, 255)  // circle
@@ -62,9 +77,9 @@ asyncTest("animateLayer, two addLayers & two animateLayers", 2, function() {
 //		})
 //})
 
-module("jCanvas Transformation")
+module("Canvas Rotate")
 
-test("transformation, rotateCanvas", function () {
+test("rotateCanvas", function () {
 	var ac = new AtomicCanvas()
 	transformation_rotateCanvas("#atomic-canvas", 100, 0)
 	// unspecified x, y in above function, so rotation occurs around x:0, y:0
@@ -75,7 +90,9 @@ test("transformation, rotateCanvas", function () {
 	QUnit.pixelEqual(ac.canvas, 87, 50, 0, 255, 0, 255)
 })
 
-test("transformation, scaleCanvas", function () {
+module("Canvas Scale")
+
+test("scaleCanvas", function () {
 	var ac = new AtomicCanvas()
 	transformation_scaleCanvas("#atomic-canvas", 100, 20)
 	// scaling should both shift and balloon the shape

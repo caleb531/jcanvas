@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>combine jQuery UI, jCanvas</title>
+	<link type="text/css"
+		href="http://code.jquery.com/ui/jquery-ui-git.css"
+		rel="stylesheet"/>
+</head>
+<body>
+	<div id="graphics">
+		<canvas id="canvas"></canvas>
+	</div>
+	<div id="ui">
+		<div id="slider"></div>
+	</div>
+		<script src="http://code.jquery.com/jquery.min.js"></script>
+		<script src="http://code.jquery.com/ui/jquery-ui-git.js"></script>
+		<script src="../../../jcanvas.min.js"></script>
+	<script>
+		$(document).ready(function(){
+			$("canvas").drawArc({
+				fillStyle: "green",
+				x: 100, y: 100,
+				radius: 50
+			});
+			$('#slider').slider({
+				range: true,
+				values: [17, 67]
+			});
+		});
+	</script>
+</body>
+</html>

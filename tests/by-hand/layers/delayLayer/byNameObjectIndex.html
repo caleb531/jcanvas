@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>jCanvas delayLayer by Name, Object, and Index</title>
+</head>
+<body>
+	<div id="content">
+		<canvas id="canvas" height="450" width="800"></canvas>
+	</div>
+	<script src="http://code.jquery.com/jquery.min.js"></script>
+	<script src="../../../../jcanvas.min.js"></script>
+	<script>
+		$(document).ready(function(){
+			var rightX = 250,
+				works = "#090",
+				notyet = "#900",
+				leftX = 10,
+				gapY = 10,
+				tY = gapY,
+				hH = 40
+			function addBox(x,y,w,name,grp) {
+				$("canvas").addLayer({method: "drawRect", name: name,
+					fillStyle: notyet, fromCenter: false, group: grp,
+					x: x, y: y, width: w, height: hH})
+			}
+			function addTxt(x,y,txt,grp) {
+				$("canvas").addLayer({method: "drawText", group: grp,
+					x: x, y: y, fromCenter: false, fillStyle: "black",
+					strokeStyle: "black", text: txt})
+			}
+			function shiftBox(B) {
+				$("canvas").animateLayer(B, {x: rightX, fillStyle: works}, 2000)
+			}
+			function delayBox(B) {
+				$("canvas").delayLayer(B, 2000)
+				shiftBox(B)
+			}
+
+			// animateLayer objects
+			addBox(leftX,tY,180,"animateLayerName")
+			addTxt(rightX,tY+gapY,"animateLayer by name")
+			addBox(leftX,tY+(hH+gapY),180,"animateLayerObject")
+			addTxt(rightX,tY+gapY+(hH+gapY),"animateLayer by object")
+			addBox(leftX,tY+2*(hH+gapY),180,"animateLayerIndex")
+			addTxt(rightX,tY+gapY+2*(hH+gapY),"animateLayer by index")
+
+			// delayLayer test objects
+			addBox(leftX,tY+3*(hH+gapY),180,"delayLayerName")
+			addTxt(rightX,tY+gapY+3*(hH+gapY),"delayLayer by name")
+			addBox(leftX,tY+4*(hH+gapY),180,"delayLayerObject")
+			addTxt(rightX,tY+gapY+4*(hH+gapY),"delayLayer by object")
+			addBox(leftX,tY+5*(hH+gapY),180,"delayLayerIndex")
+			addTxt(rightX,tY+gapY+5*(hH+gapY),"delayLayer by index")
+
+			var rect2 = $("canvas").getLayer("animateLayerObject"),
+				rect5 = $("canvas").getLayer("delayLayerObject")
+
+			shiftBox("animateLayerName")
+			shiftBox(rect2)
+			shiftBox(4)
+
+			delayBox("delayLayerName")
+			delayBox(rect5)
+			delayBox(10)
+		});
+	</script>
+</body>
+</html>

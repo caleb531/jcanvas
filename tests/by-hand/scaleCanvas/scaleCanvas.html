@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>jCanvas scale canvas</title>
+	<style>
+		html, body { width:100%; height:100%; margin: 0px;}
+		canvas { display:block; }
+	</style>
+</head>
+<body>
+	<div id="content">
+		<canvas id="control" width="300" height="100"></canvas>
+		<canvas id="scaled" width="300" height="100"></canvas>
+		Two canvases above.  Top is unscaled.  Bottom has identical geometry on scaled canvas.
+	</div>
+	<script src="http://code.jquery.com/jquery.min.js"></script>
+	<script src="../../../jcanvas.min.js"></script>
+	<script src="../../test-jcanvas-units.js"></script>
+	<script>
+		transformation_contextBox('#control', 100)
+		transformation_simpleBox('#control', 100, 20)
+		transformation_scaleCanvas('#scaled', 100, 20)
+	</script>
+</body>
+</html>
