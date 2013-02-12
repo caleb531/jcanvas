@@ -75,7 +75,6 @@ function animateLayerGroup_circleRect(canvasName, msecShift, afterFn) {
 	.addLayer({method: "drawArc", fillStyle: "#f00", group: "circleAndRect",
 		start: -Math.PI+0.01, end: 3*Math.PI/2+0.01, inDegrees: false,
 		opacity: 0.1, x: 125, y: 50, radius: 20})
-	.drawLayers()
 	.animateLayerGroup("circleAndRect", {y: 100, opacity: 1,
 		fillStyle: "#0f0"}, msecShift, afterFn)
 }

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>jCanvas pattern</title>
+</head>
+<body>
+	<div id="content">
+		<canvas id="canvas" width="800" height="1100"></canvas>
+	</div>
+	<script src="http://code.jquery.com/jquery.min.js"></script>
+	<script src="../../../jcanvas.min.js"></script>
+	<script>
+		$(document).ready(function(){
+			var patt = $("canvas").pattern({
+				width: 40, height: 40,
+				source: function(ctx) {
+					ctx.beginPath();
+					ctx.moveTo(0.0, 40.0);
+					ctx.lineTo(26.9, 36.0);
+					ctx.bezierCurveTo(31.7, 36.0, 36.0, 32.1, 36.0, 27.3);
+					ctx.lineTo(40.0, 0.0);
+					ctx.lineTo(11.8, 3.0);
+					ctx.bezierCurveTo(7.0, 3.0, 3.0, 6.9, 3.0, 11.7);
+					ctx.lineTo(0.0, 40.0);
+					ctx.closePath();
+					ctx.fillStyle = "rgb(188, 222, 178)";
+					ctx.fill();
+					ctx.lineWidth = 0.8;
+					ctx.strokeStyle = "rgb(0, 156, 86)";
+					ctx.lineJoin = "miter";
+					ctx.miterLimit = 4.0;
+					ctx.stroke();
+				},
+				repeat: "repeat"
+			});
+
+			$("canvas").drawRect({
+				fillStyle: patt,
+				opacity: 0.95,
+				x: 0, y: 0,
+				width: 775, height: 1100,
+				fromCenter: false
+			});
+
+			// check geometry of pattern laydown
+			$("canvas").drawRect({
+				strokeStyle: "red",
+				fillStyle: "none",
+				x: 720, y: 1040,
+				width: 40, height: 40,
+				fromCenter: false
+			})
+		});
+	</script>
+</body>
+</html>
