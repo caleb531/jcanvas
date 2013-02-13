@@ -90,6 +90,23 @@ function drawArc_simplest(canvasName) {
 	$(canvasName).drawArc({fillStyle: "#0f0", x: 50, y: 50, radius: 50})
 }
 
+function removeLayer_byIndex(canvasName) {
+	$(canvasName).addLayer({method: "drawRect", fillStyle: "#0f0",
+		x: 50, y: 50, width: 40, height: 40, fromCenter: false})
+	.addLayer({method: "drawRect", fillStyle: "#f00",
+		x: 50, y: 50, width: 40, height: 40, fromCenter: false})
+	.removeLayer(1)
+}
+
+function removeLayer_byName(canvasName) {
+	$(canvasName).addLayer({method: "drawRect", name: "greenBox",
+		fillStyle: "#0f0", x: 150, y: 50, width: 40, height: 40,
+		fromCenter: false})
+	.addLayer({method: "drawRect", name: "redBox", fillStyle: "#f00",
+		x: 150, y: 50, width: 40, height: 40, fromCenter: false})
+	.removeLayer("redBox")
+}
+
 function transformation_rotateCanvas(canvasName, x, y) {
 	$(canvasName).rotateCanvas({
 		rotate: 30
