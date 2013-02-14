@@ -12,11 +12,15 @@
 		<script src="../../../jcanvas.min.js"></script>
 		<script>
 			function test(outer) {
-				$("canvas").addLayer(function(ctx) {
-					alert("Demonstrating access to >>>" + outer + "<<< from inner fn.  This" +
-						" works again after Caleb's issue #24 fix on 2012-07-20.");
-				});
-				$("canvas").drawLayers();
+				$("canvas").addLayer({
+					type: "function",
+					name: "aFunctionLayer",
+					fn: function(ctx) {
+						alert("Demonstrating access to >>>" + outer + "<<< from inner fn.  This" +
+							" works again after Caleb's issue #24 fix on 2012-07-20.");
+					}
+				})
+				.drawLayers();
 			}
 			test("outerValue");
 		</script>
