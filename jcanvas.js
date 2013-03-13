@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.02.11
+ * @license jCanvas v13.03.13
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -392,8 +392,6 @@ $.fn.setLayer = function(layerId, props) {
 			// Merge properties with layer
 			merge(layer, props);
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -420,8 +418,6 @@ $.fn.moveLayer = function(layerId, index) {
 			// Update layer's stored index
 			layer.index = index;
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -441,8 +437,6 @@ $.fn.removeLayer = function(layerId) {
 		if (layer) {
 			layers.splice(layer.index, 1);
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -456,8 +450,6 @@ $.fn.removeLayers = function() {
 		layers = $canvas.getLayers();
 		// Setting an array's length to 0 will empty the array
 		layers.length = 0;
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -498,8 +490,6 @@ $.fn.setLayerGroup = function(groupName, props) {
 			// Merge given properties with layer
 			merge(group[l], props);
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -524,8 +514,6 @@ $.fn.removeLayerGroup = function(groupName) {
 					l -= 1;
 				}
 			}
-			// Update canvas immediately
-			$canvas.drawLayers();
 		}
 	}
 	return $canvases;
