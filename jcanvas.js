@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.02.11
+ * @license jCanvas v13.03.20
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -392,8 +392,6 @@ $.fn.setLayer = function(layerId, props) {
 			// Merge properties with layer
 			merge(layer, props);
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -420,8 +418,6 @@ $.fn.moveLayer = function(layerId, index) {
 			// Update layer's stored index
 			layer.index = index;
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -441,8 +437,6 @@ $.fn.removeLayer = function(layerId) {
 		if (layer) {
 			layers.splice(layer.index, 1);
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -456,8 +450,6 @@ $.fn.removeLayers = function() {
 		layers = $canvas.getLayers();
 		// Setting an array's length to 0 will empty the array
 		layers.length = 0;
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -498,8 +490,6 @@ $.fn.setLayerGroup = function(groupName, props) {
 			// Merge given properties with layer
 			merge(group[l], props);
 		}
-		// Update canvas immediately
-		$canvas.drawLayers();
 	}
 	return $canvases;
 };
@@ -524,8 +514,6 @@ $.fn.removeLayerGroup = function(groupName) {
 					l -= 1;
 				}
 			}
-			// Update canvas immediately
-			$canvas.drawLayers();
 		}
 	}
 	return $canvases;
@@ -712,7 +700,7 @@ function addLayer(canvas, params, args, method) {
 	// Store arguments object for later use
 	params._args = args;
 	params.canvas = canvas;
-		
+	
 	// Only add layer if it hasn't been added before
 	if (params.layer && !params._layer) {
 		
@@ -1632,14 +1620,14 @@ $.fn.drawPolygon = function self(args) {
 				ctx.beginPath();
 				for (i=0; i<params.sides; i+=1) {
 					// Draw side of polygon
-					x = params.x + round(params.radius * cos(theta));
-					y = params.y + round(params.radius * sin(theta));
+					x = params.x + (params.radius * cos(theta));
+					y = params.y + (params.radius * sin(theta));
 					ctx.lineTo(x, y);
 					// Project side if chosen
 					if (params.concavity) {
 						// Sides are projected from the polygon's apothem
-						x = params.x + round((apothem + -apothem*params.concavity) * cos(theta + hdtheta));
-						y = params.y + round((apothem + -apothem*params.concavity) * sin(theta + hdtheta));
+						x = params.x + ((apothem + -apothem*params.concavity) * cos(theta + hdtheta));
+						y = params.y + ((apothem + -apothem*params.concavity) * sin(theta + hdtheta));
 						ctx.lineTo(x, y);
 					}
 					theta += dtheta;
@@ -2302,9 +2290,12 @@ $.fn.drawImage = function self(args) {
 			
 		}
 		
-		// Only position image
+		// Set global canvas properties
+		setGlobalProps(ctx, params);
+		
+		// Position/transform image if necessary
 		transformShape(ctx, params, params.width, params.height);
-							
+				
 		// Draw image
 		ctx.drawImage(
 			img,
@@ -2318,7 +2309,6 @@ $.fn.drawImage = function self(args) {
 			params.height
 		);
 		// Ensure the rectangle is actually invisible (still allow stroking)
-		ctx.fillStyle = 'transparent';
 		// Draw invisible rectangle to allow for events and masking
 		ctx.beginPath();
 		ctx.rect(
@@ -2352,9 +2342,7 @@ $.fn.drawImage = function self(args) {
 
 			args = addLayer($canvases[e], params, args, self);
 			if (params.visible) {
-			
-				setGlobalProps(ctx, params);
-					
+				
 				// Draw image if already loaded
 				if (img) {
 					if (img.complete || imgCtx) {
