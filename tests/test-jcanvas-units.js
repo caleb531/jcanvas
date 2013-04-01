@@ -96,6 +96,7 @@ function removeLayer_byIndex(canvasName) {
 	.addLayer({method: "drawRect", fillStyle: "#f00",
 		x: 50, y: 50, width: 40, height: 40, fromCenter: false})
 	.removeLayer(1)
+	.drawLayers()
 }
 
 function removeLayer_byName(canvasName) {
@@ -105,6 +106,7 @@ function removeLayer_byName(canvasName) {
 	.addLayer({method: "drawRect", name: "redBox", fillStyle: "#f00",
 		x: 150, y: 50, width: 40, height: 40, fromCenter: false})
 	.removeLayer("redBox")
+	.drawLayers()
 }
 
 function transformation_rotateCanvas(canvasName, x, y) {
