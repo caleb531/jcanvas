@@ -18,6 +18,48 @@ test("drawArc, simplest possible", function(assert) {
 })
 
 // -----
+module("jCanvas Images")
+
+asyncTest("drawImage basic", 1, function(assert) {
+	var ac = new AtomicCanvas()
+	drawImage_basic("#atomic-canvas", "./by-hand/images/fish-modified.png",
+		function() {
+			assert.pixelEqual(ac.canvas, 160, 70, 0, 249, 0, 255)
+			QUnit.start();
+		})
+})
+
+asyncTest("drawImage custom width/height", 1, function(assert) {
+	var ac = new AtomicCanvas()
+	drawImage_customWidthHeight("#atomic-canvas",
+		"./by-hand/images/fish-modified.png",
+		function() {
+			assert.pixelEqual(ac.canvas, 80, 35, 0, 249, 0, 255)
+			QUnit.start();
+		})
+})
+
+asyncTest("drawImage scaled", 1, function(assert) {
+	var ac = new AtomicCanvas()
+	drawImage_scale("#atomic-canvas",
+		"./by-hand/images/fish-modified.png",
+		function() {
+			assert.pixelEqual(ac.canvas, 130, 69, 0, 249, 0, 255)
+			QUnit.start();
+		})
+})
+
+asyncTest("drawImage cropped", 1, function(assert) {
+	var ac = new AtomicCanvas()
+	drawImage_crop("#atomic-canvas",
+		"./by-hand/images/fish-modified.png",
+		function() {
+			assert.pixelEqual(ac.canvas, 40, 40, 0, 249, 0, 255)
+			QUnit.start();
+		})
+})
+
+// -----
 module("jCanvas Layers")
 
 test("addLayer, method drawRect", function (assert) {

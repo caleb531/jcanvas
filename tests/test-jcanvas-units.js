@@ -90,6 +90,39 @@ function drawArc_simplest(canvasName) {
 	$(canvasName).drawArc({fillStyle: "#0f0", x: 50, y: 50, radius: 50})
 }
 
+function drawImage_basic(canvasName, imageSrc, onLoad) {
+	$(canvasName).addLayer({
+		method: "drawImage", source: imageSrc, x: 0, y: 0, fromCenter: false,
+		load: onLoad})
+	.drawLayers()
+}
+
+function drawImage_customWidthHeight(canvasName, imageSrc, onLoad) {
+	$(canvasName).addLayer({
+		method: "drawImage", source: imageSrc, x: 0, y: 0, width: 100,
+		height: 67, fromCenter: false, load: onLoad})
+	.drawLayers()
+}
+
+function drawImage_scale(canvasName, imageSrc, onLoad) {
+	// fromCenter=false seems to apply to x, y, but NOT to scaling operation,
+	//    which IS performed about the center.
+	$(canvasName).addLayer({
+		method: "drawImage", source: imageSrc, x: 0, y: 0, scale: 0.5,
+		fromCenter: false, load: onLoad})
+	.drawLayers()
+}
+
+function drawImage_crop(canvasName, imageSrc, onLoad) {
+	// crop appears to happen BEFORE x, y placement
+	$(canvasName).addLayer({
+		method: "drawImage", source: imageSrc, x: 0, y: 0, fromCenter: false,
+		sWidth: 50, sHeight: 55, cropFromCenter: false,
+		sx: 130, sy: 50,
+		load: onLoad})
+	.drawLayers()
+}
+
 function removeLayer_byIndex(canvasName) {
 	$(canvasName).addLayer({method: "drawRect", fillStyle: "#0f0",
 		x: 50, y: 50, width: 40, height: 40, fromCenter: false})
