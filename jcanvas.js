@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.04.05
+ * @license jCanvas v13.04.11
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -187,6 +187,13 @@ function isLayerWithinMask(ctx, data, params) {
 	}
 }
 
+// Restore individual shape transformation
+function restoreTransform(ctx, params) {
+	if (params._transformed) {
+		ctx.restore();
+	}
+}
+
 // Close current canvas path
 function closePath(canvas, ctx, params) {
 	var data;
@@ -209,9 +216,7 @@ function closePath(canvas, ctx, params) {
 		ctx.closePath();
 	}
 	// Restore individual shape transformation
-	if (params._transformed) {
-		ctx.restore();
-	}
+	restoreTransform(ctx, params);
 	
 	if (params.mask || params.layer) {
 		
@@ -226,7 +231,7 @@ function closePath(canvas, ctx, params) {
 
 // Rotate canvas (internal)
 function rotateCanvas(ctx, params, transforms) {
-	params._toRad = (params.inDegrees ? PI/180 : 1);
+	params._toRad = (params.inDegrees ? (PI / 180) : 1);
 
 	ctx.translate(params.x, params.y);
 	ctx.rotate(params.rotate * params._toRad);
@@ -2345,7 +2350,7 @@ $.fn.drawImage = function self(args) {
 							
 				// Set global canvas properties
 				setGlobalProps(ctx, params);
-		
+				
 				// Position/transform image if necessary
 				transformShape(ctx, params, params.width, params.height);
 				
@@ -2367,7 +2372,7 @@ $.fn.drawImage = function self(args) {
 				
 				// Set global canvas properties
 				setGlobalProps(ctx, params);
-		
+								
 				// Position/transform image if necessary
 				transformShape(ctx, params, params.width, params.height);
 								
@@ -2396,6 +2401,7 @@ $.fn.drawImage = function self(args) {
 		if (params._event) {
 			detectEvents($canvases[e], ctx, params);
 		}
+		restoreTransform(ctx, params);
 		data = getCanvasData($canvases[e]);
 		// Close path and configure masking
 		ctx.closePath();
