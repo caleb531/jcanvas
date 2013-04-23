@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.04.20
+ * @license jCanvas v13.04.22
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -1009,13 +1009,16 @@ function addLayer(canvas, params, args, method) {
 		
 		$canvas = $(canvas);
 		layers = $canvas.getLayers();
-				
-		// Find the method that corresponds with the given drawing type
-		if (!params.method && params.type) {
+		
+		// Determine the layer's type using the available information
+		if (method) {
+			params.method = method;
+		} else if (params.method) {
+			params.method = $.fn[params.method];
+		} else if (params.type) {
 			params.method = $.fn[drawingMap[params.type]];
 		} else {
-			// Associate a jCanvas method with layer
-			params.method = $.fn[params.method] || method;
+			params.method = function() {};
 		}
 		data = getCanvasData(canvas);
 						
@@ -2678,7 +2681,7 @@ $.fn.drawImage = function drawImage(args) {
 
 			args = addLayer($canvases[e], params, args, drawImage);
 			if (params.visible) {
-				
+								
 				if (img) {
 					if (img.complete || imgCtx) {
 						// Draw image if already loaded
