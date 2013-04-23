@@ -2310,18 +2310,18 @@ function setCanvasFont(ctx, params) {
 }
 
 // Measure canvas text
-function measureText(canvas, e, ctx, params, lines) {
+function measureText(canvas, ctx, params, lines) {
 	var originalSize, sizeMatch,
 		sizeExp = /\b(\d*\.?\d*)\w\w\b/gi,
 		l, curWidth;
 	
 	// Used cached width/height if possible
 	if (cache.text === params.text && cache.font === params.font && cache.fontStyle === params.fontStyle && cache.fontSize === params.fontSize && cache.fontFamily === params.fontFamily && cache.maxWidth === params.maxWidth && cache.lineHeight === params.lineHeight) {
-		
+				
 		params.width = cache.width;
 		params.height = cache.height;
 		
-	} else if (!e) {
+	} else {
 		// Calculate text dimensions only once
 								
 		// Calculate width of first line (for comparison)
@@ -2391,6 +2391,11 @@ function wrapText(ctx, params) {
 		lines.push(line);
 		
 	}
+	// Remove unnecessary white space
+	lines = lines
+		.join('\n')
+		.replace(/( (\n))|( $)/gi, '$2')
+		.split('\n');
 	return lines;
 }
 
@@ -2420,18 +2425,15 @@ $.fn.drawText = function drawText(args) {
 				if (!e && params.maxWidth !== NULL) {
 					// Wrap text using an internal function
 					lines = wrapText(ctx, params);
-					// Remove unnecessary white space
-					lines = lines
-						.join('\n')
-						.replace(/( (\n))|( $)/gi, '$2')
-						.split('\n');
 				} else if (!e) {
 					// Convert string of text to list of lines
 					lines = String(params.text).split('\n');
 				}
 				
 				// Calculate text's width and height
-				measureText($canvases[e], e, ctx, params, lines);
+				if (!e) {
+					measureText($canvases[e], ctx, params, lines);
+				}
 				transformShape(ctx, params, params.width, params.height);
 				
 				// Adjust text position to accomodate different horizontal alignments
@@ -2485,7 +2487,7 @@ $.fn.drawText = function drawText(args) {
 // Measure text width/height using the given parameters
 $.fn.measureText = function(args) {
 	var $canvases = this, ctx,
-		params;
+		params, lines;
 	
 	if (args !== UNDEFINED && (typeof args !== 'object' || args.layer)) {
 		// If layer identifier is given, get that layer
@@ -2496,11 +2498,14 @@ $.fn.measureText = function(args) {
 	}
 		
 	ctx = getContext($canvases[0]);
-	if (ctx && params.text !== UNDEFINED) {
+	if (ctx) {
+		
 		// Set canvas font using given properties
 		setCanvasFont(ctx, params);
 		// Calculate width and height of text
-		measureText($canvases[0], 0, ctx, params, params.text.split('\n'));
+		lines = wrapText(ctx, params);
+		measureText($canvases[0], ctx, params, lines);
+		
 	}
 	return params;
 };
