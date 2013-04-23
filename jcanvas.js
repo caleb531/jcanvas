@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.04.22
+ * @license jCanvas v13.04.23
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -733,11 +733,12 @@ $.fn.removeLayerGroup = function(groupName) {
 		for (e = 0; e < $canvases.length; e += 1) {
 			$canvas = $($canvases[e]);
 			layers = $canvas.getLayers();
-			// Get layer based on given layer name
+			// Remove layer group using given group name
 			for (l = 0; l < layers.length; l += 1) {
+				layer = layers[l];
 				// Ensure layer's index property is accurate
 				layer.index = inArray(layer, layers);
-				// Check if layer matches name
+				// Check if layer group matches name
 				if (layers[l].group === groupName || (idType === 'regexp' && layers[l].group.match(groupName))) {
 					layers.splice(l, 1);
 					l -= 1;
