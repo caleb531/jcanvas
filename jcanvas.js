@@ -789,7 +789,7 @@ $.fn.drawLayers = function(args) {
 		drag, group, callback;
 		
 	// The layer index from which to start redrawing the canvas
-	if (params.index === UNDEFINED) {
+	if (!params.index) {
 		params.index = 0;
 	}
 		
@@ -1611,12 +1611,16 @@ $.fn.draw = function draw(args) {
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = getContext($canvases[e]);
-		if (ctx && params.fn) {
-			args = addLayer($canvases[e], params, args, draw);
-			// Call any given user-defined function
-			if (params.visible) {
-				params.fn.call($canvases[e], ctx);
+		if (ctx) {
+			
+			if (params.fn) {
+				args = addLayer($canvases[e], params, args, draw);
+				// Call the given user-defined function
+				if (params.visible) {
+					params.fn.call($canvases[e], ctx);
+				}
 			}
+			
 		}
 	}
 	return $canvases;
