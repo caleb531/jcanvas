@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.04.23
+ * @license jCanvas v13.04.24
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -844,7 +844,7 @@ $.fn.drawLayers = function(args) {
 				}
 				
 				// Allow image layers to load before drawing successive layers
-				if (layer.method === $.fn.drawImage) {
+				if (layer.method === $.fn.drawImage && layer.visible) {
 					break;
 				}
 				
