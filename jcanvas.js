@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.04.24
+ * @license jCanvas v13.04.25
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -458,7 +458,7 @@ $.fn.getLayer = function(layerId) {
 		// Get layer with the name that matches the given regex
 		for (l = 0; l < layers.length; l += 1) {
 			// Check if layer matches name
-			if (layers[l].name.match(layerId)) {
+			if (isString(layers[l].name) && layers[l].name.match(layerId)) {
 				layer = layers[l];
 				break;
 			}
@@ -678,41 +678,41 @@ $.fn.removeLayers = function() {
 };
 
 // Get all layers in the given group
-$.fn.getLayerGroup = function(groupName) {
+$.fn.getLayerGroup = function(groupId) {
 	var layers = this.getLayers(),
-		idType = $.type(groupName),
+		idType = $.type(groupId),
 		group = [], data, l;
 	
 	if (idType === 'array') {
 		// Return layer group if given
-		return groupName;
+		return groupId;
 	} else if (idType === 'regexp') {
 		// Find layer group with a name matching the given regex
 		for (l = 0; l < layers.length; l += 1) {
 			// Ensure layer's index property is accurate
 			layers[l].index = l;
 			// Include layer is associated with group
-			if (layers[l].group.match(groupName)) {
+			if (isString(layers[l].group) && layers[l].group.match(groupId)) {
 				group.push(layers[l]);
 			}
 		}
 	} else {
 		// Find layer group with the given group name
 		data = getCanvasData(this[0]);
-		group = data.layer.groups[groupName];
+		group = data.layer.groups[groupId];
 	}
 	return group;
 };
 
 // Set properties of all layers in the given group
-$.fn.setLayerGroup = function(groupName, props) {
+$.fn.setLayerGroup = function(groupId, props) {
 	var $canvases = this, $canvas, e,
 		group, l;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		// Get layer group
 		$canvas = $($canvases[e]);
-		group = $canvas.getLayerGroup(groupName);
+		group = $canvas.getLayerGroup(groupId);
 		if (group) {
 			for (l = 0; l < group.length; l += 1) {
 				// Merge given properties with layer
@@ -724,25 +724,23 @@ $.fn.setLayerGroup = function(groupName, props) {
 };
 
 // Remove all layers within a specific group
-$.fn.removeLayerGroup = function(groupName) {
+$.fn.removeLayerGroup = function(groupId) {
 	var $canvases = this, $canvas, e,
-		idType = $.type(groupName),
-		layers, layer, l;
+		idType = $.type(groupId),
+		layers, group, layer, l;
 	
-	if (groupName !== UNDEFINED) {
+	if (groupId !== UNDEFINED) {
 		for (e = 0; e < $canvases.length; e += 1) {
 			$canvas = $($canvases[e]);
 			layers = $canvas.getLayers();
+			group = $canvas.getLayerGroup(groupId);
 			// Remove layer group using given group name
-			for (l = 0; l < layers.length; l += 1) {
-				layer = layers[l];
+			for (l = 0; l < group.length; l += 1) {
+				layer = group[l];
 				// Ensure layer's index property is accurate
 				layer.index = inArray(layer, layers);
 				// Check if layer group matches name
-				if (layers[l].group === groupName || (idType === 'regexp' && layers[l].group.match(groupName))) {
-					layers.splice(l, 1);
-					l -= 1;
-				}
+				layers.splice(layer.index, 1);
 			}
 		}
 	}
@@ -1320,72 +1318,90 @@ $.fn.animateLayer = function() {
 };
 
 // Animate all layers in a layer group
-$.fn.animateLayerGroup = function(id) {
+$.fn.animateLayerGroup = function(groupId) {
 	var $canvases = this, $canvas, e,
 		args = ([]).slice.call(arguments, 0),
 		group, l;
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
-		group = $canvas.getLayerGroup(id);
+		group = $canvas.getLayerGroup(groupId);
 		// Animate all layers in the group
 		for (l = 0; l < group.length; l += 1) {
 			$canvas.animateLayer.apply($canvas, [group[l]].concat(args.slice(1)));
 		}
 	}
+	return $canvases;
 };
 
 // Delay layer animation by a given number of milliseconds
-$.fn.delayLayer = function(id, duration) {
+$.fn.delayLayer = function(layerId, duration) {
 	var $canvases = this, e, layer;
 	duration = duration || 0;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
-		layer = $($canvases[e]).getLayer(id);
+		layer = $($canvases[e]).getLayer(layerId);
 		$(layer).delay(duration);
 	}
 	return $canvases;
 };
 
 // Delay animation all layers in a layer group
-$.fn.delayLayerGroup = function(id, duration) {
+$.fn.delayLayerGroup = function(groupId, duration) {
 	var $canvases = this, $canvas, e,
-		group, l;
+		group, layer, l;
 	duration = duration || 0;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
-		group = $canvas.getLayerGroup(id);
+		group = $canvas.getLayerGroup(groupId);
 		// Delay all layers in the group
-		for (l = 0; l < group.length; l += 1) {
-			$canvas.delayLayer.call($canvas, group[l], duration);
+		if (group) {
+			for (l = 0; l < group.length; l += 1) {
+				// Delay each layer in the group
+				layer = group[l];
+				if (layer) {
+					$(layer).delay(duration);
+				}
+			}
 		}
 	}
+	return $canvases;
 };
 
 // Stop layer animation
-$.fn.stopLayer = function(id, clearQueue) {
-	var $canvases = this, e, layer;
+$.fn.stopLayer = function(layerId, clearQueue) {
+	var $canvases = this, e,
+		layer;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
-		layer = $($canvases[e]).getLayer(id);
-		$(layer).stop(clearQueue);
+		layer = $($canvases[e]).getLayer(layerId);
+		if (layer) {
+			$(layer).stop(clearQueue);
+		}
 	}
 	return $canvases;
 };
 
 // Stop animation of all layers in a layer group
-$.fn.stopLayerGroup = function(id, clearQueue) {
+$.fn.stopLayerGroup = function(groupId, clearQueue) {
 	var $canvases = this, $canvas, e,
-		group, l;
+		group, layer, l;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
-		group = $canvas.getLayerGroup(id);
+		group = $canvas.getLayerGroup(groupId);
 		// Stop all layers in the group
-		for (l = 0; l < group.length; l += 1) {
-			$canvas.stopLayer.call($canvas, group[l], clearQueue);
+		if (group) {
+			for (l = 0; l < group.length; l += 1) {
+				// Stop each layer in the group
+				layer = group[l];
+				if (layer) {
+					$(layer).stop(clearQueue);
+				}
+			}
 		}
 	}
+	return $canvases;
 };
 
 // Enable animation for color properties
@@ -2292,7 +2308,7 @@ $.fn.drawGraph = function drawGraph(args) {
 			}
 		}
 	}
-
+	return $canvases;
 };
 
 /* Text API */
