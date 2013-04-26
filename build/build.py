@@ -14,7 +14,7 @@ def compress_file(source):
 # Update version in given source file
 def replace_in_file(path, expression, version, count=0):
 	# Open source file for reading and writing
-	f = open(path, 'r')
+	f = open(path, 'r+')
 	# Read contents from source file
 	contents = f.read()
 	f.close()
