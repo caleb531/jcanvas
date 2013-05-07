@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.02
+ * @license jCanvas v13.05.06
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -781,7 +781,7 @@ $.fn.removeLayers = function removeLayers() {
 		layers;
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
-		data = getCanvasData($canvases[e]);
+		data = _getCanvasData($canvases[e]);
 		// Setting an array's length to 0 will empty the array
 		data.layers.length = 0;
 		// Update layer mappings
