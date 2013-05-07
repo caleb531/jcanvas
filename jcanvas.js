@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.06
+ * @license jCanvas v13.05.07
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -928,10 +928,11 @@ $.fn.drawLayers = function drawLayers(args) {
 													
 				// Detect any other mouse event
 				if (callback && !layer._fired) {
+					// Prevent event from firing twice unintentionally
 					layer._fired = TRUE;
-					callback.call($canvases[e], layer);
-					// Prevent event from being "transferred" to another layer
 					eventCache.type = NULL;
+					// Run the user-defined callback function
+					callback.call($canvases[e], layer);
 				}
 				
 				// Use the mousedown event to start drag
