@@ -102,6 +102,7 @@ defaults = {
 	scaleY: 1,
 	shadowBlur: 0,
 	shadowColor: 'transparent',
+	shadowStroke: false,
 	shadowX: 0,
 	shadowY: 0,
 	sHeight: NULL,
@@ -218,15 +219,26 @@ function _closePath(canvas, ctx, params) {
 	if (params.closed) {
 		ctx.closePath();
 	}
-	ctx.fill();
-	// Prevent extra shadow created by stroke (but only when fill is present)
-	if (params.fillStyle !== 'transparent') {
+  if(params.shadowStroke && params.strokeWidth !== 0) {
+		ctx.stroke(); // first the stroke with shadow
+	  ctx.fill();   // fill with shadow
+    // Re-stroke without shadow for shadow of fill+stroke 
 		ctx.shadowColor = 'transparent';
-	}
-	// Only stroke if the stroke
-	if (params.strokeWidth !== 0) {
-		ctx.stroke();
-	}
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.stroke(); // fix stroke without shadow
+  } else {
+	  ctx.fill();
+	  // Prevent extra shadow created by stroke (but only when fill is present)
+    // and not overriden with shadowStroke
+	  if (params.fillStyle !== 'transparent') {
+		  ctx.shadowColor = 'transparent';
+	  }
+	  // Only stroke if the stroke
+	  if (params.strokeWidth !== 0) {
+		  ctx.stroke();
+	  }
+  }
 	// Optionally close path
 	if (!params.closed) {
 		ctx.closePath();
