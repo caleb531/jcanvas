@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.18
+ * @license jCanvas v13.05.19
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -401,7 +401,11 @@ function _getCanvasData(canvas) {
 				// Properties for the current drag event
 				drag: {},
 				// Data for the current event
-				event: {},
+				event: {
+					type: NULL,
+					x: NULL,
+					y: NULL
+				},
 				// Events which already have been bound to the canvas
 				events: {},
 				// The canvas's current transformation state
@@ -1583,7 +1587,9 @@ function _detectEvents(canvas, ctx, params) {
 				
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
-		over = ctx.isPointInPath(eventCache.x, eventCache.y) || (ctx.isPointInStroke && ctx.isPointInStroke(eventCache.x, eventCache.y));
+		if (eventCache.x !== NULL && eventCache.y !== NULL) {
+			over = ctx.isPointInPath(eventCache.x, eventCache.y) || (ctx.isPointInStroke && ctx.isPointInStroke(eventCache.x, eventCache.y));
+		}
 		transforms = data.transforms;
 		
 		// Allow callback functions to retrieve the mouse coordinates
