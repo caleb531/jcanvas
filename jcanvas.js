@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.07
+ * @license jCanvas v13.05.18
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -102,6 +102,7 @@ defaults = {
 	scaleY: 1,
 	shadowBlur: 0,
 	shadowColor: 'transparent',
+	shadowStroke: false,
 	shadowX: 0,
 	shadowY: 0,
 	sHeight: NULL,
@@ -218,31 +219,51 @@ function _closePath(canvas, ctx, params) {
 	if (params.closed) {
 		ctx.closePath();
 	}
-	ctx.fill();
-	// Prevent extra shadow created by stroke (but only when fill is present)
-	if (params.fillStyle !== 'transparent') {
-		ctx.shadowColor = 'transparent';
-	}
-	// Only stroke if the stroke
-	if (params.strokeWidth !== 0) {
+	
+	if (params.shadowStroke && params.strokeWidth !== 0) {
+		// Extend the shadow to include the stroke of a drawing
+		
+		// Add a stroke shadow by stroking before filling
 		ctx.stroke();
+		ctx.fill();
+		// Ensure the below stroking does not inherit a shadow
+		ctx.shadowColor = 'transparent';
+		ctx.shadowBlur = 0;
+		// Stroke over fill as usual
+		ctx.stroke();
+		
+	} else {
+		// If shadowStroke is not enabled, stroke & fill as usual
+		
+		ctx.fill();
+		// Prevent extra shadow created by stroke (but only when fill is present)
+		if (params.fillStyle !== 'transparent') {
+			ctx.shadowColor = 'transparent';
+		}
+		// Only stroke if the stroke
+		if (params.strokeWidth !== 0) {
+			ctx.stroke();
+		}
+		
 	}
+	
 	// Optionally close path
 	if (!params.closed) {
 		ctx.closePath();
 	}
 	// Restore individual shape transformation
 	_restoreTransform(ctx, params);
-	
+
 	if (params.mask || params.layer) {
-		
+	
 		// Retrieve canvas data
 		data = _getCanvasData(canvas);
-		
+	
 		_enableMasking(ctx, data, params);
 		_isLayerWithinMask(ctx, data, params);
-	
+
 	}
+		
 }
 
 // Rotate canvas (internal)
@@ -1562,7 +1583,7 @@ function _detectEvents(canvas, ctx, params) {
 				
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
-		over = ctx.isPointInPath(eventCache.x, eventCache.y);
+		over = ctx.isPointInPath(eventCache.x, eventCache.y) || (ctx.isPointInStroke && ctx.isPointInStroke(eventCache.x, eventCache.y));
 		transforms = data.transforms;
 		
 		// Allow callback functions to retrieve the mouse coordinates

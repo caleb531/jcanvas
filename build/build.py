@@ -14,18 +14,18 @@ def compress_file(source):
 # Update version in given source file
 def replace_in_file(path, expression, version, count=0):
 	# Open source file for reading and writing
-	f = open(path, 'r+')
+	file = open(path, 'r+')
 	# Read contents from source file
-	contents = f.read()
-	f.close()
+	contents = file.read()
 	
 	# Update source version
 	contents = re.sub(expression, version, contents, count)
 	
 	# Write updated source to source file
-	f = open(path, 'w')
-	f.write(contents)
-	f.close()
+	file.truncate(0)
+	file.seek(0)
+	file.write(contents)
+	file.close()
 	
 # Main function
 def main():
