@@ -1562,8 +1562,10 @@ function _detectEvents(canvas, ctx, params) {
 				
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
-		over = ctx.isPointInPath(eventCache.x, eventCache.y)
-                    || ctx.isPointInStroke && ctx.isPointInStroke(eventCache.x, eventCache.y);
+    if (eventCache.hasOwnProperty('x') && eventCache.hasOwnProperty('y')) {
+		  over = ctx.isPointInPath(eventCache.x, eventCache.y)
+        || (ctx.isPointInStroke && ctx.isPointInStroke(eventCache.x, eventCache.y));
+    }
 		transforms = data.transforms;
 		
 		// Allow callback functions to retrieve the mouse coordinates
