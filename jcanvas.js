@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.21
+ * @license jCanvas v13.05.25
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -1556,7 +1556,7 @@ function createEvent(eventName) {
 					resetFire: TRUE
 				});
 				// Prevent default behavior
-				return false;
+				event.preventDefault();
 			});
 			// Prevent this event from being bound twice
 			data.events[helperEventName] = TRUE;
