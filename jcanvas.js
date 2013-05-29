@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.25
+ * @license jCanvas v13.05.29
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -866,8 +866,10 @@ $.fn.drawLayers = function drawLayers(args) {
 			data = _getCanvasData($canvases[e]);
 			
 			// Restore canvas as many times as needed
-			for (i = 0; i < data.transforms.masks; i += 1) {
-				$canvas.restoreCanvas();
+			if (params.index === 0) {
+				for (i = 0; i < data.transforms.masks; i += 1) {
+					$canvas.restoreCanvas();
+				}
 			}
 								
 			// Clear canvas first unless otherwise directed
@@ -917,8 +919,10 @@ $.fn.drawLayers = function drawLayers(args) {
 			}
 			
 			// Restore canvas as many times as needed
-			for (i = 0; i < data.transforms.masks; i += 1) {
-				$canvas.restoreCanvas();
+			if (params.index === 0) {
+				for (i = 0; i < data.transforms.masks; i += 1) {
+					$canvas.restoreCanvas();
+				}
 			}
 						
 			layer = data.intersects[data.intersects.length - 1] || [];
