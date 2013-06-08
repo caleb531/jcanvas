@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.05.29
+ * @license jCanvas v13.06.08
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -144,7 +144,6 @@ function _getContext(canvas) {
 
 // Set canvas context properties
 function _setGlobalProps(ctx, params) {
-	var imageSmoothingEnabled;
 	// Fill/stroke styles
 	ctx.fillStyle = params.fillStyle;
 	ctx.strokeStyle = params.strokeStyle;
@@ -168,8 +167,7 @@ function _setGlobalProps(ctx, params) {
 	ctx.globalCompositeOperation = params.compositing;
 	// Support cross-browser toggling of image smoothing
 	if (params.imageSmoothing) {
-		imageSmoothingEnabled = 'imageSmoothingEnabled';
-		ctx['webkit' + imageSmoothingEnabled] = ctx['moz' + imageSmoothingEnabled] = params.imageSmoothing;
+		ctx.webkitImageSmoothingEnabled = ctx.mozImageSmoothingEnabled = params.imageSmoothing;
 	}
 }
 
@@ -421,7 +419,9 @@ function _getCanvasData(canvas) {
 				// Whether a layer is being animated or not
 				animating: FALSE,
 				// The layer currently being animated
-				animated: NULL
+				animated: NULL,
+				pixelRatio: 1,
+				scaled: false
 			};
 			// Save initial transformation state
 			data.savedTransforms = merge({}, data.transforms);
@@ -617,10 +617,9 @@ $.fn.getLayer = function getLayer(layerId) {
 
 // Get all layers in the given group
 $.fn.getLayerGroup = function getLayerGroup(groupId) {
-	var $canvases = this, layers,
-		idType = $.type(groupId),
+	var idType = $.type(groupId),
 		groups, groupName, group,
-		data, l;
+		data;
 	
 	if (idType === 'array') {
 		// Return layer group if given
@@ -638,7 +637,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 					// Stop after finding the first matching group
 					break;
 				}
-			} 
+			}
 		} else {
 			// Find layer group with the given group name
 			data = _getCanvasData(this[0]);
@@ -771,7 +770,6 @@ $.fn.removeLayer = function removeLayer(layerId) {
 // Remove all layers within a specific group
 $.fn.removeLayerGroup = function removeLayerGroup(groupId) {
 	var $canvases = this, $canvas, e, data,
-		idType = $.type(groupId),
 		layers, group, layer, l;
 	
 	if (groupId !== UNDEFINED) {
@@ -793,8 +791,8 @@ $.fn.removeLayerGroup = function removeLayerGroup(groupId) {
 						name: NULL
 					});
 				}
-				delete data.layer.groups[group.name];	
-			}		
+				delete data.layer.groups[group.name];
+			}
 		}
 	}
 	return $canvases;
@@ -802,8 +800,9 @@ $.fn.removeLayerGroup = function removeLayerGroup(groupId) {
 
 // Remove all layers
 $.fn.removeLayers = function removeLayers() {
-	var $canvases = this, $canvas, e, data,
-		layers;
+	var $canvases = this, $canvas, e,
+		data;
+	
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
 		data = _getCanvasData($canvases[e]);
@@ -1592,7 +1591,11 @@ function _detectEvents(canvas, ctx, params) {
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
 		if (eventCache.x !== NULL && eventCache.y !== NULL) {
-			over = ctx.isPointInPath(eventCache.x, eventCache.y) || (ctx.isPointInStroke && ctx.isPointInStroke(eventCache.x, eventCache.y));
+			// Respect user-defined pixel ratio
+			x = eventCache.x * data.pixelRatio;
+			y = eventCache.y * data.pixelRatio;
+			// Determine if the given coordinates are in the current path
+			over = ctx.isPointInPath(x, y) || (ctx.isPointInStroke && ctx.isPointInStroke(x, y));
 		}
 		transforms = data.transforms;
 		
@@ -3015,6 +3018,71 @@ $.fn.getCanvasImage = function getCanvasImage(type, quality) {
 		quality = 1;
 	}
 	return (canvas && canvas.toDataURL ? canvas.toDataURL('image/' + type, quality) : NULL);
+};
+
+// Scale canvas based on the device's pixel ratio
+$.fn.detectPixelRatio = function detectPixelRatio(callback) {
+	var $canvases = this,
+		$canvas, canvas, e, ctx,
+		devicePixelRatio, backingStoreRatio, ratio,
+		oldWidth, oldHeight,
+		data;
+	
+	for (e = 0; e < $canvases.length; e += 1) {
+		// Get canvas and its associated data
+		canvas = $canvases[e];
+		$canvas = $($canvases[e]);
+		ctx = _getContext(canvas);
+		data = _getCanvasData($canvases[e]);
+		
+		// If canvas has not already been scaled with this method
+		if (!data.scaled) {
+		
+			// Determine device pixel ratios
+			devicePixelRatio = window.devicePixelRatio || 1;
+			backingStoreRatio = ctx.webkitBackingStorePixelRatio ||
+				ctx.mozBackingStorePixelRatio ||
+				ctx.msBackingStorePixelRatio ||
+				ctx.oBackingStorePixelRatio ||
+				ctx.backingStorePixelRatio || 1;
+		
+			// Calculate general ratio based on the two given ratios
+			ratio = devicePixelRatio / backingStoreRatio;
+			
+			if (ratio !== 1) {
+				// Scale canvas relative to ratio
+				
+				// Get the current canvas dimensions for future use
+				oldWidth = canvas.width;
+				oldHeight = canvas.height;
+
+				// Resize canvas relative to the determined ratio
+				canvas.width = oldWidth * ratio;
+				canvas.height = oldHeight * ratio;
+			
+				// Scale canvas back to original dimensions via CSS
+				canvas.style.width = oldWidth + 'px';
+				canvas.style.height = oldHeight + 'px';
+			
+				// Scale context to counter the manual scaling of canvas
+				ctx.scale(ratio, ratio);
+			
+			}
+		
+			// Set pixel ratio on canvas data object
+			data.pixelRatio = ratio;
+			// Ensure that this method can only be called once for any given canvas
+			data.scaled = TRUE;
+			
+			// Call the given callback function with the ratio as its only argument
+			if (callback) {
+				callback.call(canvas, ratio);
+			}
+			
+		}
+		
+	}
+	return $canvases;
 };
 
 // Enable canvas feature detection with $.support
