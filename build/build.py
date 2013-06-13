@@ -60,7 +60,7 @@ def main():
 	replace_in_file(license, year_re, year)
 	
 	# Compress jCanvas source
-	compress_file(source)
+	# compress_file(source)
 		
 	# Inform user when build process has finished
 	print('Done.')

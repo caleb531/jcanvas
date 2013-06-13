@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.06.08
+ * @license jCanvas v13.06.13
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -143,10 +143,23 @@ function _getContext(canvas) {
 }
 
 // Set canvas context properties
-function _setGlobalProps(ctx, params) {
-	// Fill/stroke styles
-	ctx.fillStyle = params.fillStyle;
-	ctx.strokeStyle = params.strokeStyle;
+function _setGlobalProps(canvas, ctx, params) {
+	// Fill style
+	if (typeOf(params.fillStyle) === 'function') {
+		// Handle fill styles as functions
+		ctx.fillStyle = params.fillStyle.call(canvas, params);
+	} else {
+		// Handle fill styles as strings
+		ctx.fillStyle = params.fillStyle;
+	}
+	// Stroke style
+	if (typeOf(params.strokeStyle) === 'function') {
+		// Handle stroke styles as functions
+		ctx.strokeStyle = params.strokeStyle.call(canvas, params);
+	} else {
+		// Handle stroke styles as strings
+		ctx.strokeStyle = params.strokeStyle;
+	}
 	ctx.lineWidth = params.strokeWidth;
 	// Rounded corners for paths if chosen
 	if (params.rounded) {
@@ -361,7 +374,7 @@ jCanvas.extend = function extend(plugin) {
 				ctx = _getContext(canvas);
 				if (ctx) {
 					args = _addLayer(canvas, params, args, self);
-					_setGlobalProps(ctx, params);
+					_setGlobalProps(canvas, ctx, params);;
 					plugin.fn.call(canvas, ctx, params);
 				}
 			}
@@ -956,40 +969,77 @@ $.fn.drawLayers = function drawLayers(args) {
 													
 				// Detect any other mouse event
 				if (callback && !layer._fired) {
+					
 					// Prevent event from firing twice unintentionally
 					layer._fired = TRUE;
 					eventCache.type = NULL;
 					// Run the user-defined callback function
 					callback.call($canvases[e], layer);
+					
 				}
 				
 				// Use the mousedown event to start drag
 				if (layer.draggable && !layer.disableDrag && (eventType === 'mousedown' || eventType === 'touchstart')) {
-						
-						
-					// Optionally bring layer to front when drag starts
-					if (layer.bringToFront) {
-						// Remove layer from its original position
-						layers.splice(layer.index, 1);
-						// Bring layer to front
-						// push() returns the new array length
-						layer.index = layers.push(layer);
-					}
-					
+															
 					// Keep track of drag state
 					drag.layer = layer;
-					drag.dragging = TRUE;
+								
+				}
+				
+			}
+			
+			// Dragging a layer works independently from other events
+			if (drag.layer) {
+								
+				// Stop dragging if user releases mouse button
+				if ((eventType === 'mouseup' || eventType === 'touchend')) {
 					
-					// Move a layer's drag group when layer is dragged
-					if (drag.layer.group && drag.layer.dragGroupWithLayer) {
+					// Trigger dragstop event if defined
+					if (drag.layer.dragstop && drag.dragging) {
+						
+						drag.layer.dragstop.call($canvas, drag.layer);
+						drag.dragging = FALSE;
+						
+					}
+					
+					data.drag = {};
+					
+				}
+				// Regardless of whether the cursor is on the layer, drag the layer until drag stops
+				if ((eventType === 'mousemove' || eventType === 'touchmove')) {
+									
+					// Check if layer has started to drag
+					if (!drag.dragging) {
+						
+						drag.dragging = TRUE;
+						
+						// Stop any current animations for this layer
+						$canvas.stopLayer(drag.layer);
+						
+						// Trigger dragstart event if defined
+						if (drag.layer.dragstart) {
+							drag.layer.dragstart.call($canvas, drag.layer);
+						}
+						
+						// Optionally bring layer to front when drag starts
+						if (drag.layer.bringToFront) {
+							// Remove layer from its original position
+							layers.splice(drag.layer.index, 1);
+							// Bring layer to front
+							// push() returns the new array length
+							drag.layer.index = layers.push(drag.layer);
+						}
+					
+						// Move a layer's drag group when layer is dragged
 						group = data.layer.groups[drag.layer.group];
-						if (group) {
+						if (drag.layer.group && drag.layer.dragGroupWithLayer && group) {
+																						
 							for (l = 0; l < group.length; l += 1) {
 								if (group[l] !== drag.layer) {
 									group[l]._startX = group[l].x;
 									group[l]._startY = group[l].y;
-									group[l]._endX = layer._eventX;
-									group[l]._endY = layer._eventY;
+									group[l]._endX = drag.layer._eventX;
+									group[l]._endY = drag.layer._eventY;
 									// Optionally bring all layers in drag group to front when drag starts
 									if (group[l].bringToFront) {
 										group[l].index = inArray(group[l], layers);
@@ -1002,43 +1052,23 @@ $.fn.drawLayers = function drawLayers(args) {
 									}
 								}
 							}
+														
 						}
-					}
 					
-					// Set drag properties for this layer
-					drag._startX = layer._startX = layer.x;
-					drag._startY = layer._startY = layer.y;
-					drag._endX = layer._endX = layer._eventX;
-					drag._endY = layer._endY = layer._eventY;
-					
-					// Trigger dragstart event if defined
-					if (layer.dragstart) {
-						layer.dragstart.call($canvases[e], layer);
+						// Set drag properties for this layer
+						drag._startX = drag.layer._startX = drag.layer.x;
+						drag._startY = drag.layer._startY = drag.layer.y;
+						drag._endX = drag.layer._endX = drag.layer._eventX;
+						drag._endY = drag.layer._endY = drag.layer._eventY;
+						
 					}
-				}
-				
-			}
-			
-			// Dragging a layer works independently from other events
-			if (drag.layer) {
-				
-				// Stop dragging if user releases mouse button
-				if (drag.dragging && (eventType === 'mouseup' || eventType === 'touchend')) {
-					// Trigger dragstop event if defined
-					if (drag.layer.dragstop) {
-						drag.layer.dragstop.call($canvases[e], drag.layer);
-					}
-					data.drag = {};
-				}
-				// Regardless of whether the cursor is on the layer, drag the layer until drag stops
-				if (drag.dragging && (eventType === 'mousemove' || eventType === 'touchmove')) {
 					
 					drag.layer.x = drag.layer._eventX - (drag._endX - drag._startX);
 					drag.layer.y = drag.layer._eventY - (drag._endY - drag._startY);
 					
 					// Trigger drag event if defined
 					if (drag.layer.drag) {
-						drag.layer.drag.call($canvases[e], drag.layer);
+						drag.layer.drag.call($canvas, drag.layer);
 					}
 					if (drag.layer.group && drag.layer.dragGroupWithLayer) {
 						group = data.layer.groups[drag.layer.group];
@@ -1876,7 +1906,7 @@ $.fn.drawRect = function drawRect(args) {
 			args = _addLayer($canvases[e], params, args, drawRect);
 			if (params.visible) {
 			
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, params.width, params.height);
 				
 				ctx.beginPath();
@@ -1938,7 +1968,7 @@ $.fn.drawArc = function drawArc(args) {
 			args = _addLayer($canvases[e], params, args, drawArc);
 			if (params.visible) {
 				
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, params.radius*2);
 				
 				// Draw arc
@@ -1973,7 +2003,7 @@ $.fn.drawEllipse = function drawEllipse(args) {
 			args = _addLayer($canvases[e], params, args, drawEllipse);
 			if (params.visible) {
 		
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, params.width, params.height);
 				
 				// Create ellipse using curves
@@ -2023,7 +2053,7 @@ $.fn.drawPolygon = function drawPolygon(args) {
 			args = _addLayer($canvases[e], params, args, drawPolygon);
 			if (params.visible) {
 				
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, params.radius*2);
 				
 				// Calculate points and draw
@@ -2070,7 +2100,7 @@ $.fn.drawLine = function drawLine(args) {
 			args = _addLayer($canvases[e], params, args, drawLine);
 			if (params.visible) {
 				
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, 0);
 				
 				// Draw each point
@@ -2114,7 +2144,7 @@ $.fn.drawQuadratic = $.fn.drawQuad = function drawQuadratic(args) {
 			args = _addLayer($canvases[e], params, args, drawQuadratic);
 			if (params.visible) {
 				
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, 0);
 				
 				// Draw each point
@@ -2162,7 +2192,7 @@ $.fn.drawBezier = function drawBezier(args) {
 			args = _addLayer($canvases[e], params, args, drawBezier);
 			if (params.visible) {
 			
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, 0);
 				
 				// Draw each point
@@ -2211,7 +2241,7 @@ $.fn.drawVector = function drawVector(args) {
 			args = _addLayer($canvases[e], params, args, drawVector);
 			if (params.visible) {
 			
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				_transformShape(ctx, params, 0);
 				
 				// Draw each point
@@ -2288,7 +2318,7 @@ $.fn.drawGraph = function drawGraph(args) {
 			args = _addLayer($canvases[e], params, args, drawGraph);
 			if (params.visible) {
 			
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 							
 				// Cache graph information
 				graph = params.graph;
@@ -2507,7 +2537,7 @@ $.fn.drawText = function drawText(args) {
 			args = _addLayer($canvases[e], params, args, drawText);
 			if (params.visible) {
 				
-				_setGlobalProps(ctx, params);
+				_setGlobalProps($canvases[e], ctx, params);;
 				
 				// Set text-specific properties
 				ctx.textBaseline = params.baseline;
@@ -2659,7 +2689,7 @@ $.fn.drawImage = function drawImage(args) {
 			}
 			
 			// Set global canvas properties
-			_setGlobalProps(ctx, params);
+			_setGlobalProps($canvases[e], ctx, params);;
 			
 			// Only crop image if all cropping properties are given
 			if (params.sWidth !== NULL && params.sHeight !== NULL && params.sx !== NULL && params.sy !== NULL) {
