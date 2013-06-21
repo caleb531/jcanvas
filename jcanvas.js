@@ -71,6 +71,7 @@ defaults = {
 	compositing: 'source-over',
 	concavity: 0,
 	cornerRadius: 0,
+	count: 1,
 	cropFromCenter: TRUE,
 	disableDrag: FALSE,
 	disableEvents: FALSE,
@@ -156,15 +157,17 @@ function _getContext(canvas) {
 // Save canvas context and update jCanvas transformation stack
 function _saveCanvas(ctx, data) {
 	ctx.save();
-	data.savedTransforms.push(merge({}, data.transforms));
+	data.savedTransforms.push(merge(true, {}, data.transforms));
 }
 
 // Restore canvas context update jCanvas transformation stack
 function _restoreCanvas(ctx, data) {
-	ctx.restore();
 	if (data.savedTransforms.length === 0) {
-		data.transforms = merge({}, baseTransforms);
+		// Reset transformation state if it can't be restored any more
+		data.transforms = merge(true, {}, baseTransforms);
 	} else {
+		// Restore canvas context
+		ctx.restore();
 		// Restore current transform state to the last saved state
 		// Remove last saved state from transformation stack
 		data.transforms = merge({}, data.savedTransforms.pop());
@@ -278,13 +281,12 @@ function _closePath(canvas, ctx, params) {
 	}
 	// Restore individual shape transformation
 	_restoreTransform(ctx, params);
-		
-	if (params.mask || params.layer) {
 	
+	// Mask shape if chosen	
+	if (params.mask) {
 		// Retrieve canvas data
 		data = _getCanvasData(canvas);
 		_enableMasking(ctx, data, params);
-
 	}
 		
 }
@@ -432,7 +434,7 @@ function _getCanvasData(canvas) {
 				// Events which already have been bound to the canvas
 				events: {},
 				// The canvas's current transformation state
-				transforms: merge({}, baseTransforms),
+				transforms: merge(true, {}, baseTransforms),
 				savedTransforms: [],
 				// Whether a layer is being animated or not
 				animating: FALSE,
@@ -960,10 +962,10 @@ $.fn.drawLayers = function drawLayers(args) {
 			callback = layer[eventType];
 			// Cache the drag object
 			drag = data.drag;
-					
+								
 			// Check events for intersecting layer
 			if (layer._event && layer.prevMasksIntersects) {
-									
+										
 				// Detect mouseover events
 				if (layer.mouseover || layer.mouseout || layer.cursor) {
 				
@@ -1107,7 +1109,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// Reset list of layer masks
 			data.transforms.masks.length = 0;
 			// Reset transformation stack
-			data.transforms = merge({}, baseTransforms);
+			data.transforms = merge(true, {}, baseTransforms);
 			data.savedTransforms.length = 0;
 		}
 	}
@@ -1160,6 +1162,9 @@ function _addLayer(canvas, params, args, method) {
 		
 		// Optionally enable drag-and-drop support and cursor support
 		_enableDrag($canvas, data, layer);
+		
+		// Copy _event property to parameters object
+		params._event = layer._event;
 		
 		// Set layer properties and add to stack
 		layer.layer = TRUE;
@@ -1803,31 +1808,43 @@ $.fn.clearCanvas = function clearCanvas(args) {
 
 /* Transformation API */
 
-// Save canvas
-$.fn.saveCanvas = function saveCanvas() {
+// Restore canvas
+$.fn.saveCanvas = function saveCanvas(args) {
 	var $canvases = this, e, ctx,
-		data;
+		params = new jCanvasObject(args),
+		data, i;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
-			_saveCanvas(ctx, data);
+			args = _addLayer($canvases[e], params, args, saveCanvas);
+			
+			// Restore a number of times using the given count
+			for (i = 0; i < params.count; i += 1) {
+				_saveCanvas(ctx, data);
+			}
 		}
 	}
 	return $canvases;
 };
 
 // Restore canvas
-$.fn.restoreCanvas = function restoreCanvas() {
+$.fn.restoreCanvas = function restoreCanvas(args) {
 	var $canvases = this, e, ctx,
-		data;
+		params = new jCanvasObject(args),
+		data, i;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
-			_restoreCanvas(ctx, data);
+			args = _addLayer($canvases[e], params, args, restoreCanvas);
+			
+			// Restore a number of times using the given count
+			for (i = 0; i < params.count; i += 1) {
+				_restoreCanvas(ctx, data);
+			}
 		}
 	}
 	return $canvases;
@@ -1835,14 +1852,11 @@ $.fn.restoreCanvas = function restoreCanvas() {
 
 // Restore canvas
 $.fn.restoreCanvasOnRedraw = function restoreCanvasOnRedraw(args) {
-	var params = {
-		layer: TRUE,
-		fn: function() {
-			$(this).restoreCanvas();
-		}
-	};
-	merge(params, args);
-	return this.draw(params);
+	var $canvases = this,
+		params = merge({}, args);
+	params.layer = TRUE;
+	$canvases.restoreCanvas(params);
+	return $canvases;
 };
 
 // Rotate canvas
@@ -1859,7 +1873,8 @@ $.fn.rotateCanvas = function rotateCanvas(args) {
 			
 			// Autosave transformation state by default
 			if (params.autosave) {
-				ctx.save();
+				// Automatically save transformation state by default
+				_saveCanvas(ctx, data);
 			}
 			_rotateCanvas(ctx, params, data.transforms);
 		}
@@ -1881,7 +1896,8 @@ $.fn.scaleCanvas = function scaleCanvas(args) {
 			
 			// Autosave transformation state by default
 			if (params.autosave) {
-				ctx.save();
+				// Automatically save transformation state by default
+				_saveCanvas(ctx, data);
 			}
 			_scaleCanvas(ctx, params, data.transforms);
 		}
@@ -1903,7 +1919,8 @@ $.fn.translateCanvas = function translateCanvas(args) {
 			
 			// Autosave transformation state by default
 			if (params.autosave) {
-				ctx.save();
+				// Automatically save transformation state by default
+				_saveCanvas(ctx, data);
 			}
 			_translateCanvas(ctx, params, data.transforms);
 		}
@@ -2445,6 +2462,13 @@ $.fn.drawText = function drawText(args) {
 					// Calculate text's width and height
 					measureText($canvases[e], ctx, params, lines);
 					
+					// If text is a layer
+					if (args && params.layer) {
+						// Copy calculated width/height to layer object
+						args.width = params.width;
+						args.height = params.height;
+					}
+					
 					// Adjust text position to accomodate different horizontal alignments
 					x = params.x;
 					if (params.align === 'left') {
@@ -2480,7 +2504,7 @@ $.fn.drawText = function drawText(args) {
 					}
 					ctx.strokeText(lines[l], x, y);
 				}
-							
+									
 				// Detect jCanvas events
 				if (params._event) {
 					ctx.beginPath();
@@ -2535,7 +2559,7 @@ $.fn.measureText = function measureText(args) {
 $.fn.drawImage = function drawImage(args) {
 	var $canvases = this, canvas, e, ctx, data,
 		params = new jCanvasObject(args),
-		img, imgCtx, source, scaleFactor;
+		img, imgCtx, source;
 	
 	// Cache the given source
 	source = params.source;
@@ -2564,10 +2588,7 @@ $.fn.drawImage = function drawImage(args) {
 	
 		// Calculate image dimensions only once
 		if (e === 0) {
-		
-			// Calculate the image's width to height ratio
-			scaleFactor = img.width / img.height;
-			
+						
 			// If width and sWidth are not defined, use image width
 			if (params.width === NULL && params.sWidth === NULL) {
 				params.width = params.sWidth = img.width;
@@ -2583,12 +2604,13 @@ $.fn.drawImage = function drawImage(args) {
 				args.height = params.height;
 			}
 			
-			// Set global canvas properties
-			_setGlobalProps($canvases[e], ctx, params);
+		}
+						
+		// Only crop image if all cropping properties are given
+		if (params.sWidth !== NULL && params.sHeight !== NULL && params.sx !== NULL && params.sy !== NULL) {
 			
-			// Only crop image if all cropping properties are given
-			if (params.sWidth !== NULL && params.sHeight !== NULL && params.sx !== NULL && params.sy !== NULL) {
-				
+			if (e === 0) {
+			
 				// If width is not defined, use the given sWidth
 				if (params.width === NULL) {
 					params.width = params.sWidth;
@@ -2604,7 +2626,7 @@ $.fn.drawImage = function drawImage(args) {
 					params.sy += params.sHeight / 2;
 				}
 			
-				// Ensure cropped region does not extend beyond image boundaries
+				// Ensure cropped region does not pass image boundaries
 				
 				// Right
 				if ((params.sx + (params.sWidth / 2)) > img.width) {
@@ -2622,41 +2644,44 @@ $.fn.drawImage = function drawImage(args) {
 				if ((params.sy + (params.sHeight / 2)) > img.height) {
 					params.sy = img.height - (params.sHeight / 2);
 				}
-								
-				// Position/transform image if necessary
-				_transformShape(ctx, params, params.width, params.height);
-				
-				// Draw image
-				ctx.drawImage(
-					img,
-					params.sx - params.sWidth / 2,
-					params.sy - params.sHeight / 2,
-					params.sWidth,
-					params.sHeight,
-					params.x - params.width / 2,
-					params.y - params.height / 2,
-					params.width,
-					params.height
-				);
-			
-			} else {
-				// Show entire image if no crop region is defined
-				
-				// Position/transform image if necessary
-				_transformShape(ctx, params, params.width, params.height);
-								
-				// Draw image on canvas
-				ctx.drawImage(
-					img,
-					params.x - params.width / 2,
-					params.y - params.height / 2,
-					params.width,
-					params.height
-				);
 				
 			}
+								
+			// Position/transform image if necessary
+			_transformShape(ctx, params, params.width, params.height);
+			
+			// Draw image
+			ctx.drawImage(
+				img,
+				params.sx - params.sWidth / 2,
+				params.sy - params.sHeight / 2,
+				params.sWidth,
+				params.sHeight,
+				params.x - params.width / 2,
+				params.y - params.height / 2,
+				params.width,
+				params.height
+			);
+			
+		} else {
+			// Show entire image if no crop region is defined
+			
+			// Position/transform image if necessary
+			_transformShape(ctx, params, params.width, params.height);
+							
+			// Draw image on canvas
+			ctx.drawImage(
+				img,
+				params.x - params.width / 2,
+				params.y - params.height / 2,
+				params.width,
+				params.height
+			);
 			
 		}
+				
+		// Set global canvas properties
+		_setGlobalProps($canvases[e], ctx, params);
 		
 		// Draw invisible rectangle to allow for events and masking
 		ctx.beginPath();
