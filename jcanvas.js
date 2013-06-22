@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.06.17
+ * @license jCanvas v13.06.21
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -149,35 +149,44 @@ function isString(operand) {
 	return (typeOf(operand) === 'string');
 }
 
-// Get canvas context
+// Get 2D context for the given canvas
 function _getContext(canvas) {
 	return (canvas && canvas.getContext ? canvas.getContext('2d') : NULL);
 }
 
-// Save canvas context and update jCanvas transformation stack
+// Save canvas context and update transformation stack
 function _saveCanvas(ctx, data) {
 	ctx.save();
-	data.savedTransforms.push(merge(true, {}, data.transforms));
+	data.savedTransforms.push(_cloneTransforms(data.transforms));
 }
 
-// Restore canvas context update jCanvas transformation stack
+// Restore canvas context update transformation stack
 function _restoreCanvas(ctx, data) {
 	if (data.savedTransforms.length === 0) {
 		// Reset transformation state if it can't be restored any more
-		data.transforms = merge(true, {}, baseTransforms);
+		data.transforms = _cloneTransforms(baseTransforms);
 	} else {
 		// Restore canvas context
 		ctx.restore();
 		// Restore current transform state to the last saved state
 		// Remove last saved state from transformation stack
-		data.transforms = merge({}, data.savedTransforms.pop());
+		data.transforms = data.savedTransforms.pop();
 	}
+}
+
+// Clone the given transformations object
+function _cloneTransforms(transforms) {
+	// Clone the object itself
+	transforms = merge({}, transforms);
+	// Clone the object's masks array
+	transforms.masks = transforms.masks.slice(0);
+	return transforms;
 }
 
 // Set canvas context properties
 function _setGlobalProps(canvas, ctx, params) {
 	// Fill style
-	if (typeOf(params.fillStyle) === 'function') {
+	if (isFunction(params.fillStyle)) {
 		// Handle fill styles as functions
 		ctx.fillStyle = params.fillStyle.call(canvas, params);
 	} else {
@@ -185,7 +194,7 @@ function _setGlobalProps(canvas, ctx, params) {
 		ctx.fillStyle = params.fillStyle;
 	}
 	// Stroke style
-	if (typeOf(params.strokeStyle) === 'function') {
+	if (isFunction(params.strokeStyle)) {
 		// Handle stroke styles as functions
 		ctx.strokeStyle = params.strokeStyle.call(canvas, params);
 	} else {
@@ -195,8 +204,7 @@ function _setGlobalProps(canvas, ctx, params) {
 	ctx.lineWidth = params.strokeWidth;
 	// Rounded corners for paths if chosen
 	if (params.rounded) {
-		ctx.lineCap = 'round';
-		ctx.lineJoin = 'round';
+		ctx.lineCap = ctx.lineJoin = 'round';
 	} else {
 		ctx.lineCap = params.strokeCap;
 		ctx.lineJoin = params.strokeJoin;
@@ -282,7 +290,7 @@ function _closePath(canvas, ctx, params) {
 	// Restore individual shape transformation
 	_restoreTransform(ctx, params);
 	
-	// Mask shape if chosen	
+	// Mask shape if chosen
 	if (params.mask) {
 		// Retrieve canvas data
 		data = _getCanvasData(canvas);
@@ -434,7 +442,7 @@ function _getCanvasData(canvas) {
 				// Events which already have been bound to the canvas
 				events: {},
 				// The canvas's current transformation state
-				transforms: merge(true, {}, baseTransforms),
+				transforms: _cloneTransforms(baseTransforms),
 				savedTransforms: [],
 				// Whether a layer is being animated or not
 				animating: FALSE,
@@ -520,11 +528,11 @@ function _enableDrag($canvas, data, layer) {
 				var layer = data.drag.layer;
 				if (layer) {
 					data.drag = {};
-					$canvas.drawLayers();
 					// Handle any dragcancel events if possible
 					if (layer.dragcancel) {
 						layer.dragcancel.call($canvas[0], layer);
 					}
+					$canvas.drawLayers();
 				}
 			});
 			data.events.mouseoutdrag = TRUE;
@@ -600,7 +608,7 @@ function _updateLayerGroup($canvas, data, layer, props) {
 // Get a single jCanvas layer object
 $.fn.getLayer = function getLayer(layerId) {
 	var layers = this.getLayers(),
-		idType = $.type(layerId),
+		idType = typeOf(layerId),
 		data = _getCanvasData(this[0]),
 		layer, l;
 	
@@ -635,7 +643,7 @@ $.fn.getLayer = function getLayer(layerId) {
 
 // Get all layers in the given group
 $.fn.getLayerGroup = function getLayerGroup(groupId) {
-	var idType = $.type(groupId),
+	var idType = typeOf(groupId),
 		groups, groupName, group,
 		data;
 	
@@ -867,9 +875,8 @@ $.fn.drawLayers = function drawLayers(args) {
 		// Internal parameters for redrawing the canvas
 		params = args || {},
 		// Other variables
-		layers, layer, l, i,
+		layers, layer, l, lastIndex, i, m,
 		data, eventCache, eventType,
-		masks, m,
 		drag, group, callback;
 	
 	// The layer index from which to start redrawing the canvas
@@ -906,12 +913,15 @@ $.fn.drawLayers = function drawLayers(args) {
 				layer._event = !layer.disableEvents;
 				// Draw layer
 				drawLayer($canvas, ctx, layer, l + 1);
-																	
-				// Trigger mouseout event if necessary
+				// Store list of previous masks for each layer
+				layer._masks = data.transforms.masks.slice(0);
+				
+				// Manage mouseout event
 				if (layer._mousedout) {
 					layer._mousedout = FALSE;
 					layer._fired = TRUE;
 					layer._hovered = FALSE;
+					// Trigger mouseout event if necessary
 					if (layer.mouseout) {
 						layer.mouseout.call($canvases[e], layer);
 					}
@@ -930,24 +940,24 @@ $.fn.drawLayers = function drawLayers(args) {
 				
 			}
 			
+			lastIndex = l;
 			layer = {};
-			masks = data.transforms.masks;
 			
 			// Get the topmost layer whose visible area intersects event coordinates
 			for (i = data.intersecting.length - 1; i >= 0; i -= 1) {
 				layer = data.intersecting[i];
-				layer.prevMasksIntersects = TRUE;
+				layer._prevMasksIntersect = TRUE;
 				// Search previous masks to ensure layer is visible at event coordinates
-				for (m = masks.length - 1; m >= 0; m -= 1) {
+				for (m = layer._masks.length - 1; m >= 0; m -= 1) {
 					// If mask is below layer and mask does not intersect event coordinates
-					if (layer && masks[m].index < layer.index && !masks[m].intersects) {
+					if (layer && !layer._masks[m].intersects) {
 						// Indicate that the mask does not intersect event coordinates
-						layer.prevMasksIntersects = FALSE;
+						layer._prevMasksIntersect = FALSE;
 						break;
 					}
 				}
 				// If event coordinates are within all previous masks
-				if (layer.prevMasksIntersects) {
+				if (layer._prevMasksIntersect) {
 					// Stop searching for topmost layer
 					break;
 				}
@@ -962,27 +972,29 @@ $.fn.drawLayers = function drawLayers(args) {
 			callback = layer[eventType];
 			// Cache the drag object
 			drag = data.drag;
-								
+						
 			// Check events for intersecting layer
-			if (layer._event && layer.prevMasksIntersects) {
-										
+			if (layer._event && layer._prevMasksIntersect) {
+											
 				// Detect mouseover events
 				if (layer.mouseover || layer.mouseout || layer.cursor) {
-				
+										
 					if (!layer._hovered && !layer._fired) {
-					
+						
 						// Prevent events from firing excessively
 						layer._fired = TRUE;
 						layer._hovered = TRUE;
-					
+						
 						// Trigger mouseover callback if it exists
 						if (layer.mouseover) {
 							layer.mouseover.call($canvases[e], layer);
 						}
-					
+						
 						// Set cursor when mousing over layer
 						if (layer.cursor) {
+							// Store original cursor for later
 							layer._cursor = $canvas.css('cursor');
+							// Set cursor using CSS
 							$canvas.css({
 								cursor: layer.cursor
 							});
@@ -1105,12 +1117,14 @@ $.fn.drawLayers = function drawLayers(args) {
 			}
 
 			// Reset list of intersecting layers
-			data.intersecting.length = 0;
-			// Reset list of layer masks
-			data.transforms.masks.length = 0;
-			// Reset transformation stack
-			data.transforms = merge(true, {}, baseTransforms);
-			data.savedTransforms.length = 0;
+			if (lastIndex === layers.length) {
+				data.intersecting.length = 0;
+				// Reset list of layer masks
+				data.transforms.masks.length = 0;
+				// Reset transformation stack
+				data.transforms = _cloneTransforms(baseTransforms);
+				data.savedTransforms.length = 0;
+			}
 		}
 	}
 	return $canvases;
