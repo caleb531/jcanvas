@@ -3012,25 +3012,22 @@ $.fn.detectPixelRatio = function detectPixelRatio(callback) {
 			// Calculate general ratio based on the two given ratios
 			ratio = devicePixelRatio / backingStoreRatio;
 			
-			if (ratio !== 1) {
-				// Scale canvas relative to ratio
-				
-				// Get the current canvas dimensions for future use
-				oldWidth = canvas.width;
-				oldHeight = canvas.height;
+			// Scale canvas relative to ratio
+			
+			// Get the current canvas dimensions for future use
+			oldWidth = $canvas.outerWidth();
+			oldHeight = $canvas.outerHeight();
 
-				// Resize canvas relative to the determined ratio
-				canvas.width = oldWidth * ratio;
-				canvas.height = oldHeight * ratio;
-			
-				// Scale canvas back to original dimensions via CSS
-				canvas.style.width = oldWidth + 'px';
-				canvas.style.height = oldHeight + 'px';
-			
-				// Scale context to counter the manual scaling of canvas
-				ctx.scale(ratio, ratio);
-			
-			}
+			// Resize canvas relative to the determined ratio
+			canvas.width = oldWidth * ratio;
+			canvas.height = oldHeight * ratio;
+		
+			// Scale canvas back to original dimensions via CSS
+			canvas.style.width = oldWidth + 'px';
+			canvas.style.height = oldHeight + 'px';
+		
+			// Scale context to counter the manual scaling of canvas
+			ctx.scale(ratio, ratio);
 		
 			// Set pixel ratio on canvas data object
 			data.pixelRatio = ratio;
