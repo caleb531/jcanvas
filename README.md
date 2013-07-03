@@ -1,20 +1,25 @@
 # [jCanvas](http://calebevans.me/projects/jcanvas/)
 *Copyright 2013, Caleb Evans*
 
-jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.
+jCanvas is a jQuery plugin, written in JavaScript, that makes the HTML5 canvas easy to work with.
 
-## [Download](http://calebevans.me/projects/jcanvas/downloads.php)
+## [Download](http://calebevans.me/projects/jcanvas/downloads/)
 
 jCanvas requires jQuery 1.4 or newer, and supports both desktop and mobile browsers.
 
-## [Documentation](http://calebevans.me/projects/jcanvas/downloads.php)
+## [Documentation](http://calebevans.me/projects/jcanvas/docs/)
 
-Please read the documentation before emailing me any questions you may have. If something in the documentation doesn't make sense, feel free to [email me](mailto:calebevans.me@gmail.com) for clarification.
+Please read the documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:calebevans.me@gmail.com) for clarification.
 
-## [Support](http://calebevans.me/projects/jcanvas/support.php)
+## [Support](http://calebevans.me/projects/jcanvas/support/)
 
-Where to find help regarding jCanvas.
+If you are reporting a jCanvas bug, please include the following information in your report:
 
-## [License](https://github.com/caleb531/jcanvas/blob/master/license.txt)
+* The version of jCanvas you used
+* A complete code sample that reproduces the issue
+* What you expected to happen
+* What happened instead
 
-jCanvas is licensed under the MIT license.
+## [License](https://github.com/caleb531/jcanvas/blob/master/LICENSE.txt)
+
+jCanvas is available as a free and open-source library under the MIT license.

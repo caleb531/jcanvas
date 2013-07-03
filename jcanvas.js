@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.06.26
+ * jCanvas v13.07.03
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -1145,6 +1145,11 @@ $.fn.drawLayers = function drawLayers(args) {
 										// Ensure layer index is accurate
 										group[l].index = layers.length - 2;
 									}
+									// Trigger dragstart event if defined
+									if (group[l].dragstart) {
+										group[l].dragstart.call($canvases[e], group[l]);
+									}
+									
 								}
 							}
 													
@@ -1158,7 +1163,7 @@ $.fn.drawLayers = function drawLayers(args) {
 						
 						// Trigger dragstart event if defined
 						if (drag.layer.dragstart) {
-							drag.layer.dragstart.call($canvas, drag.layer);
+							drag.layer.dragstart.call($canvas[0], drag.layer);
 						}
 						
 					}
@@ -1175,6 +1180,10 @@ $.fn.drawLayers = function drawLayers(args) {
 							if (group[l] !== drag.layer) {
 								group[l].x = drag.layer._eventX - (group[l]._endX - group[l]._startX);
 								group[l].y = drag.layer._eventY - (group[l]._endY - group[l]._startY);
+								// Trigger drag event if defined
+								if (group[l].drag) {
+									group[l].drag.call($canvases[e], group[l]);
+								}
 							}
 						}
 						
@@ -1182,7 +1191,7 @@ $.fn.drawLayers = function drawLayers(args) {
 					
 					// Trigger drag event if defined
 					if (drag.layer.drag) {
-						drag.layer.drag.call($canvas, drag.layer);
+						drag.layer.drag.call($canvases[e], drag.layer);
 					}
 					
 				} else if ((eventType === 'mouseup' || eventType === 'touchend')) {
@@ -1190,10 +1199,21 @@ $.fn.drawLayers = function drawLayers(args) {
 					
 					// Trigger dragstop event if defined
 					if (drag.layer.dragstop && drag.dragging) {
-						drag.layer.dragstop.call($canvas, drag.layer);
+						drag.layer.dragstop.call($canvases[e], drag.layer);
 						drag.dragging = FALSE;
 					}
 					
+					group = data.layer.groups[drag.layer.group];
+					if (drag.layer.group && drag.layer.dragGroupWithLayer && group) {
+						for (l = 0; l < group.length; l += 1) {
+							if (group[l] !== drag.layer) {
+								// Trigger dragstart event if defined
+								if (group[l].dragstop) {
+									group[l].dragstop.call($canvases[e], group[l]);
+								}
+							}
+						}
+					}
 					// Cancel dragging
 					data.drag = {};
 				
