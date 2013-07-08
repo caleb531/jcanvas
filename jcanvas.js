@@ -985,7 +985,7 @@ $.fn.drawLayers = function drawLayers(args) {
 				_drawLayer($canvas, ctx, layer, l + 1);
 				// Store list of previous masks for each layer
 				layer._masks = data.transforms.masks.slice(0);
-				
+								
 				// Manage mouseout event
 				if (layer._mousedout) {
 					layer._mousedout = FALSE;
@@ -1021,23 +1021,28 @@ $.fn.drawLayers = function drawLayers(args) {
 				// Get current layer
 				layer = data.intersecting[i];
 				
-				// Search previous masks to ensure layer is visible at event coordinates
-				for (m = layer._masks.length - 1; m >= 0; m -= 1) {
+				// If layer has previous masks
+				if (layer._masks) {
 					
-					// If mask does not intersect event coordinates
-					if (!layer._masks[m].intersects) {
-						// Indicate that the mask does not intersect event coordinates
-						layer.intersects = FALSE;
-						// Stop searching previous masks
+					// Search previous masks to ensure layer is visible at event coordinates
+					for (m = layer._masks.length - 1; m >= 0; m -= 1) {
+					
+						// If mask does not intersect event coordinates
+						if (!layer._masks[m].intersects) {
+							// Indicate that the mask does not intersect event coordinates
+							layer.intersects = FALSE;
+							// Stop searching previous masks
+							break;
+						}
+					
+					}
+				
+					// If event coordinates intersect all previous masks
+					if (layer.intersects) {
+						// Stop searching for topmost layer
 						break;
 					}
 					
-				}
-				
-				// If event coordinates intersect all previous masks
-				if (layer.intersects) {
-					// Stop searching for topmost layer
-					break;
 				}
 				
 			}
@@ -1949,7 +1954,7 @@ $.fn.clearCanvas = function clearCanvas(args) {
 				
 			} else {
 				// Otherwise, clear the defined section of the canvas
-				
+								
 				// Transform clear rectangle
 				_transformShape(ctx, params, params.width, params.height);
 				ctx.clearRect(params.x - (params.width / 2), params.y - (params.height / 2), params.width, params.height);
@@ -2758,7 +2763,7 @@ $.fn.drawImage = function drawImage(args) {
 	}
 	
 	// Draw image function
-	function draw(e, ctx) {
+	function draw(e, ctx, data) {
 	
 		// Calculate image dimensions only once
 		if (e === 0) {
@@ -2869,7 +2874,6 @@ $.fn.drawImage = function drawImage(args) {
 		if (params._event) {
 			_detectEvents($canvases[e], ctx, params);
 		}
-		data = _getCanvasData($canvases[e]);
 		// Close path and configure masking
 		ctx.closePath();
 		ctx.stroke();
@@ -2877,7 +2881,7 @@ $.fn.drawImage = function drawImage(args) {
 		_enableMasking(ctx, data, params);
 	}
 	// On load function
-	function onload(canvas, e, ctx) {
+	function onload(canvas, e, ctx, data) {
 		return function() {
 			draw(e, ctx);
 			// Run callback function if defined
@@ -2885,12 +2889,17 @@ $.fn.drawImage = function drawImage(args) {
 				params.load.call(canvas, args);
 			}
 			// Continue drawing successive layers after this image layer has loaded
-			if (params.layer && params._next) {
-				$(canvas).drawLayers({
-					clear: FALSE,
-					resetFire: TRUE,
-					index: params._next
-				});
+			if (params.layer) {
+				// Store list of previous masks for each layer
+				params._args._masks = data.transforms.masks.slice(0);
+				if (params._next) {
+					// Draw successive layers
+					$(canvas).drawLayers({
+						clear: FALSE,
+						resetFire: TRUE,
+						index: params._next
+					});
+				}
 			}
 		};
 	}
@@ -2899,16 +2908,17 @@ $.fn.drawImage = function drawImage(args) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
 
+			data = _getCanvasData($canvases[e]);
 			args = _addLayer($canvases[e], params, args, drawImage);
 			if (params.visible) {
 								
 				if (img) {
 					if (img.complete || imgCtx) {
 						// Draw image if already loaded
-						onload(canvas, e, ctx)();
+						onload(canvas, e, ctx, data)();
 					} else {
 						// Otherwise, draw image when it loads
-						$(img).bind('load', onload(canvas, e, ctx));
+						$(img).bind('load', onload(canvas, e, ctx, data));
 						// Fix onload() bug in IE9
 						img.src = img.src;
 					}
