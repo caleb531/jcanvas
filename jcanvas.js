@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.07.08
+ * jCanvas v13.07.13
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -21,6 +21,7 @@ var defaults,
 	touchEventMap,
 	drawingMap,
 	cache = {},
+	imageCache = {},
 	baseTransforms = {
 		rotate: 0,
 		scaleX: 1,
@@ -2743,22 +2744,20 @@ $.fn.drawImage = function drawImage(args) {
 	// Cache the given source
 	source = params.source;
 	
-	// Use image or canvas element, if not, an image URL
 	imgCtx = source.getContext;
 	if (source.src || imgCtx) {
-		// Use the given DOM element (if given)
+		// Use image or canvas element if given
 		img = source;
 	} else if (source) {
-		if (cache.source === source) {
+		if (imageCache[source] !== UNDEFINED) {
 			// Get the image element from the cache if possible
-			img = cache._source;
+			img = imageCache[source];
 		} else {
-			// Get the image from the given URL (if given)
+			// Otherwise, get the image from the given source URL
 			img = new Image();
 			img.src = source;
-			// Save image and source in cache for next time
-			cache.source = source;
-			cache._source = img;
+			// Save image in cache for improved performance
+			imageCache[source] = img;
 		}
 	}
 	
@@ -2788,6 +2787,7 @@ $.fn.drawImage = function drawImage(args) {
 		// Only crop image if all cropping properties are given
 		if (params.sWidth !== NULL && params.sHeight !== NULL && params.sx !== NULL && params.sy !== NULL) {
 			
+			// Calculate image dimensions only once
 			if (e === 0) {
 			
 				// If width is not defined, use the given sWidth
@@ -2847,7 +2847,7 @@ $.fn.drawImage = function drawImage(args) {
 			
 			// Position/transform image if necessary
 			_transformShape(ctx, params, params.width, params.height);
-							
+						
 			// Draw image on canvas
 			ctx.drawImage(
 				img,
@@ -2883,7 +2883,7 @@ $.fn.drawImage = function drawImage(args) {
 	// On load function
 	function onload(canvas, e, ctx, data) {
 		return function() {
-			draw(e, ctx);
+			draw(e, ctx, data);
 			// Run callback function if defined
 			if (params.load) {
 				params.load.call(canvas, args);
