@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.07.13
+ * jCanvas v13.07.16
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -17,8 +17,8 @@ var defaults,
 	sin = Math.sin,
 	cos = Math.cos,
 	jQueryEventFix = $.event.fix,
-	mouseEventMap,
 	touchEventMap,
+	mouseEventMap,
 	drawingMap,
 	cache = {},
 	imageCache = {},
@@ -501,7 +501,7 @@ function _addLayerEvent($canvas, data, layer, eventName) {
 	// Only bind event if layer has callback function to complement it
 	if (layer[eventName]) {
 		// Use touch events if appropriate
-		eventName = getTouchEventName(eventName);
+		eventName = _getTouchEventName(eventName);
 		jCanvas.events[eventName]($canvas, data);
 		layer._event = TRUE;
 	}
@@ -519,7 +519,7 @@ function _enableDrag($canvas, data, layer) {
 		// Bind each helper event to the canvas
 		for (i = 0; i < dragHelperEvents.length; i += 1) {
 			// Use touch events if appropriate
-			eventName = getTouchEventName(dragHelperEvents[i]);
+			eventName = _getTouchEventName(dragHelperEvents[i]);
 			// Bind event
 			jCanvas.events[eventName]($canvas, data);
 		}
@@ -1266,7 +1266,7 @@ function _addLayer(canvas, params, args, method) {
 	} else {
 		params._method = function() {};
 	}
-	
+		
 	// Only add layer if it hasn't been added before
 	if (params.layer && !params._layer) {
 		
@@ -1309,7 +1309,7 @@ function _addLayer(canvas, params, args, method) {
 // Add a jCanvas layer
 $.fn.addLayer = function addLayer(args) {
 	var $canvases = this, e, ctx,
-		params = merge({}, args);
+		params = new jCanvasObject(args);
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -1711,32 +1711,32 @@ supportColorProps([
 /* Event API */
 
 // Map standard mouse events to touch events
-mouseEventMap = {
+touchEventMap = {
 	'mousedown': 'touchstart',
 	'mouseup': 'touchend',
 	'mousemove': 'touchmove'
 };
 // Map standard touch events to mouse events
-touchEventMap = {
+mouseEventMap = {
 	'touchstart': 'mousedown',
 	'touchend': 'mouseup',
 	'touchmove': 'mousemove'
 };
 
 // Convert mouse event name to a corresponding touch event name (if possible)
-function getTouchEventName(eventName) {
+function _getTouchEventName(eventName) {
 	// Detect touch event support
-	if ('ontouchstart' in window) {
-		if (mouseEventMap[eventName]) {
-			eventName = mouseEventMap[eventName];
+	if (window.ontouchstart !== undefined) {
+		if (touchEventMap[eventName]) {
+			eventName = touchEventMap[eventName];
 		}
 	}
 	return eventName;
 }
 // Convert touch event name to a corresponding mouse event name
 function getMouseEventName(eventName) {
-	if (touchEventMap[eventName]) {
-		eventName = touchEventMap[eventName];
+	if (mouseEventMap[eventName]) {
+		eventName = mouseEventMap[eventName];
 	}
 	return eventName;
 }
@@ -1748,7 +1748,7 @@ function createEvent(eventName) {
 		var helperEventName, eventCache;
 			
 		// Use touch events instead of mouse events for mobile devices
-		eventName = getTouchEventName(eventName);
+		eventName = _getTouchEventName(eventName);
 		// Retrieve canvas's event cache
 		eventCache = data.event;
 		
@@ -2102,7 +2102,7 @@ $.fn.drawRect = function drawRect(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-		
+			
 			args = _addLayer($canvases[e], params, args, drawRect);
 			if (params.visible) {
 			
@@ -3225,6 +3225,7 @@ $.support.canvas = ($('<canvas />')[0].getContext !== UNDEFINED);
 jCanvas.defaults = defaults;
 jCanvas.detectEvents = _detectEvents;
 jCanvas.closePath = _closePath;
+jCanvas.getTouchEventName = _getTouchEventName;
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Image, Math, parseFloat, true, false, null));
