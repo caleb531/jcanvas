@@ -1,7 +1,7 @@
 # [jCanvas](http://calebevans.me/projects/jcanvas/)
 *Copyright 2013, Caleb Evans*
 
-jCanvas is a jQuery plugin, written in JavaScript, that makes the HTML5 canvas easy to work with.
+jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.
 
 ## [Download](http://calebevans.me/projects/jcanvas/downloads/)
 

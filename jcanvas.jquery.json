@@ -1,7 +1,7 @@
 {
 	"name": "jcanvas",
 	"title": "jCanvas",
-	"version": "13.07.16",
+	"version": "13.08.12",
 	"author": {
 		"name": "Caleb Evans",
 		"email": "calebevans.me@gmail.com",
@@ -16,7 +16,7 @@
 	"dependencies": {
 		"jquery": ">=1.4"
 	},
-	"description": "jCanvas brings the flexible power of jQuery's syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
+	"description": "jCanvas brings the jQuery's powerful syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
 	"keywords": [
 		"jcanvas",
 		"jquery",

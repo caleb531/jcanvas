@@ -3,14 +3,6 @@
 
 import datetime, sys, os, re
 
-# Compress source file
-def compress_file(source):
-	# Create path to minified file from source path
-	compressed = re.sub('(\.\w+)$', '.min\\1', source)
-	
-	# Compress source file using Google Closure Compiler
-	os.system('java -jar build/closure-compiler.jar --js ' + source + ' --js_output_file ' + compressed + ' --compilation_level SIMPLE_OPTIMIZATIONS')
-
 # Update version in given source file
 def replace_in_file(path, expression, version, count=0):
 	# Open source file for reading and writing
@@ -59,9 +51,6 @@ def main():
 	replace_in_file(readme, year_re, year)
 	replace_in_file(license, year_re, year)
 	
-	# Compress jCanvas source
-	# compress_file(source)
-		
 	# Inform user when build process has finished
 	print('Done.')
 	
