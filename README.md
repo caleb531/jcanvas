@@ -20,6 +20,10 @@ If you are reporting a jCanvas bug, please include the following information in 
 * What you expected to happen
 * What happened instead
 
+## [Donate](https://www.gittip.com/caleb531/)
+
+Please donate to support the future development of jCanvas.
+
 ## [License](https://github.com/caleb531/jcanvas/blob/master/LICENSE.txt)
 
 jCanvas is available as a free and open-source library under the MIT license.

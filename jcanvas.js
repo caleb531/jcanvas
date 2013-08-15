@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.08.12
+ * jCanvas v13.08.15
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -76,7 +76,10 @@ defaults = {
 	disableEvents: FALSE,
 	domain: NULL,
 	draggable: FALSE,
+	dragGroupWithLayer: FALSE,
+	dragGroups: NULL,
 	group: NULL,
+	groups: NULL,
 	data: {},
 	each: NULL,
 	end: 360,
@@ -303,7 +306,7 @@ function _closePath(canvas, ctx, params) {
 
 // Rotate canvas (internal)
 function _rotateCanvas(ctx, params, transforms) {
-	// Convert angle to radians if necessary
+	// Get conversion factor for radians
 	params._toRad = (params.inDegrees ? (PI / 180) : 1);
 	
 	// Rotate canvas using shape as center of rotation
@@ -345,8 +348,8 @@ function _translateCanvas(ctx, params, transforms) {
 
 // Transform (translate, scale, or rotate) shape
 function _transformShape(canvas, ctx, params, width, height) {
-			
-	// Measure angles in chosen units
+	
+	// Get conversion factor for radians
 	params._toRad = (params.inDegrees ? (PI / 180) : 1);
 	
 	params._transformed = TRUE;
@@ -515,7 +518,7 @@ function _addLayerEvent($canvas, data, layer, eventName) {
 function _enableDrag($canvas, data, layer) {
 	var dragHelperEvents, eventName, i;
 	// Only make layer draggable if necessary
-	if (layer.draggable || layer.dragGroupWithLayer || layer.cursor) {
+	if (layer.draggable || layer.cursor) {
 		
 		// Organize helper events which enable drag support
 		dragHelperEvents = ['mousedown', 'mousemove', 'mouseup'];
@@ -565,7 +568,7 @@ function _updateLayerName($canvas, data, layer, props) {
 	} else {
 		
 		// Remove old layer name entry because layer name has changed
-		if (props.name !== UNDEFINED && isString(layer.name) && layer.group !== props.group) {
+		if (props.name !== UNDEFINED && isString(layer.name) && layer.name !== props.name) {
 			delete nameMap[layer.name];
 		}
 		
@@ -578,9 +581,28 @@ function _updateLayerName($canvas, data, layer, props) {
 }
 
 // Create or update the data map for the given layer and group type
-function _updateLayerGroup($canvas, data, layer, props) {
+function _updateLayerGroups($canvas, data, layer, props) {
 	var groupMap = data.layer.groups,
-		group, index, l;
+		group, groupName, g,
+		index, l;
+	
+	// Fallback for deprecated group property
+	if (layer.group !== NULL) {
+		layer.groups = [layer.group];
+		if (layer.dragGroupWithLayer) {
+			layer.dragGroups = [layer.group];
+		}
+	}
+	if (props && props.group !== UNDEFINED) {
+		if (props.group === NULL) {
+			props.groups = NULL;
+		} else {
+			props.groups = [props.group];
+			if (props.dragGroupWithLayer) {
+				props.dragGroups = [props.group];
+			}
+		}
+	}
 	
 	// If group name is not changing
 	if (!props) {
@@ -589,44 +611,53 @@ function _updateLayerGroup($canvas, data, layer, props) {
 		
 	} else {
 		
-		// Update the layer's group map if name is changed
-		if (props.group !== UNDEFINED && isString(layer.group) && layer.group !== props.group) {
-			group = groupMap[layer.group];
-			if (group) {
-				// Remove layer from its old layer group entry
-				for (l = 0; l < group.length; l += 1) {
-					if (group[l] === layer) {
-						// Keep track of the layer's initial index
-						index = l;
-						// Remove layer once found
-						group.splice(l, 1);
-						break;
+		// Remove layer from all of its associated groups
+		if (props.groups !== UNDEFINED && layer.groups !== NULL) {
+			for (g = 0; g < layer.groups.length; g += 1) {
+				groupName = layer.groups[g];
+				group = groupMap[groupName];
+				if (group) {
+					// Remove layer from its old layer group entry
+					for (l = 0; l < group.length; l += 1) {
+						if (group[l] === layer) {
+							// Keep track of the layer's initial index
+							index = l;
+							// Remove layer once found
+							group.splice(l, 1);
+							break;
+						}
 					}
-				}
-				// Remove layer group entry if group is empty
-				if (group.length === 0) {
-					delete groupMap[layer.group];
+					// Remove layer group entry if group is empty
+					if (group.length === 0) {
+						delete groupMap[groupName];
+					}
 				}
 			}
 		}
 		
 	}
-	
-	// Add layer to new group if a new group name is given
-	if (isString(props.group)) {
 		
-		group = groupMap[props.group];
-		if (!group) {
-			// Create new group entry if it doesn't exist
-			group = groupMap[props.group] = [];
-			group.name = props.group;
+	// Add layer to new group if a new group name is given
+	if (props.groups !== UNDEFINED && props.groups !== NULL) {
+				
+		for (g = 0; g < props.groups.length; g += 1) {
+			
+			groupName = props.groups[g];
+			
+			group = groupMap[groupName];
+			if (!group) {
+				// Create new group entry if it doesn't exist
+				group = groupMap[groupName] = [];
+				group.name = groupName;
+			}
+			if (index === UNDEFINED) {
+				// Add layer to end of group unless otherwise stated
+				index = group.length;
+			}
+			// Add layer to its new layer group
+			group.splice(index, 0, layer);
+		
 		}
-		if (index === UNDEFINED) {
-			// Add layer to end of group unless otherwise stated
-			index = group.length;
-		}
-		// Add layer to its new layer group
-		group.splice(index, 0, layer);
 		
 	}
 }
@@ -733,7 +764,7 @@ $.fn.setLayer = function setLayer(layerId, props) {
 			
 			// Update layer property mappings
 			_updateLayerName($canvas, data, layer, props);
-			_updateLayerGroup($canvas, data, layer, props);
+			_updateLayerGroups($canvas, data, layer, props);
 			
 			// If index was given
 			if (props.index !== UNDEFINED) {
@@ -853,8 +884,8 @@ $.fn.removeLayer = function removeLayer(layerId) {
 				name: NULL
 			});
 			// Update layer group map
-			_updateLayerGroup($canvas, data, layer, {
-				group: NULL
+			_updateLayerGroups($canvas, data, layer, {
+				groups: NULL
 			});
 			
 		}
@@ -920,6 +951,68 @@ $.fn.removeLayers = function removeLayers() {
 	return $canvases;
 };
 
+// Add an existing layer to a layer group
+$.fn.addLayerToGroup = function(layerId, groupName) {
+	var $canvases = this, $canvas, e,
+		layer, groups = [];
+	
+	for (e = 0; e < $canvases.length; e += 1) {
+		$canvas = $($canvases[e]);
+		layer = $canvas.getLayer(layerId);
+		
+		// If layer is not already in group
+		if (layer.groups && inArray(groupName, layer.groups) === -1) {
+			
+			// Clone groups list
+			groups = layer.groups.slice(0);
+			
+			// Add layer to group
+			groups.push(groupName);
+		
+			// Update layer group mappings
+			$canvas.setLayer(layer, {
+				groups: groups
+			});
+		
+		}
+				
+	}
+	return $canvases;
+};
+
+// Remove an existing layer from a layer group
+$.fn.removeLayerFromGroup = function(layerId, groupName) {
+	var $canvases = this, $canvas, e,
+		layer, groups = [],
+		index;
+	
+	for (e = 0; e < $canvases.length; e += 1) {
+		$canvas = $($canvases[e]);
+		layer = $canvas.getLayer(layerId);
+		
+		// Find index of layer in group
+		index = inArray(groupName, layer.groups);
+		
+		// If layer is in group
+		if (index !== -1) {
+			
+			// Clone groups list			
+			groups = layer.groups.slice(0);
+			
+			// Remove layer from group
+			groups.splice(index, 1);
+					
+			// Update layer group mappings	
+			$canvas.setLayer(layer, {
+				groups: groups
+			});
+								
+		}
+						
+	}
+	return $canvases;
+};
+
 // Get first layer that intersects with event coordinates
 function _getIntersectingLayer(data) {
 	var layer, i, m;
@@ -962,14 +1055,16 @@ function _getIntersectingLayer(data) {
 }
 
 // Handle dragging of the currently-dragged layer
-function _handleLayerDrag($canvas, data) {
-	var eventType, drag,
-		layers, group, l;
+function _handleLayerDrag($canvas, data, eventType) {
+	var layers, layer, l,
+		drag, dragGroups,
+		group, groupName, g;
 	
 	drag = data.drag;
+	layer = drag.layer;
+	dragGroups = layer.dragGroups || [];
 	layers = data.layers;
-	eventType = data.event.type;
-		
+			
 	if ((eventType === 'mousemove' || eventType === 'touchmove')) {
 		// Detect when user starts dragging and when user is in the process of dragging layer
 			
@@ -980,103 +1075,123 @@ function _handleLayerDrag($canvas, data) {
 			drag.dragging = TRUE;
 									
 			// Optionally bring layer to front when drag starts
-			if (drag.layer.bringToFront) {
+			if (layer.bringToFront) {
 				// Remove layer from its original position
-				layers.splice(drag.layer.index, 1);
+				layers.splice(layer.index, 1);
 				// Bring layer to front
 				// push() returns the new array length
-				drag.layer.index = layers.push(drag.layer);
+				layer.index = layers.push(layer);
 			}
 	
-			// Move a layer's drag group when layer is dragged
-			group = data.layer.groups[drag.layer.group];
-			if (drag.layer.group && drag.layer.dragGroupWithLayer && group) {
+			// Move group with layer on dragstart
+			for (g = 0; g < dragGroups.length; g += 1) {
+				
+				groupName = dragGroups[g];
+				group = data.layer.groups[groupName];
+				if (layer.groups && group) {
 																		
-				for (l = 0; l < group.length; l += 1) {
-					if (group[l] !== drag.layer) {
-						group[l]._startX = group[l].x;
-						group[l]._startY = group[l].y;
-						group[l]._endX = drag.layer._eventX;
-						group[l]._endY = drag.layer._eventY;
-						// Optionally bring all layers in drag group to front when drag starts
-						if (group[l].bringToFront) {
-							group[l].index = inArray(group[l], layers);
-							// Remove layer from its original position in layers array
-							layers.splice(group[l].index, 1);
-							// Bring layer to front
-							layers.splice(-1, 0, group[l]);
-							// Ensure layer index is accurate
-							group[l].index = layers.length - 2;
-						}
-						// Trigger dragstart event if defined
-						if (group[l].dragstart) {
-							group[l].dragstart.call($canvas, group[l]);
-						}
+					for (l = 0; l < group.length; l += 1) {
+						if (group[l] !== layer) {
+							group[l]._startX = group[l].x;
+							group[l]._startY = group[l].y;
+							group[l]._endX = layer._eventX;
+							group[l]._endY = layer._eventY;
+							// Optionally bring all layers in drag group to front when drag starts
+							if (group[l].bringToFront) {
+								group[l].index = inArray(group[l], layers);
+								// Remove layer from its original position in layers array
+								layers.splice(
+									group[l].index,
+									1
+								);
+								// Bring layer to front
+								layers.splice(-1, 0, group[l]);
+								// Ensure layer index is accurate
+								group[l].index = layers.length - 2;
+							}
+							// Trigger dragstart event if defined
+							if (group[l].dragstart) {
+								group[l].dragstart.call($canvas, group[l]);
+							}
 						
+						}
 					}
-				}
 										
+				}
+				
 			}
 	
 			// Set drag properties for this layer
-			drag._startX = drag.layer._startX = drag.layer.x;
-			drag._startY = drag.layer._startY = drag.layer.y;
-			drag._endX = drag.layer._endX = drag.layer._eventX;
-			drag._endY = drag.layer._endY = drag.layer._eventY;
+			drag._startX = layer._startX = layer.x;
+			drag._startY = layer._startY = layer.y;
+			drag._endX = layer._endX = layer._eventX;
+			drag._endY = layer._endY = layer._eventY;
 			
 			// Trigger dragstart event if defined
-			if (drag.layer.dragstart) {
-				drag.layer.dragstart.call($canvas, drag.layer);
+			if (layer.dragstart) {
+				layer.dragstart.call($canvas, layer);
 			}
 			
 		}
 		
 		// Calculate position after drag
-		drag.layer.x = drag.layer._eventX - (drag._endX - drag._startX);
-		drag.layer.y = drag.layer._eventY - (drag._endY - drag._startY);
-		
-		// Move groups with layer if desired
-		group = data.layer.groups[drag.layer.group];
-		if (drag.layer.group && drag.layer.dragGroupWithLayer && group) {
+		layer.x = layer._eventX - (drag._endX - drag._startX);
+		layer.y = layer._eventY - (drag._endY - drag._startY);
+				
+		// Move groups with layer on drag
+		for (g = 0; g < dragGroups.length; g += 1) {
 			
-			for (l = 0; l < group.length; l += 1) {
-				if (group[l] !== drag.layer) {
-					group[l].x = drag.layer._eventX - (group[l]._endX - group[l]._startX);
-					group[l].y = drag.layer._eventY - (group[l]._endY - group[l]._startY);
-					// Trigger drag event if defined
-					if (group[l].drag) {
-						group[l].drag.call($canvas, group[l]);
+			groupName = dragGroups[g];
+			group = data.layer.groups[groupName];
+			if (layer.groups && group) {
+			
+				for (l = 0; l < group.length; l += 1) {
+					if (group[l] !== layer) {
+						group[l].x = layer._eventX - (group[l]._endX - group[l]._startX);
+						group[l].y = layer._eventY - (group[l]._endY - group[l]._startY);
+						// Trigger drag event if defined
+						if (group[l].drag) {
+							group[l].drag.call($canvas, group[l]);
+						}
 					}
 				}
+			
 			}
 			
 		}
 		
 		// Trigger drag event if defined
-		if (drag.layer.drag) {
-			drag.layer.drag.call($canvas, drag.layer);
+		if (layer.drag) {
+			layer.drag.call($canvas, layer);
 		}
 		
 	} else if ((eventType === 'mouseup' || eventType === 'touchend')) {
 		// Detect when user stops dragging layer
 		
 		// Trigger dragstop event if defined
-		if (drag.layer.dragstop && drag.dragging) {
-			drag.layer.dragstop.call($canvas, drag.layer);
+		if (layer.dragstop && drag.dragging) {
+			layer.dragstop.call($canvas, layer);
 			drag.dragging = FALSE;
 		}
 				
-		group = data.layer.groups[drag.layer.group];
-		if (drag.layer.group && drag.layer.dragGroupWithLayer && group) {
-			for (l = 0; l < group.length; l += 1) {
-				if (group[l] !== drag.layer) {
-					// Trigger dragstart event if defined
-					if (group[l].dragstop) {
-						group[l].dragstop.call($canvas, group[l]);
+		// Move drag groups with layer on dragstop
+		for (g = 0; g < dragGroups.length; g += 1) {
+			
+			groupName = dragGroups[g];
+			group = data.layer.groups[groupName];
+			if (layer.groups && group) {
+				for (l = 0; l < group.length; l += 1) {
+					if (group[l] !== layer) {
+						// Trigger dragstop event if defined
+						if (group[l].dragstop) {
+							group[l].dragstop.call($canvas, group[l]);
+						}
 					}
 				}
 			}
+		
 		}
+		
 		// Cancel dragging
 		data.drag = {};
 	
@@ -1236,6 +1351,7 @@ $.fn.drawLayers = function drawLayers(args) {
 				
 					// Prevent event from firing twice unintentionally
 					layer._fired = TRUE;
+					eventCache.type = NULL;
 					// Run the user-defined callback function
 					callback.call($canvases[e], layer);
 				
@@ -1254,7 +1370,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// Dragging a layer works independently from other events
 			
 			if (drag.layer) {
-				_handleLayerDrag($canvases[e], data);
+				_handleLayerDrag($canvases[e], data, eventType);
 			}
 
 			// If the last layer has been drawn
@@ -1283,7 +1399,7 @@ function _addLayer(canvas, params, args, method) {
 	params.canvas = canvas;
 	
 	// Convert all draggable drawings into jCanvas layers
-	if (params.draggable || params.dragGroupWithLayer) {
+	if (params.draggable || params.dragGroups) {
 		params.layer = TRUE;
 		params.draggable = TRUE;
 	}
@@ -1308,7 +1424,7 @@ function _addLayer(canvas, params, args, method) {
 		data = _getCanvasData(canvas);
 						
 		// Ensure layers are unique across canvases by cloning them
-		layer = new jCanvasObject(args);
+		layer = new jCanvasObject(new jCanvasObject(args));
 		// Ensure future layer object receives all properties from parameters object
 		layer._method = params._method;
 		layer.canvas = params.canvas;
@@ -1318,7 +1434,7 @@ function _addLayer(canvas, params, args, method) {
 				
 		// Update layer group mappings
 		_updateLayerName($canvas, data, layer);
-		_updateLayerGroup($canvas, data, layer);
+		_updateLayerGroups($canvas, data, layer);
 		
 		// Check for any associated jCanvas events and enable them
 		_addLayerEvents($canvas, data, layer);
@@ -2205,12 +2321,7 @@ $.fn.drawArc = function drawArc(args) {
 	var $canvases = this, e, ctx,
 		params = new jCanvasObject(args);
 	args = args || {};
-
-	// Convert default end angle to radians if necessary
-	if (params.layer && !params.inDegrees && params.end === 360) {
-		args.end = params.end = PI * 2;
-	}
-	
+		
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
@@ -2221,12 +2332,19 @@ $.fn.drawArc = function drawArc(args) {
 				_setGlobalProps($canvases[e], ctx, params);
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
 				
+				// Convert default end angle to radians if necessary
+				if (!params.inDegrees && params.end === 360) {
+					params.end = PI * 2;
+				}
+				
 				// Convert angles to radians
-				params.start *= params._toRad;
-				params.end *= params._toRad;
-				// Consider 0deg due north of arc
-				params.start -= (PI / 2);
-				params.end -= (PI / 2);
+				if (e === 0) {
+					params.start *= params._toRad;
+					params.end *= params._toRad;
+					// Consider 0deg due north of arc
+					params.start -= (PI / 2);
+					params.end -= (PI / 2);
+				}
 				// Draw arc
 				ctx.beginPath();
 				ctx.arc(params.x, params.y, params.radius, params.start, params.end, params.ccw);
@@ -2610,8 +2728,8 @@ $.fn.drawVector = function drawVector(args) {
 						angle *= params._toRad;
 						angle -= (PI / 2);
 						// Compute (x, y) coordinates from angle and length
-						x += (length * Math.cos(angle));
-						y += (length * Math.sin(angle));
+						x += (length * cos(angle));
+						y += (length * sin(angle));
 						ctx.lineTo(x, y);
 						l += 1;
 					} else {
