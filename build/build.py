@@ -11,13 +11,14 @@ def replace_in_file(path, expression, version, count=0):
 	contents = file.read()
 	
 	# Update source version
-	contents = re.sub(expression, version, contents, count)
+	new_contents = re.sub(expression, version, contents, count)
 	
 	# Write updated source to source file
-	file.truncate(0)
-	file.seek(0)
-	file.write(contents)
-	file.close()
+	if (new_contents != contents):
+		file.truncate(0)
+		file.seek(0)
+		file.write(new_contents)
+		file.close()
 	
 # Main function
 def main():
