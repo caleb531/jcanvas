@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.08.24
+ * jCanvas v13.08.26
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -2854,7 +2854,7 @@ function setCanvasFont(ctx, params) {
 }
 
 // Measure canvas text
-function measureText(canvas, ctx, params, lines) {
+function _measureText(canvas, ctx, params, lines) {
 	var originalSize, curWidth, l;
 	
 	// Used cached width/height if possible
@@ -2963,52 +2963,46 @@ $.fn.drawText = function drawText(args) {
 				// Set canvas font using given properties
 				setCanvasFont(ctx, params);
 										
-				if (!e) {
-					if (params.maxWidth !== NULL) {
-						// Wrap text using an internal function
-						lines = wrapText(ctx, params);
-					} else {
-						// Convert string of text to list of lines
-						lines = params.text
-						.toString()
-						.split('\n');
-					}
+				if (params.maxWidth !== NULL) {
+					// Wrap text using an internal function
+					lines = wrapText(ctx, params);
+				} else {
+					// Convert string of text to list of lines
+					lines = params.text
+					.toString()
+					.split('\n');
+				}
+								
+				// Calculate text's width and height
+				_measureText($canvases[e], ctx, params, lines);
+				
+				// If text is a layer
+				if (args && params.layer) {
+					// Copy calculated width/height to layer object
+					args.width = params.width;
+					args.height = params.height;
 				}
 				
-				// If this is the first iteration
-				if (!e) {
-					
-					// Calculate text's width and height
-					measureText($canvases[e], ctx, params, lines);
-					
-					// If text is a layer
-					if (args && params.layer) {
-						// Copy calculated width/height to layer object
-						args.width = params.width;
-						args.height = params.height;
+				// Adjust text position to accomodate different horizontal alignments
+				x = params.x;
+				if (params.align === 'left') {
+					if (params.respectAlign) {
+						// Realign text to the left if chosen
+						params.x += params.width / 2;
+					} else {
+						// Center text block by default
+						x -= params.width / 2;
 					}
-					
-					// Adjust text position to accomodate different horizontal alignments
-					x = params.x;
-					if (params.align === 'left') {
-						if (params.respectAlign) {
-							// Realign text to the left if chosen
-							params.x += params.width / 2;
-						} else {
-							// Center text block by default
-							x -= params.width / 2;
-						}
-					} else if (params.align === 'right') {
-						if (params.respectAlign) {
-							// Realign text to the right if chosen
-							params.x -= params.width / 2;
-						} else {
-							// Center text block by default
-							x += params.width / 2;
-						}
+				} else if (params.align === 'right') {
+					if (params.respectAlign) {
+						// Realign text to the right if chosen
+						params.x -= params.width / 2;
+					} else {
+						// Center text block by default
+						x += params.width / 2;
 					}
-					
 				}
+					
 				_transformShape($canvases[e], ctx, params, params.width, params.height);
 								
 				// Draw each line of text separately
@@ -3052,22 +3046,30 @@ $.fn.measureText = function measureText(args) {
 	var $canvases = this, ctx,
 		params, lines;
 	
-	if (args && args.layer) {
+	if ((args && args.layer) || (typeOf(args) === 'string')) {
 		// If layer identifier is given, get that layer
 		params = $canvases.getLayer(args);
 	} else {
 		// If object is given, just use that
 		params = new jCanvasObject(args);
 	}
+	
+	if (!params) {
 		
-	ctx = _getContext($canvases[0]);
-	if (ctx) {
+		params = {};
 		
-		// Set canvas font using given properties
-		setCanvasFont(ctx, params);
-		// Calculate width and height of text
-		lines = wrapText(ctx, params);
-		measureText($canvases[0], ctx, params, lines);
+	} else {
+	
+		ctx = _getContext($canvases[0]);
+		if (ctx) {
+		
+			// Set canvas font using given properties
+			setCanvasFont(ctx, params);
+			// Calculate width and height of text
+			lines = wrapText(ctx, params);
+			_measureText($canvases[0], ctx, params, lines);
+		
+		}
 		
 	}
 	return params;
