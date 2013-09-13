@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.08.26
+ * jCanvas v13.09.13
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -314,8 +314,11 @@ function _rotateCanvas(ctx, params, transforms) {
 	ctx.rotate(params.rotate * params._toRad);
 	ctx.translate(-params.x, -params.y);
 	
-	// Update transformation data
-	transforms.rotate += (params.rotate * params._toRad);
+	// If transformation data was given
+	if (transforms) {
+		// Update transformation data
+		transforms.rotate += (params.rotate * params._toRad);
+	}
 }
 
 // Scale canvas (internal)
@@ -331,10 +334,12 @@ function _scaleCanvas(ctx, params, transforms) {
 	ctx.scale(params.scaleX, params.scaleY);
 	ctx.translate(-params.x, -params.y);
 	
-	// Update transformation state data
-	transforms.scaleX *= params.scaleX;
-	transforms.scaleY *= params.scaleY;
-	
+	// If transformation data was given
+	if (transforms) {
+		// Update transformation data
+		transforms.scaleX *= params.scaleX;
+		transforms.scaleY *= params.scaleY;
+	}
 }
 
 // Translate canvas (internal)
@@ -348,9 +353,12 @@ function _translateCanvas(ctx, params, transforms) {
 	// Translate canvas
 	ctx.translate(params.translateX, params.translateY);
 	
-	transforms.translateX += params.translateX;
-	transforms.translateY += params.translateY;
-	
+	// If transformation data was given
+	if (transforms) {
+		// Update transformation data
+		transforms.translateX += params.translateX;
+		transforms.translateY += params.translateY;
+	}
 }
 
 // Transform (translate, scale, or rotate) shape
@@ -386,6 +394,7 @@ function _transformShape(canvas, ctx, params, width, height) {
 	if (params.translate || params.translateX || params.translateY) {
 		_translateCanvas(ctx, params, {});
 	}
+		
 }
 
 /* Plugin API */
@@ -2110,7 +2119,8 @@ drawingMap = {
 // Draw on canvas using a function
 $.fn.draw = function draw(args) {
 	var $canvases = this, $canvas, e, ctx,
-		params, layer;
+		params = new jCanvasObject(args),
+		layer;
 			
 	// Draw using any other method
 	if (drawingMap[params.type]) {
@@ -2145,7 +2155,8 @@ $.fn.draw = function draw(args) {
 // Clear canvas
 $.fn.clearCanvas = function clearCanvas(args) {
 	var $canvases = this, e, ctx,
-		params = new jCanvasObject(args);
+		params = new jCanvasObject(args),
+		layer;
 		
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2164,10 +2175,11 @@ $.fn.clearCanvas = function clearCanvas(args) {
 				// Otherwise, clear the defined section of the canvas
 								
 				// Transform clear rectangle
+				layer = _addLayer($canvases[e], params, args, clearCanvas);
 				_transformShape($canvases[e], ctx, params, params.width, params.height);
 				ctx.clearRect(params.x - (params.width / 2), params.y - (params.height / 2), params.width, params.height);
 				// Restore previous transformation
-				ctx.restore();
+				_restoreTransform(ctx, params);
 				
 			}
 			
@@ -3427,7 +3439,7 @@ $.fn.setPixels = function setPixels(args) {
 	var $canvases = this,
 		canvas, e, ctx,
 		params, layer,
-		px = {},
+		px,
 		imgData, data, i, len;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
@@ -3454,16 +3466,17 @@ $.fn.setPixels = function setPixels(args) {
 				imgData = ctx.getImageData(params.x - (params.width / 2), params.y - (params.height / 2), params.width, params.height);
 				data = imgData.data;
 				len = data.length;
-				px = [];
-						
+				
 				// Loop through pixels with the "each" callback function
 				if (params.each) {
 					for (i = 0; i < len; i += 4) {
-						px.r = data[i];
-						px.g = data[i + 1];
-						px.b = data[i + 2];
-						px.a = data[i + 3];
-						params.each.call(canvas, px);
+						px = {
+							r: data[i],
+							g: data[i + 1],
+							b: data[i + 2],
+							a: data[i + 3]
+						};
+						params.each.call(canvas, px, params);
 						data[i] = px.r;
 						data[i + 1] = px.g;
 						data[i + 2] = px.b;
@@ -3561,6 +3574,7 @@ $.support.canvas = ($('<canvas />')[0].getContext);
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
+jCanvas.transformShape = _transformShape;
 jCanvas.detectEvents = _detectEvents;
 jCanvas.closePath = _closePath;
 jCanvas.getTouchEventName = _getTouchEventName;
