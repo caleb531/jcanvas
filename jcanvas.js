@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.09.13
+ * jCanvas v13.09.15
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -2905,50 +2905,70 @@ function _measureText(canvas, ctx, params, lines) {
 
 // Wrap a string of text within a defined width
 function wrapText(ctx, params) {
-	var text = params.text,
+	var // The original string of text
+		allText = params.text,
+		// Maximum line width (optional)
 		maxWidth = params.maxWidth,
-		words = text.split(' '), w,
-		lines = [],
+		// Lines created by manual line breaks (\n)
+		manualLines = allText.split('\n'),
+		// All lines created manually and by wrapping
+		allLines = [],
+		// Other variables
+		lines, line, l,
+		text, words, w;
+	
+	// Loop through manually-broken lines
+	for (l = 0; l < manualLines.length; l += 1) {
+		
+		text = manualLines[l];
+		// Split line into list of words
+		words = text.split(' ');
+		lines = [];
 		line = '';
 		
-	// If text is short enough initially
-	// Or, if the text consists of only one word
-	if (words.length === 1 || ctx.measureText(text).width < maxWidth) {
+		// If text is short enough initially
+		// Or, if the text consists of only one word
+		if (words.length === 1 || ctx.measureText(text).width < maxWidth) {
 		
-		// No need to wrap text
-		lines = [text];
+			// No need to wrap text
+			lines = [text];
 		
-	} else {
+		} else {
 		
-		// Wrap lines
-		for (w = 0; w < words.length; w += 1) {
+			// Wrap lines
+			for (w = 0; w < words.length; w += 1) {
 			
-			// Once line gets too wide, push word to next line
-			if (ctx.measureText(line + words[w]).width > maxWidth) {
-				// This check prevents empty lines from being created
-				if (line !== '') {
-					lines.push(line);
+				// Once line gets too wide, push word to next line
+				if (ctx.measureText(line + words[w]).width > maxWidth) {
+					// This check prevents empty lines from being created
+					if (line !== '') {
+						lines.push(line);
+					}
+					// Start new line and repeat process
+					line = '';
 				}
-				// Start new line and repeat process
-				line = '';
+				// Add words to line until the line is too wide
+				line += words[w];
+				// Do not add a space after the last word
+				if (w !== (words.length - 1)) {
+					line += ' ';
+				}
 			}
-			// Add words to line until the line is too wide
-			line += words[w];
-			// Do not add a space after the last word
-			if (w !== (words.length - 1)) {
-				line += ' ';
-			}
+			// The last word should always be pushed
+			lines.push(line);
+		
 		}
-		// The last word should always be pushed
-		lines.push(line);
+		// Remove extra space at the end of each line
+		allLines = allLines.concat(
+			lines
+			.join('\n')
+			.replace(/( (\n))|( $)/gi, '$2')
+			.split('\n')
+		);
 		
 	}
-	// Remove extra space at the end of each line
-	lines = lines
-	.join('\n')
-	.replace(/( (\n))|( $)/gi, '$2')
-	.split('\n');
-	return lines;
+	
+	return allLines;
 }
 
 // Draw text
@@ -3124,13 +3144,13 @@ $.fn.drawImage = function drawImage(args) {
 			if (params.height === NULL) {
 				params.height = params.sHeight;
 			}
-		
+			
 			// Optionally crop from top-left corner of region
 			if (!params.cropFromCenter) {
 				params.sx += params.sWidth / 2;
 				params.sy += params.sHeight / 2;
 			}
-		
+			
 			// Ensure cropped region does not escape image boundaries
 			
 			// Top
