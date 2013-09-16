@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.09.15
+ * jCanvas v13.09.16
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -1698,7 +1698,7 @@ $.fn.animateLayer = function animateLayer() {
 	function complete($canvas, data, layer) {
 		
 		return function() {
-						
+			
 			_showProps(layer);
 		
 			// Prevent multiple redraw loops
@@ -1716,21 +1716,21 @@ $.fn.animateLayer = function animateLayer() {
 			layer._animating = FALSE;
 			data.animating = FALSE;
 			data.animated = NULL;
-									
+													
 		};
 		
 	}
-	
+		
 	// Redraw layers on every frame of the animation
 	function step($canvas, data, layer) {
 		
 		return function(now, fx) {
 			
 			// Throttle animation to improve efficiency
-			if (data.pos !== fx.pos) {
+			if (layer._pos !== fx.pos) {
 				
-				data.pos = fx.pos;
-								
+				layer._pos = fx.pos;
+				
 				_showProps(layer);
 			
 				// Signify the start of an animation loop
@@ -1750,7 +1750,7 @@ $.fn.animateLayer = function animateLayer() {
 				if (args[5]) {
 					args[5].call($canvas[0], now, fx, layer);
 				}
-								
+
 			}
 			
 		};
@@ -2905,8 +2905,7 @@ function _measureText(canvas, ctx, params, lines) {
 
 // Wrap a string of text within a defined width
 function wrapText(ctx, params) {
-	var // The original string of text
-		allText = params.text,
+	var allText = params.text,
 		// Maximum line width (optional)
 		maxWidth = params.maxWidth,
 		// Lines created by manual line breaks (\n)
@@ -3039,15 +3038,19 @@ $.fn.drawText = function drawText(args) {
 								
 				// Draw each line of text separately
 				for (l = 0; l < lines.length; l += 1) {
+					
 					ctx.shadowColor = params.shadowColor;
 					// Add line offset to center point, but subtract some to center everything
 					y = params.y + (l * params.height / lines.length) - ((lines.length - 1) * params.height / lines.length) / 2;
+					
+					// Fill & stroke text
 					ctx.fillText(lines[l], x, y);
 					// Prevent extra shadow created by stroke (but only when fill is present)
 					if (params.fillStyle !== 'transparent') {
 						ctx.shadowColor = 'transparent';
 					}
 					ctx.strokeText(lines[l], x, y);
+					
 				}
 									
 				// Detect jCanvas events
