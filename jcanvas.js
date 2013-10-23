@@ -3120,6 +3120,9 @@ $.fn.drawImage = function drawImage(args) {
 		
 	// Draw image function
 	function draw(e, ctx, data, params, layer) {
+				
+		// Set global canvas properties
+		_setGlobalProps($canvases[e], ctx, params);
 							
 		// If width and sWidth are not defined, use image width
 		if (params.width === NULL && params.sWidth === NULL) {
@@ -3205,9 +3208,6 @@ $.fn.drawImage = function drawImage(args) {
 			);
 			
 		}
-				
-		// Set global canvas properties
-		_setGlobalProps($canvases[e], ctx, params);
 				
 		// Draw invisible rectangle to allow for events and masking
 		ctx.beginPath();
