@@ -84,6 +84,7 @@ defaults = {
 	each: NULL,
 	end: 360,
 	fillStyle: 'transparent',
+	fireDragGroupEvents: FALSE,
 	fontStyle: 'normal',
 	fontSize: '12pt',
 	fontFamily: 'sans-serif',
@@ -1182,7 +1183,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 								group[l].index = layers.length - 2;
 							}
 							// Trigger dragstart event if defined
-							if (group[l].dragstart) {
+							if (group[l].dragstart && layer.fireDragGroupEvents) {
 								group[l].dragstart.call($canvas[0], group[l]);
 							}
 						
@@ -1219,7 +1220,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 						group[l].x = layer._eventX - (group[l]._endX - group[l]._startX);
 						group[l].y = layer._eventY - (group[l]._endY - group[l]._startY);
 						// Trigger drag event if defined
-						if (group[l].drag) {
+						if (group[l].drag && layer.fireDragGroupEvents) {
 							group[l].drag.call($canvas[0], group[l]);
 						}
 					}
@@ -1250,7 +1251,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 				for (l = 0; l < group.length; l += 1) {
 					if (group[l] !== layer) {
 						// Trigger dragstop event if defined
-						if (group[l].dragstop) {
+						if (group[l].dragstop && layer.fireDragGroupEvents) {
 							group[l].dragstop.call($canvas[0], group[l]);
 						}
 					}
@@ -2411,8 +2412,8 @@ $.fn.drawArc = function drawArc(args) {
 				_setGlobalProps($canvases[e], ctx, params);
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
 				
-				// Convert default end angle to radians if necessary
 				if (!params.inDegrees && params.end === 360) {
+					// Convert default end angle to radians if necessary	
 					params.end = PI * 2;
 				}
 				
@@ -2566,7 +2567,7 @@ $.fn.drawSlice = function drawSlice(args) {
 				_setGlobalProps($canvases[e], ctx, params);
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
 								
-				// Perform extra calculations if necessary
+				// Perform extra calculations
 				
 				// Convert angles to radians										
 				params.start *= params._toRad;
@@ -3120,7 +3121,10 @@ $.fn.drawImage = function drawImage(args) {
 		
 	// Draw image function
 	function draw(e, ctx, data, params, layer) {
-							
+		
+		// Set global canvas properties
+		_setGlobalProps($canvases[e], ctx, params);
+		
 		// If width and sWidth are not defined, use image width
 		if (params.width === NULL && params.sWidth === NULL) {
 			params.width = params.sWidth = img.width;
@@ -3205,10 +3209,7 @@ $.fn.drawImage = function drawImage(args) {
 			);
 			
 		}
-				
-		// Set global canvas properties
-		_setGlobalProps($canvases[e], ctx, params);
-				
+						
 		// Draw invisible rectangle to allow for events and masking
 		ctx.beginPath();
 		ctx.rect(
@@ -3223,7 +3224,6 @@ $.fn.drawImage = function drawImage(args) {
 		}
 		// Close path and configure masking
 		ctx.closePath();
-		ctx.stroke();
 		_restoreTransform(ctx, params);
 		_enableMasking(ctx, data, params);
 	}
