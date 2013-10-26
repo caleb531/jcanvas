@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.09.16
+ * jCanvas v13.10.25
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -3015,6 +3015,8 @@ $.fn.drawText = function drawText(args) {
 					args.height = params.height;
 				}
 				
+				_transformShape($canvases[e], ctx, params, params.width, params.height);
+				
 				// Adjust text position to accomodate different horizontal alignments
 				x = params.x;
 				if (params.align === 'left') {
@@ -3034,9 +3036,7 @@ $.fn.drawText = function drawText(args) {
 						x += params.width / 2;
 					}
 				}
-					
-				_transformShape($canvases[e], ctx, params, params.width, params.height);
-								
+												
 				// Draw each line of text separately
 				for (l = 0; l < lines.length; l += 1) {
 					
