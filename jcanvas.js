@@ -1,5 +1,5 @@
 /**
- * jCanvas v13.10.25
+ * jCanvas v13.11.04
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -854,14 +854,14 @@ $.fn.setLayerGroup = function setLayerGroup(groupId, props) {
 	return $canvases;
 };
 
-// Set properties of all layers
-$.fn.setLayers = function setLayers(props) {
+// Set properties of all layers (optionally filtered by a callback)
+$.fn.setLayers = function setLayers(props, callback) {
 	var $canvases = this, $canvas, e,
 		layers, l;
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
 		
-		layers = $canvas.getLayers();
+		layers = $canvas.getLayers(callback);
 		// Loop through all layers
 		for (l = 0; l < layers.length; l += 1) {
 			// Set properties of each layer
