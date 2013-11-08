@@ -2081,14 +2081,14 @@ $.event.fix = function(event) {
 		
 		// If offsetX and offsetY are not supported, define them
 		if (event.pageX !== UNDEFINED && event.offsetX === UNDEFINED) {
-			offset = $(event.target).offset();
+			offset = $(event.currentTarget).offset();
 			if (offset) {
 				event.offsetX = event.pageX - offset.left;
 				event.offsetY = event.pageY - offset.top;
 			}
 		} else if (touches) {
 			// Enable offsetX and offsetY for mobile devices
-			offset = $(originalEvent.target).offset();
+			offset = $(event.currentTarget).offset();
 			if (offset) {
 				event.offsetX = touches[0].pageX - offset.left;
 				event.offsetY = touches[0].pageY - offset.top;
