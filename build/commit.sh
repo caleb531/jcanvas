@@ -48,7 +48,7 @@ then
 		if [[ $CONFIRM =~ ^y ]]
 		then
 			# Commit with message if confirmed
-			git commit -m MESSAGE
+			git commit -m "$MESSAGE"
 			# Tag commit with the version
 			git tag $VERSION
 			echo "Changes successfully committed."
