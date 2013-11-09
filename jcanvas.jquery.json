@@ -1,7 +1,7 @@
 {
 	"name": "jcanvas",
 	"title": "jCanvas",
-	"version": "13.11.07",
+	"version": "13.11.08",
 	"author": {
 		"name": "Caleb Evans",
 		"email": "calebevans.me@gmail.com",
@@ -19,17 +19,17 @@
 	"description": "jCanvas brings the jQuery's powerful syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
 	"keywords": [
 		"jcanvas",
-		"jquery",
 		"html5",
 		"canvas",
+		"jquery",
 		"javascript",
-		"event",
+		"events",
 		"animation",
 		"touch"
 	],
 	"homepage": "http://calebevans.me/projects/jcanvas/",
-	"docs": "http://calebevans.me/projects/jcanvas/docs.php",
-	"download": "http://calebevans.me/projects/jcanvas/downloads.php",
+	"docs": "http://calebevans.me/projects/jcanvas/docs/",
+	"download": "http://calebevans.me/projects/jcanvas/downloads/",
 	"bugs": "https://github.com/caleb531/jcanvas/issues",
 	"maintainers": [
 		{

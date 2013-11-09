@@ -1,5 +1,4 @@
-/**
- * jCanvas v13.11.07
+/**@license jCanvas v13.11.08
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */

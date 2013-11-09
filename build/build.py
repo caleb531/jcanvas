@@ -23,12 +23,6 @@ def replace_in_file(path, expression, version, count=0):
 # Main function
 def main():
 	
-	# Inform user when build process has started
-	print('Building...')
-	
-	# Change directory to jcanvas/ directory
-	os.chdir('../')
-	
 	# Get current date
 	now = datetime.datetime.now()
 	# Get current year for license
@@ -36,10 +30,10 @@ def main():
 	# Get jCanvas version from current date
 	version = now.strftime('%y.%m.%d')
 	
-	source = 'jcanvas.js'
-	manifest = 'jcanvas.jquery.json'
-	readme = 'README.md'
-	license = 'LICENSE.txt'
+	source = '../jcanvas.js'
+	manifest = '../jcanvas.jquery.json'
+	readme = '../README.md'
+	license = '../LICENSE.txt'
 	
 	# Update version in source and readme files
 	version_re = '\d{2}\.\d{2}\.\d{2}'
@@ -51,10 +45,7 @@ def main():
 	replace_in_file(source, year_re, year)
 	replace_in_file(readme, year_re, year)
 	replace_in_file(license, year_re, year)
-	
-	# Inform user when build process has finished
-	print('Done.')
-	
+		
 # Initialize only when executed directly
 if (__name__ == '__main__'):
 	main()
