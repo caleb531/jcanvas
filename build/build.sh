@@ -88,7 +88,7 @@ then
 				# Commit with message if confirmed
 				git commit -m "$MESSAGE"
 				# If jCanvas was built and version does not already exist
-				if ($CONFIRM_BUILD ~= ^y) && !(git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
+				if [[ ($CONFIRM_BUILD =~ ^y) && !$(git show-ref --tags --quiet --verify -- "refs/tags/$TAG") ]]
 				then
 					# Tag commit with the version
 					git tag $VERSION
@@ -100,7 +100,7 @@ then
 				# Ask before pushing to GitHub
 				echo -n "Push changes to GitHub? ";
 				read PUSH_CONFIRM
-				if [ $PUSH_CONFIRM =~ ^y ]
+				if [[ $PUSH_CONFIRM =~ ^y ]]
 				then
 					# Push commit to GitHub
 					git push origin
