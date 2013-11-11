@@ -30,7 +30,7 @@ then
 	if [[ $CONFIRM_BUILD =~ ^y ]]
 	then
 		
-		echo "  Building jCanvas v$VERSION..."
+		echo "Building jCanvas v$VERSION..."
 		
 		# Function to replace within file using pattern
 		replace() {
@@ -56,7 +56,7 @@ then
 	fi
 	
 	# Ask to commit changes
-	echo -n 'Commit changes? '
+	echo -n "Commit changes? "
 	read CONFIRM_COMMIT
 	if [[ $CONFIRM_COMMIT =~ ^y ]]
 	then
@@ -72,8 +72,8 @@ then
 		git add -A
 		
 		# As long as user confirms choices
-		CONFIRM_MESSAGE='n'
-		while [[ !($CONFIRM_MESSAGE =~ ^y) && ($CONFIRM_MESSAGE != 'exit') ]]
+		CONFIRM_MESSAGE="n"
+		while [[ !($CONFIRM_MESSAGE =~ ^y) && ($CONFIRM_MESSAGE != "exit") ]]
 		do
 			
 			# Prompt for commit message
@@ -87,14 +87,19 @@ then
 			then
 				# Commit with message if confirmed
 				git commit -m "$MESSAGE"
+				echo
 				# If jCanvas was built and version does not already exist
-				if [[ ($CONFIRM_BUILD =~ ^y) && !$(git show-ref --tags --quiet --verify -- "refs/tags/$TAG") ]]
+				if [[ $CONFIRM_BUILD =~ ^y ]] 
 				then
-					# Tag commit with the version
-					git tag $VERSION
-				else
-					# Indicate that the tag already exists
-					echo "Tag corresponding to version already exists."
+					# If tag does not already exist
+					if !(git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
+					then
+						# Tag commit with the version
+						git tag $VERSION
+					else
+						# Indicate that the tag already exists
+						echo "Tag corresponding to version already exists."
+					fi
 				fi
 				echo "Changes successfully committed."
 				# Ask before pushing to GitHub
@@ -106,6 +111,7 @@ then
 					git push origin
 					# Push all tags to GitHub
 					git push --tags origin
+					echo
 					echo "Commit successfully pushed to GitHub."
 				else
 					echo "Commit not pushed to GitHub."
@@ -119,4 +125,5 @@ then
 fi
 
 # Signify end of script
-echo -e "\nDone."
+echo
+echo "Done."
