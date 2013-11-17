@@ -1,4 +1,5 @@
-/**@license jCanvas v13.11.09
+/**
+ * @license jCanvas v13.11.17
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -15,6 +16,7 @@ var defaults,
 	PI = Math.PI,
 	sin = Math.sin,
 	cos = Math.cos,
+	atan2 = Math.atan2,
 	jQueryEventFix = $.event.fix,
 	touchEventMap,
 	mouseEventMap,
@@ -62,6 +64,8 @@ jCanvas.events = {};
 // jCanvas default property values
 defaults = {
 	align: 'center',
+	arrowAngle: 90,
+	arrowRadius: 0,
 	autosave: TRUE,
 	baseline: 'middle',
 	bringToFront: FALSE,
@@ -366,6 +370,9 @@ function _transformShape(canvas, ctx, params, width, height) {
 	
 	// Get conversion factor for radians
 	params._toRad = (params.inDegrees ? (PI / 180) : 1);
+	
+	// Convert arrow angle to radians
+	params.arrowAngle *= params._toRad;
 	
 	params._transformed = TRUE;
 	ctx.save();
@@ -2395,10 +2402,30 @@ $.fn.drawRect = function drawRect(args) {
 	return $canvases;
 };
 
+// Get a coterminal angle between 0 and 2pi for the given angle
+function _getCoterminal(angle) {
+	while (angle < 0) {
+		angle += (2 * PI);
+	}
+	return angle;
+}
+
+// Retrieves the x-coordinate for the given angle in a circle
+function _getX(params, angle) {
+	return params.x + (params.radius * cos(angle));
+}
+// Retrieves the y-coordinate for the given angle in a circle
+function _getY(params, angle) {
+	return params.y + (params.radius * sin(angle));
+}
+
 // Draw arc or circle
 $.fn.drawArc = function drawArc(args) {
 	var $canvases = this, e, ctx,
-		params, layer;
+		params, layer,
+		x1, y1, x2, y2,
+		x3, y3, x4, y4,
+		diff;
 			
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2426,6 +2453,31 @@ $.fn.drawArc = function drawArc(args) {
 				// Draw arc
 				ctx.beginPath();
 				ctx.arc(params.x, params.y, params.radius, params.start, params.end, params.ccw);
+				
+				diff = PI / 180 * 1;
+				// Ensure arrows are pointed correctly for CCW arcs
+				if (params.ccw) {
+					diff *= -1;
+				}
+				// Calculate coordinates for start arrow
+				x1 = _getX(params, params.start + diff);
+				y1 = _getY(params, params.start + diff);
+				x2 = _getX(params, params.start);
+				y2 = _getY(params, params.start);
+				// Calculate coordinates for end arrow
+				x3 = _getX(params, params.end + diff);
+				y3 = _getY(params, params.end + diff);
+				x4 = _getX(params, params.end);
+				y4 = _getY(params, params.end);
+				
+				_drawArrows(
+					$canvases[e], ctx, params,
+					x1, y1,
+					x2, y2,
+					x4, y4,
+					x3, y3
+				);
+				
 				// Check for jCanvas events
 				if (params._event) {
 					_detectEvents($canvases[e], ctx, params);
@@ -2576,12 +2628,8 @@ $.fn.drawSlice = function drawSlice(args) {
 				params.end -= (PI / 2);
 				
 				// Find positive equivalents of angles
-				while (params.start < 0) {
-					params.start += (2 * PI);
-				}
-				while (params.end < 0) {
-					params.end += (2 * PI);
-				}
+				params.start = _getCoterminal(params.start);
+				params.end = _getCoterminal(params.end);
 				// Ensure start angle is less than end angle
 				if (params.end < params.start) {
 					params.end += (2 * PI);
@@ -2618,6 +2666,55 @@ $.fn.drawSlice = function drawSlice(args) {
 };
 
 /* Path API */
+
+// Add arrow to path using the given properties
+function _drawArrow(canvas, ctx, params, x1, y1, x2, y2) {
+	var leftX, leftY,
+		rightX, rightY,
+		offsetX, offsetY,
+		angle;
+	
+	if (params.arrowRadius && !params.closed) {
+		
+		// Calculate angle
+		angle = atan2((y2 - y1), (x2 - x1));
+		// Adjust angle correctly
+		angle -= PI;
+		// Calculate offset to place arrow at edge of path
+		offsetX = (params.strokeWidth * cos(angle));
+		offsetY = (params.strokeWidth * sin(angle));
+		
+		// Calculate coordinates for left half of arrow
+		leftX = x2 + (params.arrowRadius * cos(angle + (params.arrowAngle / 2)));
+		leftY = y2 + (params.arrowRadius * sin(angle + (params.arrowAngle / 2)));
+		// Calculate coordinates for right half of arrow
+		rightX = x2 + (params.arrowRadius * cos(angle - (params.arrowAngle / 2)));
+		rightY = y2 + (params.arrowRadius * sin(angle - (params.arrowAngle / 2)));
+		
+		// Draw left half of arrow
+		ctx.moveTo(leftX - offsetX, leftY - offsetY);
+		ctx.lineTo(x2 - offsetX, y2 - offsetY);
+		// Draw right half of arrow
+		ctx.lineTo(rightX - offsetX, rightY - offsetY);
+		
+		// Visually connect arrow to path
+		ctx.moveTo(x2 - offsetX, y2 - offsetY);
+		ctx.lineTo(x2 + offsetX, y2 + offsetY);
+		
+	}
+}
+
+// Add start and/or end arrows to path
+function _drawArrows(canvas, ctx, params, x1, y1, x2, y2, x3, y3, x4, y4) {
+	if (params.startArrow) {
+		// Optionally draw start arrow
+		_drawArrow(canvas, ctx, params, x1, y1, x2, y2);
+	}
+	if (params.endArrow) {
+		// Optionally draw start arrow
+		_drawArrow(canvas, ctx, params, x3, y3, x4, y4);
+	}
+}
 
 // Draw line
 $.fn.drawLine = function drawLine(args) {
@@ -2660,6 +2757,20 @@ $.fn.drawLine = function drawLine(args) {
 					}
 					
 				}
+				l -= 1;
+				_drawArrows(
+					$canvases[e],
+					ctx,
+					params,
+					params.x2 + params.x,
+					params.y2 + params.y,
+					params.x1 + params.x,
+					params.y1 + params.y,
+					params['x' + (l - 1)] + params.x,
+					params['y' + (l - 1)] + params.y,
+					params['x' + l] + params.x,
+					params['y' + l] + params.y
+				);
 				// Check for jCanvas events
 				if (params._event) {
 					_detectEvents($canvases[e], ctx, params);
@@ -2718,6 +2829,20 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 					}
 					
 				}
+				l -= 1;
+				_drawArrows(
+					$canvases[e],
+					ctx,
+					params,
+					params.cx1 + params.x,
+					params.cy1 + params.y,
+					params.x1 + params.x,
+					params.y1 + params.y,
+					params['cx' + (l - 1)] + params.x,
+					params['cy' + (l - 1)] + params.y,
+					params['x' + l] + params.x,
+					params['y' + l] + params.y
+				);
 				// Check for jCanvas events
 				if (params._event) {
 					_detectEvents($canvases[e], ctx, params);
@@ -2782,6 +2907,21 @@ $.fn.drawBezier = function drawBezier(args) {
 					}
 					
 				}
+				l -= 1;
+				lc -= 2;
+				_drawArrows(
+					$canvases[e],
+					ctx,
+					params,
+					params.cx1 + params.x,
+					params.cy1 + params.y,
+					params.x1 + params.x,
+					params.y1 + params.y,
+					params['cx' + (lc + 1)] + params.x,
+					params['cy' + (lc + 1)] + params.y,
+					params['x' + l] + params.x,
+					params['y' + l] + params.y
+				);
 				// Check for jCanvas events
 				if (params._event) {
 					_detectEvents($canvases[e], ctx, params);
@@ -2799,7 +2939,8 @@ $.fn.drawBezier = function drawBezier(args) {
 $.fn.drawVector = function drawVector(args) {
 	var $canvases = this, e, ctx,
 		params, layer,
-		l, angle, length, x, y;
+		l, angle, length,
+		x, y, x2, y2, x3, y3, x4, y4;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2815,8 +2956,8 @@ $.fn.drawVector = function drawVector(args) {
 				// Draw each point
 				l = 1;
 				ctx.beginPath();
-				x = params.x;
-				y = params.y;
+				x = x3 = x4 = x2 = params.x;
+				y = y3 = y4 = y2 = params.y;
 				// The vector starts at the given (x, y) coordinates
 				ctx.moveTo(params.x, params.y);
 				while (TRUE) {
@@ -2828,10 +2969,18 @@ $.fn.drawVector = function drawVector(args) {
 						// Convert the angle to radians with 0 degrees starting at north
 						angle *= params._toRad;
 						angle -= (PI / 2);
+						// Keep track of last two coordinates
+						x3 = x4;
+						y3 = y4;
 						// Compute (x, y) coordinates from angle and length
-						x += (length * cos(angle));
-						y += (length * sin(angle));
-						ctx.lineTo(x, y);
+						x4 += (length * cos(angle));
+						y4 += (length * sin(angle));
+						// Store the second point
+						if (l === 1) {
+							x2 = x4;
+							y2 = y4;
+						}
+						ctx.lineTo(x4, y4);
 						l += 1;
 					} else {
 						// Otherwise, stop drawing
@@ -2839,6 +2988,14 @@ $.fn.drawVector = function drawVector(args) {
 					}
 					
 				}
+				_drawArrows(
+					$canvases[e],
+					ctx, params,
+					x2, y2,
+					params.x, params.y,
+					x3, y3,
+					x4, y4
+				);
 				// Check for jCanvas events
 				if (params._event) {
 					_detectEvents($canvases[e], ctx, params);

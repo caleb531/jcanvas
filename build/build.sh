@@ -91,15 +91,14 @@ then
 				# If jCanvas was built and version does not already exist
 				if [[ $CONFIRM_BUILD =~ ^y ]] 
 				then
-					# If tag does not already exist
-					if !(git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
+					# If tag already exists
+					if (git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
 					then
-						# Tag commit with the version
-						git tag $VERSION
-					else
-						# Indicate that the tag already exists
-						echo "Tag corresponding to version already exists."
+						# Delete tag
+						git tag -d $VERSION
 					fi
+					# Tag commit with the version
+					git tag $VERSION
 				fi
 				echo "Changes successfully committed."
 				# Ask before pushing to GitHub
