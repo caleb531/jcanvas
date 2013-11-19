@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.11.17
+ * @license jCanvas v13.11.19
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -2390,9 +2390,7 @@ $.fn.drawRect = function drawRect(args) {
 					
 				}
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Close rectangle path
 				_closePath($canvases[e], ctx, params);
 				
@@ -2470,7 +2468,8 @@ $.fn.drawArc = function drawArc(args) {
 				x4 = _getX(params, params.end);
 				y4 = _getY(params, params.end);
 				
-				_drawArrows(
+				// Optionally add arrows to path
+				_addArrows(
 					$canvases[e], ctx, params,
 					x1, y1,
 					x2, y2,
@@ -2479,9 +2478,7 @@ $.fn.drawArc = function drawArc(args) {
 				);
 				
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
 				_closePath($canvases[e], ctx, params);
 			
@@ -2522,9 +2519,7 @@ $.fn.drawEllipse = function drawEllipse(args) {
 				// Right side
 				ctx.bezierCurveTo(params.x + (controlW / 2), params.y + (controlH / 2), params.x + (controlW / 2), params.y - (controlH / 2), params.x, params.y - (controlH / 2));
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Always close path
 				params.closed = TRUE;
 				_closePath($canvases[e], ctx, params);
@@ -2587,9 +2582,7 @@ $.fn.drawPolygon = function drawPolygon(args) {
 					
 				}
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Always close path
 				params.closed = TRUE;
 				_closePath($canvases[e], ctx, params);
@@ -2651,9 +2644,7 @@ $.fn.drawSlice = function drawSlice(args) {
 				ctx.arc(params.x, params.y, params.radius, params.start, params.end, params.ccw);
 				ctx.lineTo(params.x, params.y);
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Always close path
 				params.closed = TRUE;
 				_closePath($canvases[e], ctx, params);
@@ -2668,12 +2659,13 @@ $.fn.drawSlice = function drawSlice(args) {
 /* Path API */
 
 // Add arrow to path using the given properties
-function _drawArrow(canvas, ctx, params, x1, y1, x2, y2) {
+function _addArrow(canvas, ctx, params, x1, y1, x2, y2) {
 	var leftX, leftY,
 		rightX, rightY,
 		offsetX, offsetY,
 		angle;
 	
+	// If arrow radius is given and path is not closed
 	if (params.arrowRadius && !params.closed) {
 		
 		// Calculate angle
@@ -2705,14 +2697,14 @@ function _drawArrow(canvas, ctx, params, x1, y1, x2, y2) {
 }
 
 // Add start and/or end arrows to path
-function _drawArrows(canvas, ctx, params, x1, y1, x2, y2, x3, y3, x4, y4) {
+function _addArrows(canvas, ctx, params, x1, y1, x2, y2, x3, y3, x4, y4) {
 	if (params.startArrow) {
-		// Optionally draw start arrow
-		_drawArrow(canvas, ctx, params, x1, y1, x2, y2);
+		// Optionally draw arrow at start point of path
+		_addArrow(canvas, ctx, params, x1, y1, x2, y2);
 	}
 	if (params.endArrow) {
-		// Optionally draw start arrow
-		_drawArrow(canvas, ctx, params, x3, y3, x4, y4);
+		// Optionally draw arrow at end point of path
+		_addArrow(canvas, ctx, params, x3, y3, x4, y4);
 	}
 }
 
@@ -2758,7 +2750,8 @@ $.fn.drawLine = function drawLine(args) {
 					
 				}
 				l -= 1;
-				_drawArrows(
+				// Optionally add arrows to path
+				_addArrows(
 					$canvases[e],
 					ctx,
 					params,
@@ -2772,9 +2765,7 @@ $.fn.drawLine = function drawLine(args) {
 					params['y' + l] + params.y
 				);
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
 				_closePath($canvases[e], ctx, params);
 			
@@ -2830,7 +2821,8 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 					
 				}
 				l -= 1;
-				_drawArrows(
+				// Optionally add arrows to path
+				_addArrows(
 					$canvases[e],
 					ctx,
 					params,
@@ -2844,9 +2836,7 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 					params['y' + l] + params.y
 				);
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
 				_closePath($canvases[e], ctx, params);
 			
@@ -2909,7 +2899,8 @@ $.fn.drawBezier = function drawBezier(args) {
 				}
 				l -= 1;
 				lc -= 2;
-				_drawArrows(
+				// Optionally add arrows to path
+				_addArrows(
 					$canvases[e],
 					ctx,
 					params,
@@ -2923,9 +2914,7 @@ $.fn.drawBezier = function drawBezier(args) {
 					params['y' + l] + params.y
 				);
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
 				_closePath($canvases[e], ctx, params);
 			
@@ -2988,7 +2977,8 @@ $.fn.drawVector = function drawVector(args) {
 					}
 					
 				}
-				_drawArrows(
+				// Optionally add arrows to path
+				_addArrows(
 					$canvases[e],
 					ctx, params,
 					x2, y2,
@@ -2997,9 +2987,7 @@ $.fn.drawVector = function drawVector(args) {
 					x4, y4
 				);
 				// Check for jCanvas events
-				if (params._event) {
-					_detectEvents($canvases[e], ctx, params);
-				}
+				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
 				_closePath($canvases[e], ctx, params);
 		
@@ -3061,7 +3049,7 @@ function _measureText(canvas, ctx, params, lines) {
 }
 
 // Wrap a string of text within a defined width
-function wrapText(ctx, params) {
+function _wrapText(ctx, params) {
 	var allText = params.text,
 		// Maximum line width (optional)
 		maxWidth = params.maxWidth,
@@ -3153,7 +3141,7 @@ $.fn.drawText = function drawText(args) {
 										
 				if (params.maxWidth !== NULL) {
 					// Wrap text using an internal function
-					lines = wrapText(ctx, params);
+					lines = _wrapText(ctx, params);
 				} else {
 					// Convert string of text to list of lines
 					lines = params.text
@@ -3238,32 +3226,25 @@ $.fn.measureText = function measureText(args) {
 	var $canvases = this, ctx,
 		params, lines;
 	
-	if ((args && args.layer) || (typeOf(args) === 'string')) {
-		// If layer identifier is given, get that layer
-		params = $canvases.getLayer(args);
-	} else {
-		// If object is given, just use that
+	// Attempt to retrieve layer
+	params = $canvases.getLayer(args);
+	// If layer does not exist or if returned object is not a jCanvas layer
+	if (!params || (params && !params._layer)) {
 		params = new jCanvasObject(args);
 	}
 	
-	if (!params) {
-		
-		params = {};
-		
-	} else {
+	ctx = _getContext($canvases[0]);
+	if (ctx) {
 	
-		ctx = _getContext($canvases[0]);
-		if (ctx) {
+		// Set canvas font using given properties
+		setCanvasFont(ctx, params);
+		// Calculate width and height of text
+		lines = _wrapText(ctx, params);
+		_measureText($canvases[0], ctx, params, lines);
 		
-			// Set canvas font using given properties
-			setCanvasFont(ctx, params);
-			// Calculate width and height of text
-			lines = wrapText(ctx, params);
-			_measureText($canvases[0], ctx, params, lines);
-		
-		}
 		
 	}
+
 	return params;
 };
 
@@ -3375,9 +3356,7 @@ $.fn.drawImage = function drawImage(args) {
 			params.height
 		);
 		// Check for jCanvas events
-		if (params._event) {
-			_detectEvents($canvases[e], ctx, params);
-		}
+		_detectEvents($canvases[e], ctx, params);
 		// Close path and configure masking
 		ctx.closePath();
 		_restoreTransform(ctx, params);
