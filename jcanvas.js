@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v13.11.19
+ * @license jCanvas v13.11.21
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -465,8 +465,9 @@ function _getCanvasData(canvas) {
 					names: {},
 					groups: {}
 				},
-				// The topmost layer whose area contains the event coordinates
+				// All layers that intersect with the event coordinates (regardless of visibility)
 				intersecting: [],
+				// The topmost layer whose area contains the event coordinates
 				lastIntersected: NULL,
 				cursor: $(canvas).css('cursor'),
 				// Properties for the current drag event
@@ -1063,7 +1064,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 	return $canvases;
 };
 
-// Get first layer that intersects with event coordinates
+// Get topmost layer that intersects with event coordinates
 function _getIntersectingLayer(data) {
 	var layer, i, m;
 	
@@ -2026,7 +2027,7 @@ function _detectEvents(canvas, ctx, params) {
 	// Use the layer object stored by the given parameters object
 	layer = params._args;
 	// Canvas must have event bindings
-	if (layer._event) {
+	if (layer && layer._event) {
 
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
