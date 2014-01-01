@@ -1,16 +1,21 @@
 #!/bin/bash
 
+# Make all strings case-insensitive
+shopt -s nocasematch
+
 # Ask before running program
-echo -n "Reday to start? "
+echo -n "Ready to start? "
 read CONFIRM_RUN
 # Confirmation must begin with "y"
 if [[ $CONFIRM_RUN =~ ^y ]]
 then
 	
-	# Make all strings case-insensitive
-	shopt -s nocasematch
 	# Switch to parent directory
+	cd $(dirname $0)
 	cd ../
+	
+	# Define default branch
+	BRANCH=master
 	
 	# Define file paths
 	SOURCE=jcanvas.js
@@ -61,63 +66,46 @@ then
 	if [[ $CONFIRM_COMMIT =~ ^y ]]
 	then
 		
-		# If current branch is not master
-		if [[ $(git rev-parse --abbrev-ref HEAD) != master ]]
+		# If current branch is not the default branch
+		if [[ $(git rev-parse --abbrev-ref HEAD) != $BRANCH ]]
 		then
-			# Switch to master branch
-			git checkout master
+			# Switch to the default branch
+			git checkout $BRANCH
 		fi
 		
 		# Stage all files
 		git add -A
 		
-		# As long as user confirms choices
-		CONFIRM_MESSAGE="n"
-		while [[ !($CONFIRM_MESSAGE =~ ^y) && ($CONFIRM_MESSAGE != "exit") ]]
-		do
-			
-			# Prompt for commit message
-			echo -n "Enter commit message: "
-			read MESSAGE
-			
-			# Confirm commit message
-			echo -n "Commit with this message? "
-			read CONFIRM_MESSAGE
-			if [[ $CONFIRM_MESSAGE =~ ^y ]]
+		# Enter a message to commit
+		git commit
+		echo
+		# If jCanvas was built and version does not already exist as tag
+		if [[ $CONFIRM_BUILD =~ ^y ]] 
+		then
+			# If tag already exists
+			if (git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
 			then
-				# Commit with message if confirmed
-				git commit -m "$MESSAGE"
-				echo
-				# If jCanvas was built and version does not already exist
-				if [[ $CONFIRM_BUILD =~ ^y ]] 
-				then
-					# If tag already exists
-					if (git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
-					then
-						# Delete tag
-						git tag -d $VERSION
-					fi
-					# Tag commit with the version
-					git tag $VERSION
-				fi
-				echo "Changes successfully committed."
-				# Ask before pushing to GitHub
-				echo -n "Push changes to GitHub? ";
-				read PUSH_CONFIRM
-				if [[ $PUSH_CONFIRM =~ ^y ]]
-				then
-					# Push commit to GitHub
-					git push origin
-					# Push all tags to GitHub
-					git push --tags origin
-					echo
-					echo "Commit successfully pushed to GitHub."
-				else
-					echo "Commit not pushed to GitHub."
-				fi
+				# Delete tag
+				git tag -d $VERSION
 			fi
-		
-		done
+			# Tag commit with the version
+			git tag $VERSION
+		fi
+		echo "Changes successfully committed."
+		# Ask before pushing to GitHub
+		echo -n "Push changes to GitHub? ";
+		read PUSH_CONFIRM
+		if [[ $PUSH_CONFIRM =~ ^y ]]
+		then
+			# Push commit to GitHub
+			git push origin $BRANCH
+			# Push all tags to GitHub
+			git push --tags origin
+			echo
+			echo "Commit successfully pushed to GitHub."
+		else
+			echo "Commit not pushed to GitHub."
+		fi
 	
 	fi
 	

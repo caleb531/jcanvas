@@ -1,14 +1,13 @@
 /**
- * @license jCanvas v13.11.21
- * Copyright 2013 Caleb Evans
+ * @license jCanvas v14.01.01
+ * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
-
-(function($, document, Image, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
+(function($, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
 
 // Define local aliases to frequently used properties
 var defaults,
-	merge = $.extend,
+	extendObject = $.extend,
 	inArray = $.inArray,
 	typeOf = $.type,
 	isFunction = $.isFunction,
@@ -34,13 +33,15 @@ var defaults,
 		masks: []
 	},
 	cssProps,
-	cssPropsObj;
+	cssPropsObj,
+	css3Cursors,
+	prefix;
 
 // Preferences constructor (which inherits from the defaults object)
 function jCanvasObject(args) {
 	var params = this;
 	// Merge preferences with arguments
-	merge(params, args);
+	extendObject(params, args);
 	return params;
 }
 
@@ -48,10 +49,10 @@ function jCanvasObject(args) {
 function jCanvas(args) {
 	if (args) {
 		// Merge arguments with preferences
-		merge(jCanvasObject.prototype, args);
+		extendObject(jCanvasObject.prototype, args);
 	} else {
 		// Reset preferences to defaults if nothing is passed
-		jCanvas.prefs = jCanvasObject.prototype = merge({}, defaults);
+		jCanvas.prefs = jCanvasObject.prototype = extendObject({}, defaults);
 	}
 	return this;
 }
@@ -60,6 +61,8 @@ $.fn.jCanvas = jCanvas;
 
 // Events object for maintaining jCanvas event initiation functions
 jCanvas.events = {};
+// Object containing all jCanvas event hooks
+jCanvas.eventHooks = {};
 
 // jCanvas default property values
 defaults = {
@@ -84,10 +87,13 @@ defaults = {
 	group: NULL,
 	groups: NULL,
 	data: {},
+	dx: NULL,
+	dy: NULL,
 	each: NULL,
 	end: 360,
+	eventX: NULL,
+	eventY: NULL,
 	fillStyle: 'transparent',
-	fireDragGroupEvents: FALSE,
 	fontStyle: 'normal',
 	fontSize: '12pt',
 	fontFamily: 'sans-serif',
@@ -99,7 +105,6 @@ defaults = {
 	index: NULL,
 	lineHeight: 1,
 	layer: FALSE,
-	load: NULL,
 	mask: FALSE,
 	maxWidth: NULL,
 	miterLimit: 10,
@@ -161,7 +166,7 @@ function _getContext(canvas) {
 // Clone the given transformations object
 function _cloneTransforms(transforms) {
 	// Clone the object itself
-	transforms = merge({}, transforms);
+	transforms = extendObject({}, transforms);
 	// Clone the object's masks array
 	transforms.masks = transforms.masks.slice(0);
 	return transforms;
@@ -377,18 +382,17 @@ function _transformShape(canvas, ctx, params, width, height) {
 	params._transformed = TRUE;
 	ctx.save();
 	
-	// Always draw from center unless otherwise specified
-	if (height === UNDEFINED) {
-		height = width;
-	}
-	
 	// Optionally measure (x, y) position from top-left corner
-	if (!params.fromCenter && !params._centered) {
+	if (!params.fromCenter && !params._centered && width !== UNDEFINED) {
+		// Always draw from center unless otherwise specified
+		if (height === UNDEFINED) {
+			height = width;
+		}
 		params.x += width / 2;
 		params.y += height / 2;
 		params._centered = TRUE;
 	}
-		
+	
 	// Optionally rotate shape
 	if (params.rotate) {
 		_rotateCanvas(ctx, params, {});
@@ -410,7 +414,7 @@ function _transformShape(canvas, ctx, params, width, height) {
 jCanvas.extend = function extend(plugin) {
 	
 	// Merge properties with defaults
-	jCanvas.defaults = merge(defaults, plugin.props);
+	jCanvas.defaults = extendObject(defaults, plugin.props);
 	jCanvas();
 	
 	// Create plugin
@@ -434,6 +438,12 @@ jCanvas.extend = function extend(plugin) {
 			}
 			return $canvases;
 		};
+		// Add drawing type to drawing map
+		if (plugin.type) {
+			if (drawingMap[plugin.type] === UNDEFINED) {
+				drawingMap[plugin.type] = plugin.name;
+			}
+		}
 	}
 	return $.fn[plugin.name];
 };
@@ -460,18 +470,22 @@ function _getCanvasData(canvas) {
 				canvas: canvas,
 				// Layers array
 				layers: [],
-				// Layer mappings
+				// Layer maps
 				layer: {
 					names: {},
 					groups: {}
 				},
+				eventHooks: {},
 				// All layers that intersect with the event coordinates (regardless of visibility)
 				intersecting: [],
 				// The topmost layer whose area contains the event coordinates
 				lastIntersected: NULL,
 				cursor: $(canvas).css('cursor'),
 				// Properties for the current drag event
-				drag: {},
+				drag: {
+					layer: NULL,
+					dragging: FALSE
+				},
 				// Data for the current event
 				event: {
 					type: NULL,
@@ -487,8 +501,6 @@ function _getCanvasData(canvas) {
 				animating: FALSE,
 				// The layer currently being animated
 				animated: NULL,
-				// The percentage complete (from 0 to 1) of the current animation
-				pos: 0,
 				// The device pixel ratio
 				pixelRatio: 1,
 				// Whether pixel ratio transformations have been applied
@@ -505,40 +517,6 @@ function _getCanvasData(canvas) {
 	}
 	return data;
 }
-
-// Get jCanvas layers array
-$.fn.getLayers = function getLayers(callback) {
-	var canvas = this[0],
-		data, layers, l,
-		matching = [];
-	// If element is a canvas
-	if (canvas && canvas.getContext) {
-		
-		data = _getCanvasData(canvas);
-		// Retrieve layers array for this canvas
-		layers = data.layers;
-		
-		// If a callback function is given
-		if (isFunction(callback)) {
-			
-			// Filter the layers array using the callback
-			for (l = 0; l < layers.length; l += 1) {
-				if (callback.call(canvas, layers[l])) {
-					// Add layer to array of matching layers if test passes
-					matching.push(layers[l]);
-				}
-			}
-			
-		} else {
-			// Otherwise, get all layers
-			
-			matching = layers;
-			
-		}
-		
-	}
-	return matching;
-};
 
 // Initialize all of a layer's associated jCanvas events
 function _addLayerEvents($canvas, data, layer) {
@@ -589,10 +567,7 @@ function _enableDrag($canvas, data, layer) {
 				if (layer) {
 					// Cancel dragging
 					data.drag = {};
-					// Trigger dragcancel event if defined
-					if (layer.dragcancel) {
-						layer.dragcancel.call($canvas[0], layer);
-					}
+					_triggerLayerEvent($canvas, data, layer, 'dragcancel');
 					$canvas.drawLayers();
 				}
 			});
@@ -712,6 +687,40 @@ function _updateLayerGroups($canvas, data, layer, props) {
 	}
 }
 
+// Get jCanvas layers array
+$.fn.getLayers = function getLayers(callback) {
+	var canvas = this[0],
+		data, layers, l,
+		matching = [];
+	// If element is a canvas
+	if (canvas && canvas.getContext) {
+		
+		data = _getCanvasData(canvas);
+		// Retrieve layers array for this canvas
+		layers = data.layers;
+		
+		// If a callback function is given
+		if (isFunction(callback)) {
+			
+			// Filter the layers array using the callback
+			for (l = 0; l < layers.length; l += 1) {
+				if (callback.call(canvas, layers[l])) {
+					// Add layer to array of matching layers if test passes
+					matching.push(layers[l]);
+				}
+			}
+			
+		} else {
+			// Otherwise, get all layers
+			
+			matching = layers;
+			
+		}
+		
+	}
+	return matching;
+};
+
 // Get a single jCanvas layer object
 $.fn.getLayer = function getLayer(layerId) {
 	var canvas = this[0],
@@ -758,7 +767,8 @@ $.fn.getLayer = function getLayer(layerId) {
 
 // Get all layers in the given group
 $.fn.getLayerGroup = function getLayerGroup(groupId) {
-	var idType = typeOf(groupId),
+	var canvas = this[0],
+		idType = typeOf(groupId),
 		groups, groupName, group,
 		data;
 	
@@ -770,7 +780,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 	} else if (idType === 'regexp') {
 		
 		// Get canvas data
-		data = _getCanvasData(this[0]);
+		data = _getCanvasData(canvas);
 		groups = data.groups;
 		// Loop through all layers groups for this canvas
 		for (groupName in groups) {
@@ -785,7 +795,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 	} else {
 		
 		// Find layer group with the given group name
-		data = _getCanvasData(this[0]);
+		data = _getCanvasData(canvas);
 		group = data.layer.groups[groupId];
 		
 	}
@@ -801,6 +811,14 @@ $.fn.getLayerIndex = function getLayerIndex(layerId) {
 	return inArray(layer, layers);
 };
 
+// Get event hooks object for the first selected canvas
+$.fn.getEventHooks = function getEventHooks() {
+	var canvas = this[0],
+		data = _getCanvasData(canvas);
+	
+	return data.eventHooks;
+};
+
 // Set properties of a layer
 $.fn.setLayer = function setLayer(layerId, props) {
 	var $canvases = this, $canvas, e,
@@ -813,23 +831,39 @@ $.fn.setLayer = function setLayer(layerId, props) {
 		layer = $($canvases[e]).getLayer(layerId);
 		if (layer) {
 			
-			// Update layer property mappings
+			// Update layer property maps
 			_updateLayerName($canvas, data, layer, props);
 			_updateLayerGroups($canvas, data, layer, props);
 			
-			// If index was given
-			if (props.index !== UNDEFINED) {
-				// Move layer to that new index
-				$canvas.moveLayer(layer, props.index);
-			}
-			
 			// Merge properties with layer
-			merge(layer, props);
+			extendObject(layer, props);
 						
 			// Update layer events
 			_addLayerEvents($canvas, data, layer);
 			_enableDrag($canvas, data, layer);
 			
+			// If layer's properties were changed
+			if ($.isEmptyObject(props) === false) {
+				_triggerLayerEvent($canvas, data, layer, 'change', props);
+			}
+			
+		}
+	}
+	return $canvases;
+};
+
+// Set properties of all layers (optionally filtered by a callback)
+$.fn.setLayers = function setLayers(props, callback) {
+	var $canvases = this, $canvas, e,
+		layers, l;
+	for (e = 0; e < $canvases.length; e += 1) {
+		$canvas = $($canvases[e]);
+		
+		layers = $canvas.getLayers(callback);
+		// Loop through all layers
+		for (l = 0; l < layers.length; l += 1) {
+			// Set properties of each layer
+			$canvas.setLayer(layers[l], props);
 		}
 	}
 	return $canvases;
@@ -861,33 +895,29 @@ $.fn.setLayerGroup = function setLayerGroup(groupId, props) {
 	return $canvases;
 };
 
-// Set properties of all layers (optionally filtered by a callback)
-$.fn.setLayers = function setLayers(props, callback) {
+// Set event hooks for the selected canvases
+$.fn.setEventHooks = function setEventHooks(eventHooks) {
 	var $canvases = this, $canvas, e,
-		layers, l;
+		data;
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
-		
-		layers = $canvas.getLayers(callback);
-		// Loop through all layers
-		for (l = 0; l < layers.length; l += 1) {
-			// Set properties of each layer
-			$canvas.setLayer(layers[l], props);
-		}
+		data = _getCanvasData($canvases[e]);
+		extendObject(data.eventHooks, eventHooks);
 	}
 	return $canvases;
 };
 
-// Move a layer's placement in the layers array
+// Move a layer to the given index in the layers array
 $.fn.moveLayer = function moveLayer(layerId, index) {
 	var $canvases = this, $canvas, e,
-		layers, layer;
+		data, layers, layer;
 		
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
+		data = _getCanvasData($canvases[e]);
 		
 		// Retrieve layers array and desired layer
-		layers = $canvas.getLayers();
+		layers = data.layers;
 		layer = $canvas.getLayer(layerId);
 		if (layer) {
 			
@@ -905,6 +935,8 @@ $.fn.moveLayer = function moveLayer(layerId, index) {
 			}
 			// Update layer's stored index
 			layer.index = index;
+			
+			_triggerLayerEvent($canvas, data, layer, 'move');
 			
 		}
 	}
@@ -939,7 +971,33 @@ $.fn.removeLayer = function removeLayer(layerId) {
 				groups: NULL
 			});
 			
+			// Trigger 'remove' event
+			_triggerLayerEvent($canvas, data, layer, 'remove');
+			
 		}
+	}
+	return $canvases;
+};
+
+// Remove all layers
+$.fn.removeLayers = function removeLayers(callback) {
+	var $canvases = this, $canvas, e,
+		data, layers, layer, l;
+	
+	for (e = 0; e < $canvases.length; e += 1) {
+		$canvas = $($canvases[e]);
+		data = _getCanvasData($canvases[e]);
+		layers = $canvas.getLayers(callback);
+		// Remove all layers individually
+		for (l = 0; l < layers.length; l += 1) {
+			layer = layers[l];
+			$canvas.removeLayer(layer);
+			// Ensure no layer is skipped over
+			l -= 1;
+		}
+		// Update layer maps
+		data.layer.names = {};
+		data.layer.groups = {};
 	}
 	return $canvases;
 };
@@ -984,24 +1042,6 @@ $.fn.removeLayerGroup = function removeLayerGroup(groupId) {
 	return $canvases;
 };
 
-// Remove all layers
-$.fn.removeLayers = function removeLayers() {
-	var $canvases = this, $canvas, e,
-		data;
-	
-	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
-		data = _getCanvasData($canvases[e]);
-		
-		// Setting an array's length to 0 will empty the array
-		data.layers.length = 0;
-		// Update layer mappings
-		data.layer.names = {};
-		data.layer.groups = {};
-	}
-	return $canvases;
-};
-
 // Add an existing layer to a layer group
 $.fn.addLayerToGroup = function addLayerToGroup(layerId, groupName) {
 	var $canvases = this, $canvas, e,
@@ -1020,7 +1060,7 @@ $.fn.addLayerToGroup = function addLayerToGroup(layerId, groupName) {
 			// Add layer to group
 			groups.push(groupName);
 		
-			// Update layer group mappings
+			// Update layer group maps
 			$canvas.setLayer(layer, {
 				groups: groups
 			});
@@ -1053,7 +1093,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 			// Remove layer from group
 			groups.splice(index, 1);
 					
-			// Update layer group mappings	
+			// Update layer group maps	
 			$canvas.setLayer(layer, {
 				groups: groups
 			});
@@ -1066,10 +1106,11 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 
 // Get topmost layer that intersects with event coordinates
 function _getIntersectingLayer(data) {
-	var layer, i, m;
+	var layer, i,
+		mask, m;
 	
 	// Store the topmost layer
-	layer = {};
+	layer = NULL;
 	
 	// Get the topmost layer whose visible area intersects event coordinates
 	for (i = data.intersecting.length - 1; i >= 0; i -= 1) {
@@ -1082,9 +1123,9 @@ function _getIntersectingLayer(data) {
 			
 			// Search previous masks to ensure layer is visible at event coordinates
 			for (m = layer._masks.length - 1; m >= 0; m -= 1) {
-			
+				mask = layer._masks[m];
 				// If mask does not intersect event coordinates
-				if (!layer._masks[m].intersects) {
+				if (!mask.intersects) {
 					// Indicate that the mask does not intersect event coordinates
 					layer.intersects = FALSE;
 					// Stop searching previous masks
@@ -1138,18 +1179,19 @@ $.fn.drawLayer = function drawLayer(layerId) {
 function _handleLayerDrag($canvas, data, eventType) {
 	var layers, layer, l,
 		drag, dragGroups,
-		group, groupName, g;
+		group, groupName, g,
+		newX, newY;
 	
 	drag = data.drag;
 	layer = drag.layer;
-	dragGroups = layer.dragGroups || [];
+	dragGroups = (layer && layer.dragGroups) || [];
 	layers = data.layers;
 			
-	if ((eventType === 'mousemove' || eventType === 'touchmove')) {
-		// Detect when user starts dragging and when user is in the process of dragging layer
+	if (eventType === 'mousemove' || eventType === 'touchmove') {
+		// Detect when user is currently dragging layer
 			
-		// Check if layer has started to drag
 		if (!drag.dragging) {
+			// Detect when user starts dragging layer
 			
 			// Signify that a layer on the canvas is being dragged
 			drag.dragging = TRUE;
@@ -1163,132 +1205,100 @@ function _handleLayerDrag($canvas, data, eventType) {
 				layer.index = layers.push(layer);
 			}
 	
-			// Move group with layer on dragstart
-			for (g = 0; g < dragGroups.length; g += 1) {
+			// Set drag properties for this layer
+			layer._startX = layer.x;
+			layer._startY = layer.y;
+			layer._endX = layer._eventX;
+			layer._endY = layer._eventY;
+			
+			// Trigger dragstart event
+			_triggerLayerEvent($canvas, data, layer, 'dragstart');
+			
+		}
 				
+		if (drag.dragging) {
+			
+			// Calculate position after drag
+			newX = layer._eventX - (layer._endX - layer._startX);
+			newY = layer._eventY - (layer._endY - layer._startY);
+			layer.dx = newX - layer.x;
+			layer.dy = newY - layer.y;
+			layer.x = newX;
+			layer.y = newY;
+		
+			// Trigger drag event
+			_triggerLayerEvent($canvas, data, layer, 'drag');
+		
+			// Move groups with layer on drag
+			for (g = 0; g < dragGroups.length; g += 1) {
+			
 				groupName = dragGroups[g];
 				group = data.layer.groups[groupName];
 				if (layer.groups && group) {
-																		
+			
 					for (l = 0; l < group.length; l += 1) {
 						if (group[l] !== layer) {
-							group[l]._startX = group[l].x;
-							group[l]._startY = group[l].y;
-							group[l]._endX = layer._eventX;
-							group[l]._endY = layer._eventY;
-							// Optionally bring all layers in drag group to front when drag starts
-							if (group[l].bringToFront) {
-								group[l].index = inArray(group[l], layers);
-								// Remove layer from its original position in layers array
-								layers.splice(
-									group[l].index,
-									1
-								);
-								// Bring layer to front
-								layers.splice(-1, 0, group[l]);
-								// Ensure layer index is accurate
-								group[l].index = layers.length - 2;
-							}
-							// Trigger dragstart event if defined
-							if (group[l].dragstart && layer.fireDragGroupEvents) {
-								group[l].dragstart.call($canvas[0], group[l]);
-							}
-						
+							group[l].x += layer.dx;
+							group[l].y += layer.dy;
 						}
 					}
-										
-				}
-				
-			}
-	
-			// Set drag properties for this layer
-			drag._startX = layer._startX = layer.x;
-			drag._startY = layer._startY = layer.y;
-			drag._endX = layer._endX = layer._eventX;
-			drag._endY = layer._endY = layer._eventY;
 			
-			triggerLayerEvent($canvas, layer, 'dragstart');
-			
-		}
-		
-		// Calculate position after drag
-		layer.x = layer._eventX - (drag._endX - drag._startX);
-		layer.y = layer._eventY - (drag._endY - drag._startY);
-				
-		// Move groups with layer on drag
-		for (g = 0; g < dragGroups.length; g += 1) {
-			
-			groupName = dragGroups[g];
-			group = data.layer.groups[groupName];
-			if (layer.groups && group) {
-			
-				for (l = 0; l < group.length; l += 1) {
-					if (group[l] !== layer) {
-						group[l].x = layer._eventX - (group[l]._endX - group[l]._startX);
-						group[l].y = layer._eventY - (group[l]._endY - group[l]._startY);
-						// Trigger drag event if defined
-						if (group[l].drag && layer.fireDragGroupEvents) {
-							group[l].drag.call($canvas[0], group[l]);
-						}
-					}
 				}
 			
 			}
-			
+		
 		}
 		
-		// Trigger drag event if defined
-		triggerLayerEvent($canvas, layer, 'drag');
-		
-	} else if ((eventType === 'mouseup' || eventType === 'touchend')) {
+	} else if (eventType === 'mouseup' || eventType === 'touchend') {
 		// Detect when user stops dragging layer
 		
-		// Trigger dragstop event if defined
 		if (drag.dragging) {
-			triggerLayerEvent($canvas, layer, 'dragstop');
+			// Trigger dragstop event
+			_triggerLayerEvent($canvas, data, layer, 'dragstop');
 			drag.dragging = FALSE;
-		}
-				
-		// Move drag groups with layer on dragstop
-		for (g = 0; g < dragGroups.length; g += 1) {
-			
-			groupName = dragGroups[g];
-			group = data.layer.groups[groupName];
-			if (layer.groups && group) {
-				for (l = 0; l < group.length; l += 1) {
-					if (group[l] !== layer) {
-						// Trigger dragstop event if defined
-						if (group[l].dragstop && layer.fireDragGroupEvents) {
-							group[l].dragstop.call($canvas[0], group[l]);
-						}
-					}
-				}
-			}
-		
 		}
 		
 		// Cancel dragging
 		data.drag = {};
-	
+		
 	}
 }
 
-// Trigger the given event on the given layer
-function triggerLayerEvent($canvas, layer, eventType, cursor) {
-	
-	// If cursor was not explicitly provided
-	if (!cursor) {
-	
-		if (layer.cursors) {
-			// Use cursors property if given
-			cursor = layer.cursors[eventType];
-		} else {
-			// Otherwise, fallback to deprecated cursor property
-			cursor = layer.cursor;
-		}
-	
+
+// List of CSS3 cursors that need to be prefixed
+css3Cursors = ['grab', 'grabbing', 'zoom-in', 'zoom-out'];
+
+// Function to detect vendor prefix
+// Modified version of David Walsh's implementation
+// http://davidwalsh.name/vendor-prefix
+prefix = (function() {
+	var styles = getComputedStyle(document.documentElement, ''),
+		pre = (Array.prototype.slice
+			.call(styles)
+			.join('')
+			.match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
+		)[1];
+	return {
+		lowercase: pre,
+		css: '-' + pre + '-',
+		js: pre[0].toUpperCase() + pre.substr(1)
+	};
+})();
+
+// Set cursor on canvas
+function _setCursor($canvas, data, layer, eventType) {
+	var cursor;
+	if (layer.cursors) {
+		// Retrieve cursor from cursors object if it exists
+		cursor = layer.cursors[eventType];
+	} else {
+		// Otherwise, fallback to deprecated cursor property
+		cursor = layer.cursor;
 	}
-		
+	// Prefix any CSS3 cursor
+	if ($.inArray(cursor, css3Cursors) !== -1) {
+		cursor = prefix.css + cursor;
+	}
 	// If cursor is defined	
 	if (cursor) {
 		// Set canvas cursor
@@ -1296,22 +1306,66 @@ function triggerLayerEvent($canvas, layer, eventType, cursor) {
 			cursor: cursor
 		});
 	}
+}
 
-	// Run the user-defined callback function
-	if (layer[eventType]) {
-		layer[eventType].call($canvas[0], layer);
+// Reset cursor on canvas
+function _resetCursor($canvas, data) {
+	$canvas.css({
+		cursor: data.cursor
+	});
+}
+
+// Trigger the event hook of the given type on the given data object
+function _triggerEventHook($canvas, data, layer, eventType, arg) {
+	if (data.eventHooks[eventType]) {
+		// Run the canvas-bound event hook if it exists
+		data.eventHooks[eventType].call($canvas[0], layer, arg);
 	}
 }
+
+// Trigger the given event on the given layer
+function _triggerLayerEvent($canvas, data, layer, eventType, arg) {
+	// If events are not disabled for this layer
+	if (!layer.disableEvents) {
+
+		_setCursor($canvas, data, layer, eventType);
+
+		if (layer[eventType]) {
+			// Run the user-defined callback if it exists
+			layer[eventType].call($canvas[0], layer, arg);
+		}
+		// Run the canvas-bound event hook if it exists
+		_triggerEventHook($canvas, data, layer, eventType, arg);
+		// Run the global event hook if it exists
+		_triggerEventHook($canvas, jCanvas, layer, eventType, arg);
+	
+	}
+}
+
+// Manually trigger a layer event
+$.fn.triggerLayerEvent = function(layer, eventType) {
+	var $canvases = this, $canvas, e,
+		data;
+	
+	for (e = 0; e < $canvases.length; e += 1) {
+		$canvas = $($canvases[e]);
+		data = _getCanvasData($canvases[e]);
+		layer = $canvas.getLayer(layer);
+		if (layer) {
+			_triggerLayerEvent($canvas, data, layer, eventType);
+		}
+	}
+	return $canvases;
+};
 
 // Draw all layers (or, if given, only layers starting at an index)
 $.fn.drawLayers = function drawLayers(args) {
 	var $canvases = this, $canvas, e, ctx,
 		// Internal parameters for redrawing the canvas
-		params = merge({}, args),
+		params = extendObject({}, args),
 		// Other variables
 		layers, layer, lastLayer, l, lastIndex,
-		data, eventCache, eventType,
-		drag;
+		data, eventCache, eventType;
 	
 	// The layer index from which to start redrawing the canvas
 	if (!params.index) {
@@ -1324,7 +1378,7 @@ $.fn.drawLayers = function drawLayers(args) {
 		if (ctx) {
 			
 			data = _getCanvasData($canvases[e]);
-												
+			
 			// Clear canvas first unless otherwise directed
 			if (params.clear !== FALSE) {
 				$canvas.clearCanvas();
@@ -1332,20 +1386,18 @@ $.fn.drawLayers = function drawLayers(args) {
 			
 			// Cache the layers array
 			layers = data.layers;
-							
+			
 			// Draw layers from first to last (bottom to top)
 			for (l = params.index; l < layers.length; l += 1) {
 				layer = layers[l];
-								
+				
 				// Ensure layer index is up-to-date
 				layer.index = l;
-												
+									
 				// Prevent any one event from firing excessively
 				if (params.resetFire) {
 					layer._fired = FALSE;
 				}
-				// Optionally disable events temporarily
-				layer._event = !layer.disableEvents;
 				// Draw layer
 				_drawLayer($canvas, ctx, layer, l + 1);
 				// Store list of previous masks for each layer
@@ -1363,76 +1415,85 @@ $.fn.drawLayers = function drawLayers(args) {
 			
 			// Get first layer that intersects with event coordinates
 			layer = _getIntersectingLayer(data);
-									
+			
 			eventCache = data.event;
 			eventType = eventCache.type;
-			// Use mouse event callbacks if no touch event callbacks are given
-			if (!layer[eventType]) {
-				eventType = getMouseEventName(eventType);
-			}
-			// Cache the drag object
-			drag = data.drag;
 			
-			lastLayer = data.lastIntersected;
-								
+			// If jCanvas has detected a dragstart
+			if (data.drag.layer) {
+				// Handle dragging of layer
+				_handleLayerDrag($canvas, data, eventType);
+			}
+						
 			// Manage mouseout event
-			if (lastLayer !== NULL && layer !== lastLayer && lastLayer._hovered && !lastLayer._fired) {
-												
+			lastLayer = data.lastIntersected;
+			if (lastLayer !== NULL && layer !== lastLayer && lastLayer._hovered && !lastLayer._fired && !data.drag.dragging) {
+										
 				data.lastIntersected = NULL;
 				lastLayer._fired = TRUE;
 				lastLayer._hovered = FALSE;
-				
-				triggerLayerEvent($canvas, lastLayer, 'mouseout', data.cursor);
-							
-			}
-				
-			// Check events for intersecting layer
-			if (layer._event && layer.intersects) {
-				
-				data.lastIntersected = layer;
-																
-				// Detect mouseover events
-				if (layer.mouseover || layer.mouseout || layer.cursor || layer.cursors) {
-								
-					if (!layer._hovered && !layer._fired) {
-												
-						// Prevent events from firing excessively
-						layer._fired = TRUE;
-						layer._hovered = TRUE;
-						
-						triggerLayerEvent($canvas, layer, 'mouseover');
-											
-					}
-				
-				}
-																								
-				// Detect any other mouse event
-				if (!layer._fired) {
-				
-					// Prevent event from firing twice unintentionally
-					layer._fired = TRUE;
-					eventCache.type = NULL;
-					
-					triggerLayerEvent($canvas, layer, eventType);
-				
-				}
-			
-				// Use the mousedown event to start drag
-				if (layer.draggable && (eventType === 'mousedown' || eventType === 'touchstart')) {
-														
-					// Keep track of drag state
-					drag.layer = layer;
-							
-				}
-			
-			}
 		
-			// Dragging a layer works independently from other events
-			
-			if (drag.layer) {
-				_handleLayerDrag($canvas, data, eventType);
+				_triggerLayerEvent($canvas, data, lastLayer, 'mouseout');
+				_resetCursor($canvas, data);
+				
 			}
-
+			
+			if (layer) {
+				
+				// Use mouse event callbacks if no touch event callbacks are given
+				if (!layer[eventType]) {
+					eventType = getMouseEventName(eventType);
+				}
+				
+				// Check events for intersecting layer
+				if (layer._event && layer.intersects) {
+				
+					data.lastIntersected = layer;
+																
+					// Detect mouseover events
+					if (layer.mouseover || layer.mouseout || layer.cursor || layer.cursors && !data.drag.dragging) {
+								
+						if (!layer._hovered && !layer._fired) {
+												
+							// Prevent events from firing excessively
+							layer._fired = TRUE;
+							layer._hovered = TRUE;
+							
+							_triggerLayerEvent($canvas, data, layer, 'mouseover');
+											
+						}
+				
+					}
+																								
+					// Detect any other mouse event
+					if (!layer._fired) {
+				
+						// Prevent event from firing twice unintentionally
+						layer._fired = TRUE;
+						eventCache.type = NULL;
+					
+						_triggerLayerEvent($canvas, data, layer, eventType);
+				
+					}
+			
+					// Use the mousedown event to start drag
+					if (layer.draggable && !layer.disableEvents && (eventType === 'mousedown' || eventType === 'touchstart')) {
+														
+						// Keep track of drag state
+						data.drag.layer = layer;
+							
+					}
+			
+				}
+		
+			}
+			
+			// If cursor is not intersecting with any layer
+			if (layer === NULL && !data.drag.dragging) {
+				// Revert cursor to previous state
+				_resetCursor($canvas, data);
+			}
+						
 			// If the last layer has been drawn
 			if (lastIndex === layers.length) {
 				
@@ -1478,38 +1539,51 @@ function _addLayer(canvas, params, args, method) {
 	// If layer hasn't been added yet
 	if (params.layer && !params._layer) {
 		// Add layer to canvas
-						
+		
 		$canvas = $(canvas);
-		layers = $canvas.getLayers();
 				
 		data = _getCanvasData(canvas);
-					
-		// Ensure layers are unique across canvases by cloning them
-		layer = new jCanvasObject(params);
-		// Indicate that this is a layer for future checks
-		layer.layer = TRUE;
-		layer._layer = TRUE;
-			
-		// Update layer group mappings
-		_updateLayerName($canvas, data, layer);
-		_updateLayerGroups($canvas, data, layer);
+		layers = data.layers;
 		
-		// Check for any associated jCanvas events and enable them
-		_addLayerEvents($canvas, data, layer);
-		
-		// Optionally enable drag-and-drop support and cursor support
-		_enableDrag($canvas, data, layer);
-		
-		// Copy _event property to parameters object
-		params._event = layer._event;
+		// Do not add duplicate layers of same name		
+		if (layer.name === NULL || (isString(layer.name) && data.layer.names[layer.name] === UNDEFINED)) {
 				
-		// Add layer to end of array if no index is specified
-		if (layer.index === NULL) {
-			layer.index = layers.length;
+			// Ensure layers are unique across canvases by cloning them
+			layer = new jCanvasObject(params);
+			// Indicate that this is a layer for future checks
+			layer.layer = TRUE;
+			layer._layer = TRUE;
+			layer._data = data;
+		
+			// Update layer group maps
+			_updateLayerName($canvas, data, layer);
+			_updateLayerGroups($canvas, data, layer);
+		
+			// Check for any associated jCanvas events and enable them
+			_addLayerEvents($canvas, data, layer);
+		
+			// Optionally enable drag-and-drop support and cursor support
+			_enableDrag($canvas, data, layer);
+		
+			// Copy _event property to parameters object
+			params._event = layer._event;
+				
+			// Add layer to end of array if no index is specified
+			if (layer.index === NULL) {
+				layer.index = layers.length;
+			}
+			
+			// Add layer to layers array at specified index
+			layers.splice(layer.index, 0, layer);
+			
+			// Store layer on parameters object
+			params._args = layer;
+		
+			// Trigger an 'add' event
+			_triggerLayerEvent($canvas, data, layer, 'add');
+		
 		}
 		
-		// Add layer to layers array at specified index
-		layers.splice(layer.index, 0, layer);
 	}
 	return layer;
 }
@@ -1584,7 +1658,7 @@ function toRgb(color) {
 		multiple = 1;
 	
 	// Deal with hexadecimal colors and color names
-	if (color.match(/^#?\w+$/gi)) {
+	if (color.match(/^(\w+|#[0-9a-f]+)$/gi)) {
 		// Deal with complete transparency
 		if (color === 'transparent') {
 			color = 'rgba(0,0,0,0)';
@@ -1658,7 +1732,7 @@ function animateColor(fx) {
 // Animate jCanvas layer
 $.fn.animateLayer = function animateLayer() {
 	var $canvases = this, $canvas, e, ctx,
-		args = ([]).slice.call(arguments, 0),
+		args = Array.prototype.slice.call(arguments, 0),
 		data, layer, props;
 			
 	// Deal with all cases of argument placement
@@ -1708,39 +1782,48 @@ $.fn.animateLayer = function animateLayer() {
 		return function() {
 			
 			_showProps(layer);
-		
+					
 			// Prevent multiple redraw loops
 			if (!data.animating || data.animated === layer) {
 				// Redraw layers on last frame
 				$canvas.drawLayers();
 			}
 		
-			// Run callback function at the end of the animation
-			if (args[4]) {
-				args[4].call($canvas[0], layer);
-			}
-		
 			// Signify the end of an animation loop
 			layer._animating = FALSE;
 			data.animating = FALSE;
 			data.animated = NULL;
-													
+			
+			// Run callback function at the end of the animation
+			if (args[4]) {
+				args[4].call($canvas[0], layer);
+			}
+			_triggerLayerEvent($canvas, data, layer, 'animateend');
+												
 		};
 		
 	}
 		
 	// Redraw layers on every frame of the animation
 	function step($canvas, data, layer) {
-		
+				
 		return function(now, fx) {
+			
+			// If animated property has been hidden
+			if (fx.prop[0] === '_') {
+				// Clone fx object
+				fx = extendObject({}, fx);
+				// Remove underscore from property name
+				fx.prop = fx.prop.replace('_', '');
+				// Show property
+				layer[fx.prop] = layer['_' + fx.prop];
+			}
 			
 			// Throttle animation to improve efficiency
 			if (layer._pos !== fx.pos) {
 				
 				layer._pos = fx.pos;
-				
-				_showProps(layer);
-			
+								
 				// Signify the start of an animation loop
 				if (!layer._animating && !data.animating) {
 					layer._animating = TRUE;
@@ -1753,13 +1836,15 @@ $.fn.animateLayer = function animateLayer() {
 					// Redraw layers for every frame
 					$canvas.drawLayers();
 				}
-			
-				// Run callback function for every frame (if specified)
-				if (args[5]) {
-					args[5].call($canvas[0], now, fx, layer);
-				}
 
 			}
+			
+			if (args[5]) {
+				// Run step callback if specified
+				args[5].call($canvas[0], now, fx, layer);
+			}
+			
+			_triggerLayerEvent($canvas, data, layer, 'animate', fx);
 			
 		};
 		
@@ -1779,7 +1864,7 @@ $.fn.animateLayer = function animateLayer() {
 			if (layer && layer._method !== $.fn.draw) {
 				
 				// Do not modify original object
-				props = merge({}, args[1]);
+				props = extendObject({}, args[1]);
 				
 				props = _evalFnValues($canvases[e], layer, props);
 											
@@ -1799,6 +1884,7 @@ $.fn.animateLayer = function animateLayer() {
 					// Redraw canvas for every animation frame
 					step: step($canvas, data, layer)
 				});
+				_triggerLayerEvent($canvas, data, layer, 'animatestart');
 			}
 			
 		}
@@ -1809,7 +1895,7 @@ $.fn.animateLayer = function animateLayer() {
 // Animate all layers in a layer group
 $.fn.animateLayerGroup = function animateLayerGroup(groupId) {
 	var $canvases = this, $canvas, e,
-		args = ([]).slice.call(arguments, 0),
+		args = Array.prototype.slice.call(arguments, 0),
 		group, l;
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
@@ -1831,12 +1917,20 @@ $.fn.animateLayerGroup = function animateLayerGroup(groupId) {
 
 // Delay layer animation by a given number of milliseconds
 $.fn.delayLayer = function delayLayer(layerId, duration) {
-	var $canvases = this, e, layer;
+	var $canvases = this, $canvas, e,
+		data, layer;
 	duration = duration || 0;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
-		layer = $($canvases[e]).getLayer(layerId);
-		$(layer).delay(duration);
+		$canvas = $($canvases[e]);
+		data = _getCanvasData($canvases[e]);
+		layer = $canvas.getLayer(layerId);
+		// If layer exists
+		if (layer) {
+			// Delay animation
+			$(layer).delay(duration);
+			_triggerLayerEvent($canvas, data, layer, 'delay');
+		}
 	}
 	return $canvases;
 };
@@ -1857,9 +1951,7 @@ $.fn.delayLayerGroup = function delayLayerGroup(groupId, duration) {
 			for (l = 0; l < group.length; l += 1) {
 				// Delay each layer in the group
 				layer = group[l];
-				if (layer) {
-					$(layer).delay(duration);
-				}
+				$canvas.delayLayer(layer);
 			}
 			
 		}
@@ -1870,16 +1962,17 @@ $.fn.delayLayerGroup = function delayLayerGroup(groupId, duration) {
 // Stop layer animation
 $.fn.stopLayer = function stopLayer(layerId, clearQueue) {
 	var $canvases = this, $canvas, e,
-		layer;
+		data, layer;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
-		
+		data = _getCanvasData($canvases[e]);
 		layer = $canvas.getLayer(layerId);
+		// If layer exists
 		if (layer) {
-			
+			// Stop animation	
 			$(layer).stop(clearQueue);
-			
+			_triggerLayerEvent($canvas, data, layer, 'stop');
 		}
 	}
 	return $canvases;
@@ -1900,9 +1993,7 @@ $.fn.stopLayerGroup = function stopLayerGroup(groupId, clearQueue) {
 			for (l = 0; l < group.length; l += 1) {
 				// Stop each layer in the group
 				layer = group[l];
-				if (layer) {
-					$(layer).stop(clearQueue);
-				}
+				$canvas.stopLayer(layer, clearQueue);
 			}
 			
 		}
@@ -1977,8 +2068,8 @@ function createEvent(eventName) {
 		
 		// Both mouseover/mouseout events will be managed by a single mousemove event
 		helperEventName = (eventName === 'mouseover' || eventName === 'mouseout') ? 'mousemove' : eventName;
-				
-		// Ensure a single DOM event is not bound more than once
+		
+		// Ensure the event is not bound more than once
 		if (!data.events[helperEventName]) {
 			// Bind one canvas event which handles all layer events of that type
 			$canvas.bind(helperEventName + '.jCanvas', function(event) {
@@ -2027,7 +2118,7 @@ function _detectEvents(canvas, ctx, params) {
 	// Use the layer object stored by the given parameters object
 	layer = params._args;
 	// Canvas must have event bindings
-	if (layer && layer._event) {
+	if (layer) {
 
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
@@ -2112,6 +2203,7 @@ $.event.fix = function(event) {
 drawingMap = {
 	'arc': 'drawArc',
 	'bezier': 'drawBezier',
+	'circle': 'drawArc',
 	'ellipse': 'drawEllipse',
 	'function': 'draw',
 	'image': 'drawImage',
@@ -2133,7 +2225,7 @@ $.fn.draw = function draw(args) {
 	// Draw using any other method
 	if (drawingMap[params.type]) {
 		
-		$canvases[drawingMap[params.type]](params);
+		$canvases[drawingMap[params.type]](args);
 		
 	} else {
 	
@@ -2237,7 +2329,7 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 			
 			params = new jCanvasObject(args);
 			layer = _addLayer($canvases[e], params, args, restoreCanvas);
-			
+						
 			// Restore a number of times using the given count
 			for (i = 0; i < params.count; i += 1) {
 				_restoreCanvas(ctx, data);
@@ -2251,7 +2343,7 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 // Restore canvas
 $.fn.restoreCanvasOnRedraw = function restoreCanvasOnRedraw(args) {
 	var $canvases = this,
-		params = merge({}, args);
+		params = extendObject({}, args);
 	params.layer = TRUE;
 	$canvases.restoreCanvas(params);
 	return $canvases;
@@ -2361,10 +2453,10 @@ $.fn.drawRect = function drawRect(args) {
 				x1 = params.x - (params.width / 2);
 				y1 = params.y - (params.height / 2);
 				r = params.cornerRadius;
+				// If corner radius is defined and is not zero
 				if (r) {
 					// Draw rectangle with rounded corners if cornerRadius is defined
 					
-					params.closed = TRUE;
 					x2 = params.x + (params.width / 2);
 					y2 = params.y + (params.height / 2);
 					// Prevent over-rounded corners
@@ -2374,6 +2466,7 @@ $.fn.drawRect = function drawRect(args) {
 					if ((y2 - y1) - (2 * r) < 0) {
 						r = (y2 - y1) / 2;
 					}
+					// Draw rectangle
 					ctx.moveTo(x1 + r, y1);
 					ctx.lineTo(x2 - r, y1);
 					ctx.arc(x2 - r, y1 + r, r, 3 * PI / 2, PI * 2, FALSE);
@@ -2383,6 +2476,8 @@ $.fn.drawRect = function drawRect(args) {
 					ctx.arc(x1 + r, y2 - r, r, PI / 2, PI, FALSE);
 					ctx.lineTo(x1, y1 + r);
 					ctx.arc(x1 + r, y1 + r, r, PI, 3 * PI / 2, FALSE);
+					// Always close path
+					params.closed = TRUE;
 					
 				} else {
 					
@@ -2730,25 +2825,18 @@ $.fn.drawLine = function drawLine(args) {
 				l = 1;
 				ctx.beginPath();
 				while (TRUE) {
-					
 					// Calculate next coordinates
 					lx = params['x' + l];
 					ly = params['y' + l];
-					
 					// If coordinates are given
 					if (lx !== UNDEFINED && ly !== UNDEFINED) {
-						
 						// Draw next line
 						ctx.lineTo(lx + params.x, ly + params.y);
 						l += 1;
-						
 					} else {
-						
 						// Otherwise, stop drawing
 						break;
-						
 					}
-					
 				}
 				l -= 1;
 				// Optionally add arrows to path
@@ -2799,25 +2887,19 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 				ctx.beginPath();
 				ctx.moveTo(params.x1 + params.x, params.y1 + params.y);
 				while (TRUE) {
-					
 					// Calculate next coordinates
 					lx = params['x' + l];
 					ly = params['y' + l];
 					lcx = params['cx' + (l - 1)];
 					lcy = params['cy' + (l - 1)];
-					
 					// If coordinates are given
 					if (lx !== UNDEFINED && ly !== UNDEFINED && lcx !== UNDEFINED && lcy !== UNDEFINED) {
-						
 						// Draw next curve
 						ctx.quadraticCurveTo(lcx + params.x, lcy + params.y, lx + params.x, ly + params.y);
 						l += 1;
-						
 					} else {
-						
 						// Otherwise, stop drawing
 						break;
-						
 					}
 					
 				}
@@ -2873,7 +2955,6 @@ $.fn.drawBezier = function drawBezier(args) {
 				ctx.beginPath();
 				ctx.moveTo(params.x1 + params.x, params.y1 + params.y);
 				while (TRUE) {
-					
 					// Calculate next coordinates
 					lx = params['x' + l];
 					ly = params['y' + l];
@@ -2881,22 +2962,16 @@ $.fn.drawBezier = function drawBezier(args) {
 					lcy1 = params['cy' + lc];
 					lcx2 = params['cx' + (lc + 1)];
 					lcy2 = params['cy' + (lc + 1)];
-					
 					// If next coordinates are given
 					if (lx !== UNDEFINED && ly !== UNDEFINED && lcx1 !== UNDEFINED && lcy1 !== UNDEFINED && lcx2 !== UNDEFINED && lcy2 !== UNDEFINED) {
-						
 						// Draw next curve
 						ctx.bezierCurveTo(lcx1 + params.x, lcy1 + params.y, lcx2 + params.x, lcy2 + params.y, lx + params.x, ly + params.y);
 						l += 1;
 						lc += 2;
-						
 					} else {
-						
 						// Otherwise, stop drawing
 						break;
-						
 					}
-					
 				}
 				l -= 1;
 				lc -= 2;
@@ -3258,10 +3333,10 @@ $.fn.drawImage = function drawImage(args) {
 		img, imgCtx, source;
 		
 	// Draw image function
-	function draw(e, ctx, data, params, layer) {
+	function draw(canvas, ctx, data, params, layer) {
 		
 		// Set global canvas properties
-		_setGlobalProps($canvases[e], ctx, params);
+		_setGlobalProps(canvas, ctx, params);
 		
 		// If width and sWidth are not defined, use image width
 		if (params.width === NULL && params.sWidth === NULL) {
@@ -3316,7 +3391,7 @@ $.fn.drawImage = function drawImage(args) {
 			}
 											
 			// Position/transform image if necessary
-			_transformShape($canvases[e], ctx, params, params.width, params.height);
+			_transformShape(canvas, ctx, params, params.width, params.height);
 			
 			// Draw image
 			ctx.drawImage(
@@ -3335,7 +3410,7 @@ $.fn.drawImage = function drawImage(args) {
 			// Show entire image if no crop region is defined
 			
 			// Position/transform image if necessary
-			_transformShape($canvases[e], ctx, params, params.width, params.height);
+			_transformShape(canvas, ctx, params, params.width, params.height);
 						
 			// Draw image on canvas
 			ctx.drawImage(
@@ -3357,27 +3432,26 @@ $.fn.drawImage = function drawImage(args) {
 			params.height
 		);
 		// Check for jCanvas events
-		_detectEvents($canvases[e], ctx, params);
+		_detectEvents(canvas, ctx, params);
 		// Close path and configure masking
 		ctx.closePath();
 		_restoreTransform(ctx, params);
 		_enableMasking(ctx, data, params);
 	}
 	// On load function
-	function onload(canvas, e, ctx, data, params, layer) {
+	function onload(canvas, ctx, data, params, layer) {
 		return function() {
-			draw(e, ctx, data, params, layer);
+			var $canvas = $(canvas);
+			draw(canvas, ctx, data, params, layer);
 			// Run callback function if defined
-			if (params.load) {
-				params.load.call(canvas, layer);
-			}
+			_triggerLayerEvent($canvas, data, layer, 'load');
 			// Continue drawing successive layers after this image layer has loaded
 			if (params.layer) {
 				// Store list of previous masks for each layer
-				params._args._masks = data.transforms.masks.slice(0);
+				layer._masks = data.transforms.masks.slice(0);
 				if (params._next) {
 					// Draw successive layers
-					$(canvas).drawLayers({
+					$canvas.drawLayers({
 						clear: FALSE,
 						resetFire: TRUE,
 						index: params._next
@@ -3419,10 +3493,10 @@ $.fn.drawImage = function drawImage(args) {
 				if (img) {
 					if (img.complete || imgCtx) {
 						// Draw image if already loaded
-						onload(canvas, e, ctx, data, params, layer)();
+						onload(canvas, ctx, data, params, layer)();
 					} else {
 						// Otherwise, draw image when it loads
-						$(img).bind('load', onload(canvas, e, ctx, data, params, layer));
+						$(img).bind('load', onload(canvas, ctx, data, params, layer));
 						// Fix onload() bug in IE9
 						img.src = img.src;
 					}
@@ -3688,7 +3762,7 @@ $.fn.detectPixelRatio = function detectPixelRatio(callback) {
 				ctx.msBackingStorePixelRatio ||
 				ctx.oBackingStorePixelRatio ||
 				ctx.backingStorePixelRatio || 1;
-		
+			
 			// Calculate general ratio based on the two given ratios
 			ratio = devicePixelRatio / backingStoreRatio;
 			
@@ -3698,15 +3772,15 @@ $.fn.detectPixelRatio = function detectPixelRatio(callback) {
 				// Get the current canvas dimensions for future use
 				oldWidth = canvas.width;
 				oldHeight = canvas.height;
-
+				
 				// Resize canvas relative to the determined ratio
 				canvas.width = oldWidth * ratio;
 				canvas.height = oldHeight * ratio;
-			
+				
 				// Scale canvas back to original dimensions via CSS
 				canvas.style.width = oldWidth + 'px';
 				canvas.style.height = oldHeight + 'px';
-			
+				
 				// Scale context to counter the manual scaling of canvas
 				ctx.scale(ratio, ratio);
 			
@@ -3733,10 +3807,10 @@ $.support.canvas = ($('<canvas />')[0].getContext);
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
+jCanvas.setGlobalProps = _setGlobalProps;
 jCanvas.transformShape = _transformShape;
 jCanvas.detectEvents = _detectEvents;
 jCanvas.closePath = _closePath;
-jCanvas.getTouchEventName = _getTouchEventName;
 $.jCanvas = jCanvas;
 
-}(jQuery, document, Image, Math, parseFloat, true, false, null));
+}(jQuery, document, Image, Array, Math, parseFloat, true, false, null));
