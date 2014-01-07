@@ -7,6 +7,13 @@ function AtomicCanvas() {
 	this.canvas = document.getElementById('atomic-canvas')
 }
 
+QUnit.extend(QUnit.assert, {
+  pixelEqual: function(canvas, x, y, r, g, b, a, message) {
+    var actual = Array.prototype.slice.apply(canvas.getContext("2d").getImageData(x, y, 1, 1).data),
+        expected = [r, g, b, a];
+    QUnit.push(QUnit.equiv(actual, expected), actual, expected, message);
+  }
+});
 
 /* jCanvas tests */
 module("jCanvas Arcs")
@@ -24,7 +31,7 @@ asyncTest("drawImage basic", 1, function(assert) {
 	var ac = new AtomicCanvas()
 	drawImage_basic("#atomic-canvas", "./by-hand/images/fish-modified.png",
 		function() {
-			assert.pixelEqual(ac.canvas, 160, 70, 0, 249, 0, 255)
+			assert.pixelEqual(ac.canvas, 160, 70, 0, 252, 51, 255)
 			QUnit.start();
 		})
 })
@@ -34,7 +41,7 @@ asyncTest("drawImage custom width/height", 1, function(assert) {
 	drawImage_customWidthHeight("#atomic-canvas",
 		"./by-hand/images/fish-modified.png",
 		function() {
-			assert.pixelEqual(ac.canvas, 80, 35, 0, 249, 0, 255)
+			assert.pixelEqual(ac.canvas, 80, 35, 0, 252, 51, 255)
 			QUnit.start();
 		})
 })
@@ -44,7 +51,7 @@ asyncTest("drawImage scaled", 1, function(assert) {
 	drawImage_scale("#atomic-canvas",
 		"./by-hand/images/fish-modified.png",
 		function() {
-			assert.pixelEqual(ac.canvas, 130, 69, 0, 249, 0, 255)
+			assert.pixelEqual(ac.canvas, 130, 69, 0, 252, 51, 255)
 			QUnit.start();
 		})
 })
@@ -54,7 +61,7 @@ asyncTest("drawImage cropped", 1, function(assert) {
 	drawImage_crop("#atomic-canvas",
 		"./by-hand/images/fish-modified.png",
 		function() {
-			assert.pixelEqual(ac.canvas, 40, 40, 0, 249, 0, 255)
+			assert.pixelEqual(ac.canvas, 40, 40, 0, 252, 51, 255)
 			QUnit.start();
 		})
 })
