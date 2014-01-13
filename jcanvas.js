@@ -1,25 +1,30 @@
 /**
- * @license jCanvas v14.01.07
+ * @license jCanvas v14.01.12
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
-(function($, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
+(function ($, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
 
 // Define local aliases to frequently used properties
-var defaults,
+var defaults, prefs,
+	// Helper traversal functions
 	extendObject = $.extend,
 	inArray = $.inArray,
+	// Type-checking functions
 	typeOf = $.type,
 	isFunction = $.isFunction,
-	round = Math.round,
+	// Math constants and functions
 	PI = Math.PI,
+	round = Math.round,
 	sin = Math.sin,
 	cos = Math.cos,
 	atan2 = Math.atan2,
+	// The Array slice() method
+	arraySlice = Array.prototype.slice,
+	// jQuery's internal event normalization function
 	jQueryEventFix = $.event.fix,
-	touchEventMap,
-	mouseEventMap,
-	drawingMap,
+	// Object for storing a number of internal property maps
+	maps = {},
 	caches = {
 		dataCache: {},
 		propCache: {},
@@ -39,22 +44,36 @@ var defaults,
 	css3Cursors,
 	prefix;
 
-// Preferences constructor (which inherits from the defaults object)
-function jCanvasObject(args) {
-	var params = this;
-	// Merge preferences with arguments
-	extendObject(params, args);
-	return params;
+// Constructor for creating objects that inherit from jCanvas preferences and defaults
+function jCanvasObject(params) {
+	var propName;
+	if (jCanvas.future.inheritance) {
+		// Copy the given parameters into new object
+		for (propName in params) {
+			// Do not merge defaults into parameters
+			if (params.hasOwnProperty(propName)) {
+				this[propName] = params[propName];
+			}
+		}
+	} else {
+		extendObject(this, params);
+	}
 }
 
 // jCanvas function for setting property defaults (it's also an object)
+// This function is deprecated and will be removed in a future release
 function jCanvas(args) {
+	var prefName;
 	if (args) {
 		// Merge arguments with preferences
-		extendObject(jCanvasObject.prototype, args);
+		extendObject(prefs, args);
 	} else {
 		// Reset preferences to defaults if nothing is passed
-		jCanvas.prefs = jCanvasObject.prototype = extendObject({}, defaults);
+		for (prefName in prefs) {
+			if (prefs.hasOwnProperty(prefName)) {
+				delete prefs[prefName];
+			}
+		}
 	}
 	return this;
 }
@@ -65,92 +84,97 @@ $.fn.jCanvas = jCanvas;
 jCanvas.events = {};
 // Object containing all jCanvas event hooks
 jCanvas.eventHooks = {};
-
-// jCanvas default property values
-defaults = {
-	align: 'center',
-	arrowAngle: 90,
-	arrowRadius: 0,
-	autosave: TRUE,
-	baseline: 'middle',
-	bringToFront: FALSE,
-	ccw: FALSE,
-	closed: FALSE,
-	compositing: 'source-over',
-	concavity: 0,
-	cornerRadius: 0,
-	count: 1,
-	cropFromCenter: TRUE,
-	cursor: NULL,
-	cursors: NULL,
-	disableEvents: FALSE,
-	draggable: FALSE,
-	dragGroups: NULL,
-	groups: NULL,
-	data: NULL,
-	dx: NULL,
-	dy: NULL,
-	each: NULL,
-	end: 360,
-	eventX: NULL,
-	eventY: NULL,
-	fillStyle: 'transparent',
-	fontStyle: 'normal',
-	fontSize: '12pt',
-	fontFamily: 'sans-serif',
-	fromCenter: TRUE,
-	fn: NULL,
-	height: NULL,
-	imageSmoothing: TRUE,
-	inDegrees: TRUE,
-	index: NULL,
-	lineHeight: 1,
-	layer: FALSE,
-	mask: FALSE,
-	maxWidth: NULL,
-	miterLimit: 10,
-	name: NULL,
-	opacity: 1,
-	r1: NULL,
-	r2: NULL,
-	radius: 0,
-	repeat: 'repeat',
-	respectAlign: FALSE,
-	rotate: 0,
-	rounded: FALSE,
-	scale: 1,
-	scaleX: 1,
-	scaleY: 1,
-	shadowBlur: 0,
-	shadowColor: 'transparent',
-	shadowStroke: FALSE,
-	shadowX: 0,
-	shadowY: 0,
-	sHeight: NULL,
-	sides: 0,
-	source: '',
-	spread: 0,
-	start: 0,
-	strokeCap: 'butt',
-	strokeJoin: 'miter',
-	strokeStyle: 'transparent',
-	strokeWidth: 1,
-	sWidth: NULL,
-	sx: NULL,
-	sy: NULL,
-	text: '',
-	translate: 0,
-	translateX: 0,
-	translateY: 0,
-	type: NULL,
-	visible: TRUE,
-	width: NULL,
-	x: 0,
-	y: 0
+// Settings for enabling future jCanvas features
+jCanvas.future = {
+	inheritance: false
 };
 
-// Copy defaults to preferences object
-jCanvas();
+// jCanvas default property values
+function jCanvasDefaults() {
+	extendObject(this, {
+		align: 'center',
+		arrowAngle: 90,
+		arrowRadius: 0,
+		autosave: TRUE,
+		baseline: 'middle',
+		bringToFront: FALSE,
+		ccw: FALSE,
+		closed: FALSE,
+		compositing: 'source-over',
+		concavity: 0,
+		cornerRadius: 0,
+		count: 1,
+		cropFromCenter: TRUE,
+		cursors: NULL,
+		disableEvents: FALSE,
+		draggable: FALSE,
+		dragGroups: NULL,
+		groups: NULL,
+		data: NULL,
+		dx: NULL,
+		dy: NULL,
+		end: 360,
+		eventX: NULL,
+		eventY: NULL,
+		fillStyle: 'transparent',
+		fontStyle: 'normal',
+		fontSize: '12pt',
+		fontFamily: 'sans-serif',
+		fromCenter: TRUE,
+		height: NULL,
+		imageSmoothing: TRUE,
+		inDegrees: TRUE,
+		index: NULL,
+		lineHeight: 1,
+		layer: FALSE,
+		mask: FALSE,
+		maxWidth: NULL,
+		miterLimit: 10,
+		name: NULL,
+		opacity: 1,
+		r1: NULL,
+		r2: NULL,
+		radius: 0,
+		repeat: 'repeat',
+		respectAlign: FALSE,
+		rotate: 0,
+		rounded: FALSE,
+		scale: 1,
+		scaleX: 1,
+		scaleY: 1,
+		shadowBlur: 0,
+		shadowColor: 'transparent',
+		shadowStroke: FALSE,
+		shadowX: 0,
+		shadowY: 0,
+		sHeight: NULL,
+		sides: 0,
+		source: '',
+		spread: 0,
+		start: 0,
+		strokeCap: 'butt',
+		strokeJoin: 'miter',
+		strokeStyle: 'transparent',
+		strokeWidth: 1,
+		sWidth: NULL,
+		sx: NULL,
+		sy: NULL,
+		text: '',
+		translate: 0,
+		translateX: 0,
+		translateY: 0,
+		type: NULL,
+		visible: TRUE,
+		width: NULL,
+		x: 0,
+		y: 0
+	});
+}
+defaults = new jCanvasDefaults();
+function jCanvasPrefs() {}
+jCanvasPrefs.prototype = defaults;
+prefs = new jCanvasPrefs();
+jCanvasObject.prototype = prefs;
 
 /* Internal helper methods */
 
@@ -190,7 +214,6 @@ function _restoreCanvas(ctx, data) {
 		// Restore canvas context
 		ctx.restore();
 		// Restore current transform state to the last saved state
-		// Remove last saved state from transformation stack
 		data.transforms = data.savedTransforms.pop();
 	}
 }
@@ -375,10 +398,7 @@ function _transformShape(canvas, ctx, params, width, height) {
 	
 	// Get conversion factor for radians
 	params._toRad = (params.inDegrees ? (PI / 180) : 1);
-	
-	// Convert arrow angle to radians
-	params.arrowAngle *= params._toRad;
-	
+		
 	params._transformed = TRUE;
 	ctx.save();
 	
@@ -418,7 +438,6 @@ jCanvas.extend = function extend(plugin) {
 		// Merge properties with defaults
 		if (plugin.props) {
 			extendObject(defaults, plugin.props);
-			jCanvas();
 		}
 		// Define plugin method
 		$.fn[plugin.name] = function self(args) {
@@ -442,7 +461,7 @@ jCanvas.extend = function extend(plugin) {
 		};
 		// Add drawing type to drawing map
 		if (plugin.type) {
-			drawingMap[plugin.type] = plugin.name;
+			maps.drawings[plugin.type] = plugin.name;
 		}
 	}
 	return $.fn[plugin.name];
@@ -561,7 +580,7 @@ function _enableDrag($canvas, data, layer) {
 				
 		// If cursor mouses out of canvas while dragging, cancel drag
 		if (!data.events.mouseoutdrag) {
-			$canvas.bind('mouseout.jCanvas', function() {
+			$canvas.bind('mouseout.jCanvas', function () {
 				// Retrieve the layer whose drag event was canceled
 				var layer = data.drag.layer;
 				if (layer) {
@@ -696,8 +715,8 @@ $.fn.setEventHooks = function setEventHooks(eventHooks) {
 
 // Get jCanvas layers array
 $.fn.getLayers = function getLayers(callback) {
-	var $canvases = this, canvas,
-		data, layers, l,
+	var $canvases = this, canvas, data,
+		layers, layer, l,
 		matching = [];
 	
 	if ($canvases.length !== 0) {
@@ -712,9 +731,10 @@ $.fn.getLayers = function getLayers(callback) {
 			
 			// Filter the layers array using the callback
 			for (l = 0; l < layers.length; l += 1) {
-				if (callback.call(canvas, layers[l])) {
+				layer = layers[l];
+				if (callback.call(canvas, layer)) {
 					// Add layer to array of matching layers if test passes
-					matching.push(layers[l]);
+					matching.push(layer);
 				}
 			}
 			
@@ -833,7 +853,7 @@ $.fn.getLayerIndex = function getLayerIndex(layerId) {
 // Set properties of a layer
 $.fn.setLayer = function setLayer(layerId, props) {
 	var $canvases = this, $canvas, e,
-		data, layer;
+		data, layer, propName, propValue, propType;
 	
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
@@ -847,7 +867,28 @@ $.fn.setLayer = function setLayer(layerId, props) {
 			_updateLayerGroups($canvas, data, layer, props);
 			
 			// Merge properties with layer
-			extendObject(layer, props);
+			// extendObject(layer, props);
+			for (propName in props) {
+				if (props.hasOwnProperty(propName)) {
+					propValue = props[propName];
+					propType = typeOf(propValue);
+					if (propType === 'object') {
+						layer[propName] = extendObject({}, propValue);
+					} else if (propType === 'array') {
+						layer[propName] = propValue.slice(0);
+					} else if (propType === 'string') {
+						if (propValue.indexOf('+=') === 0) {
+							layer[propName] += parseFloat(propValue.substr(2));
+						} else if (propValue.indexOf('-=') === 0) {
+							layer[propName] -= parseFloat(propValue.substr(2));
+						} else {
+							layer[propName] = propValue;
+						}
+					} else {
+						layer[propName] = propValue;
+					}
+				}
+			}
 						
 			// Update layer events
 			_addLayerEvents($canvas, data, layer);
@@ -1044,7 +1085,7 @@ $.fn.addLayerToGroup = function addLayerToGroup(layerId, groupName) {
 			// Clone groups list
 			groups = layer.groups.slice(0);
 			// If layer is not already in group
-			if (inArray(groupName, layer.groups) === -1) {			
+			if (inArray(groupName, layer.groups) === -1) {
 				// Add layer to group
 				groups.push(groupName);
 			}
@@ -1170,7 +1211,8 @@ function _handleLayerDrag($canvas, data, eventType) {
 			
 			// Signify that a layer on the canvas is being dragged
 			drag.dragging = TRUE;
-									
+			layer.dragging = TRUE;
+							
 			// Optionally bring layer to front when drag starts
 			if (layer.bringToFront) {
 				// Remove layer from its original position
@@ -1200,7 +1242,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 			layer.dy = newY - layer.y;
 			layer.x = newX;
 			layer.y = newY;
-		
+			
 			// Trigger drag event
 			_triggerLayerEvent($canvas, data, layer, 'drag');
 		
@@ -1228,9 +1270,10 @@ function _handleLayerDrag($canvas, data, eventType) {
 		// Detect when user stops dragging layer
 		
 		if (drag.dragging) {
+			layer.dragging = FALSE;
+			drag.dragging = FALSE;
 			// Trigger dragstop event
 			_triggerLayerEvent($canvas, data, layer, 'dragstop');
-			drag.dragging = FALSE;
 		}
 		
 		// Cancel dragging
@@ -1246,9 +1289,9 @@ css3Cursors = ['grab', 'grabbing', 'zoom-in', 'zoom-out'];
 // Function to detect vendor prefix
 // Modified version of David Walsh's implementation
 // http://davidwalsh.name/vendor-prefix
-prefix = (function() {
+prefix = (function () {
 	var styles = getComputedStyle(document.documentElement, ''),
-		pre = (Array.prototype.slice
+		pre = (arraySlice
 			.call(styles)
 			.join('')
 			.match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
@@ -1316,7 +1359,7 @@ function _triggerLayerEvent($canvas, data, layer, eventType, arg) {
 }
 
 // Manually trigger a layer event
-$.fn.triggerLayerEvent = function(layer, eventType) {
+$.fn.triggerLayerEvent = function (layer, eventType) {
 	var $canvases = this, $canvas, e,
 		data;
 	
@@ -1440,7 +1483,7 @@ $.fn.drawLayers = function drawLayers(args) {
 					data.lastIntersected = layer;
 																
 					// Detect mouseover events
-					if (layer.mouseover || layer.mouseout || layer.cursors && !data.drag.dragging) {
+					if ((layer.mouseover || layer.mouseout || layer.cursors) && !data.drag.dragging) {
 								
 						if (!layer._hovered && !layer._fired) {
 												
@@ -1520,9 +1563,9 @@ function _addLayer(canvas, params, args, method) {
 	} else if (params.method) {
 		params._method = $.fn[params.method];
 	} else if (params.type) {
-		params._method = $.fn[drawingMap[params.type]];
+		params._method = $.fn[maps.drawings[params.type]];
 	} else {
-		params._method = function() {};
+		params._method = function () {};
 	}
 		
 	// If layer hasn't been added yet
@@ -1543,7 +1586,16 @@ function _addLayer(canvas, params, args, method) {
 			layer.layer = TRUE;
 			layer._layer = TRUE;
 			layer._running = {};
-			layer.data = {};
+			if (layer.data !== NULL) {
+				layer.data = extendObject({}, layer.data);
+			} else {
+				layer.data = {};
+			}
+			if (layer.groups !== NULL) {
+				layer.groups = layer.groups.slice(0);
+			} else {
+				layer.groups = [];
+			}
 			
 			// Update layer group maps
 			_updateLayerName($canvas, data, layer);
@@ -1625,29 +1677,65 @@ function _hideProps(obj, reset) {
 	for (p = 0; p < cssProps.length; p += 1) {
 		cssProp = cssProps[p];
 		// Hide property using same name with leading underscore
-		obj['_' + cssProp] = obj[cssProp];
-		cssPropsObj[cssProp] = TRUE;
-		if (reset) {
-			delete obj[cssProp];
+		if (obj[cssProp] !== UNDEFINED) {
+			obj['_' + cssProp] = obj[cssProp];
+			cssPropsObj[cssProp] = TRUE;
+			if (reset) {
+				delete obj[cssProp];
+			}
 		}
 	}
 }
 
 // Evaluate property values that are functions
-function _evalFnValues(canvas, layer, obj) {
-	var propName;
-	for (propName in obj) {
-		if (obj.hasOwnProperty(propName)) {
-			if (isFunction(obj[propName])) {
-				obj[propName] = obj[propName].call(canvas, layer, propName);
+function _parseEndValues(canvas, layer, endValues) {
+	var propName, propValue,
+		subPropName, subPropValue;
+	// Loop through all properties in map of end values
+	for (propName in endValues) {
+		if (endValues.hasOwnProperty(propName)) {
+			propValue = endValues[propName];
+			// If end value is function
+			if (isFunction(propValue)) {
+				// Call function and use its value as the end value
+				endValues[propName] = propValue.call(canvas, layer, propName);
+			}
+			// If end value is an object
+			if (typeOf(propValue) === 'object') {
+				// Prepare to animate properties in object
+				for (subPropName in propValue) {
+					if (propValue.hasOwnProperty(subPropName)) {
+						subPropValue = propValue[subPropName];
+						// Store property's start value at top-level of layer
+						if (layer[propName] !== UNDEFINED) {
+							layer[propName + '.' + subPropName] = layer[propName][subPropName];
+							// Store property's end value at top-level of end values map
+							endValues[propName + '.' + subPropName] = subPropValue;
+						}
+					}
+				}
+				// Delete sub-property of object as it's no longer needed
+				delete endValues[propName];
 			}
 		}
 	}
-	return obj;
+	return endValues;
 }
 
-// Convert a color value to RGB
-function _toRgb(color) {
+// Remove sub-property aliases from layer object
+function _removeSubPropAliases(layer) {
+	var propName;
+	for (propName in layer) {
+		if (layer.hasOwnProperty(propName)) {
+			if (propName.indexOf('.') !== -1) {
+				delete layer[propName];
+			}
+		}
+	}
+}
+
+// Convert a color value to an array of RGB values
+function _colorToRgbArray(color) {
 	var originalColor, elem,
 		rgb = [],
 		multiple = 1;
@@ -1666,7 +1754,7 @@ function _toRgb(color) {
 	}
 	// Parse RGB string
 	if (color.match(/^rgb/gi)) {
-		rgb = color.match(/\d+/gi);
+		rgb = color.match(/(\d+(\.\d+)?)/gi);
 		// Deal with RGB percentages
 		if (color.match(/%/gi)) {
 			multiple = 2.55;
@@ -1690,8 +1778,8 @@ function _animateColor(fx) {
 		i;
 	// Only parse start and end colors once
 	if (typeOf(fx.start) !== 'array') {
-		fx.start = _toRgb(fx.start);
-		fx.end = _toRgb(fx.end);
+		fx.start = _colorToRgbArray(fx.start);
+		fx.end = _colorToRgbArray(fx.end);
 	}
 	fx.now = [];
 	
@@ -1727,7 +1815,7 @@ function _animateColor(fx) {
 // Animate jCanvas layer
 $.fn.animateLayer = function animateLayer() {
 	var $canvases = this, $canvas, e, ctx,
-		args = Array.prototype.slice.call(arguments, 0),
+		args = arraySlice.call(arguments, 0),
 		data, layer, props;
 			
 	// Deal with all cases of argument placement
@@ -1774,16 +1862,17 @@ $.fn.animateLayer = function animateLayer() {
 	// Run callback function when animation completes
 	function complete($canvas, data, layer) {
 		
-		return function() {
+		return function () {
 			
 			_showProps(layer);
-					
+			_removeSubPropAliases(layer);
+			
 			// Prevent multiple redraw loops
 			if (!data.animating || data.animated === layer) {
 				// Redraw layers on last frame
 				$canvas.drawLayers();
 			}
-		
+			
 			// Signify the end of an animation loop
 			layer._animating = FALSE;
 			data.animating = FALSE;
@@ -1804,16 +1893,26 @@ $.fn.animateLayer = function animateLayer() {
 	// Redraw layers on every frame of the animation
 	function step($canvas, data, layer) {
 				
-		return function(now, fx) {
+		return function (now, fx) {
+			var parts, propName, subPropName,
+				hidden = false;
 			
 			// If animated property has been hidden
 			if (fx.prop[0] === '_') {
-				// Clone fx object
-				fx = extendObject({}, fx);
-				// Remove underscore from property name
+				hidden = true;
+				// Unhide property temporarily
 				fx.prop = fx.prop.replace('_', '');
-				// Show property
 				layer[fx.prop] = layer['_' + fx.prop];
+			}
+			
+			// If animating property of sub-object
+			if (fx.prop.indexOf('.') !== -1) {
+				parts = fx.prop.split('.');
+				propName = parts[0];
+				subPropName = parts[1];
+				if (layer[propName]) {
+					layer[propName][subPropName] = fx.now;
+				}
 			}
 			
 			// Throttle animation to improve efficiency
@@ -1844,6 +1943,12 @@ $.fn.animateLayer = function animateLayer() {
 			
 			_triggerLayerEvent($canvas, data, layer, 'animate', fx);
 			
+			// If property should be hidden during animation
+			if (hidden) {
+				// Hide property again
+				fx.prop = '_' + fx.prop;
+			}
+			
 		};
 		
 	}
@@ -1864,7 +1969,7 @@ $.fn.animateLayer = function animateLayer() {
 				// Do not modify original object
 				props = extendObject({}, args[1]);
 				
-				props = _evalFnValues($canvases[e], layer, props);
+				props = _parseEndValues($canvases[e], layer, props);
 											
 				// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 				_hideProps(props, TRUE);
@@ -1893,7 +1998,7 @@ $.fn.animateLayer = function animateLayer() {
 // Animate all layers in a layer group
 $.fn.animateLayerGroup = function animateLayerGroup(groupId) {
 	var $canvases = this, $canvas, e,
-		args = Array.prototype.slice.call(arguments, 0),
+		args = arraySlice.call(arguments, 0),
 		group, l;
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
@@ -2026,13 +2131,13 @@ _supportColorProps([
 /* Event API */
 
 // Map standard mouse events to touch events
-touchEventMap = {
+maps.touchEvents = {
 	'mousedown': 'touchstart',
 	'mouseup': 'touchend',
 	'mousemove': 'touchmove'
 };
 // Map standard touch events to mouse events
-mouseEventMap = {
+maps.mouseEvents = {
 	'touchstart': 'mousedown',
 	'touchend': 'mouseup',
 	'touchmove': 'mousemove'
@@ -2041,17 +2146,17 @@ mouseEventMap = {
 // Convert mouse event name to a corresponding touch event name (if possible)
 function _getTouchEventName(eventName) {
 	// Detect touch event support
-	if (window.ontouchstart !== undefined) {
-		if (touchEventMap[eventName]) {
-			eventName = touchEventMap[eventName];
+	if (window.ontouchstart !== UNDEFINED) {
+		if (maps.touchEvents[eventName]) {
+			eventName = maps.touchEvents[eventName];
 		}
 	}
 	return eventName;
 }
 // Convert touch event name to a corresponding mouse event name
 function _getMouseEventName(eventName) {
-	if (mouseEventMap[eventName]) {
-		eventName = mouseEventMap[eventName];
+	if (maps.mouseEvents[eventName]) {
+		eventName = maps.mouseEvents[eventName];
 	}
 	return eventName;
 }
@@ -2059,7 +2164,7 @@ function _getMouseEventName(eventName) {
 // Bind event to jCanvas layer using standard jQuery events
 function _createEvent(eventName) {
 	
-	jCanvas.events[eventName] = function($canvas, data) {
+	jCanvas.events[eventName] = function ($canvas, data) {
 		var helperEventName, eventCache;
 
 		// Retrieve canvas's event cache
@@ -2071,7 +2176,7 @@ function _createEvent(eventName) {
 		// Ensure the event is not bound more than once
 		if (!data.events[helperEventName]) {
 			// Bind one canvas event which handles all layer events of that type
-			$canvas.bind(helperEventName + '.jCanvas', function(event) {
+			$canvas.bind(helperEventName + '.jCanvas', function (event) {
 				// Cache current mouse position and redraw layers
 				eventCache.x = event.offsetX;
 				eventCache.y = event.offsetY;
@@ -2165,7 +2270,7 @@ function _detectEvents(canvas, ctx, params) {
 }
 
 // Normalize offsetX and offsetY for all browsers
-$.event.fix = function(event) {
+$.event.fix = function (event) {
 	var offset, originalEvent, touches;
 	
 	event = jQueryEventFix.call($.event, event);
@@ -2199,13 +2304,14 @@ $.event.fix = function(event) {
 /* Drawing API */
 
 // Map drawing names with their respective method names
-drawingMap = {
+maps.drawings = {
 	'arc': 'drawArc',
 	'bezier': 'drawBezier',
 	'ellipse': 'drawEllipse',
 	'function': 'draw',
 	'image': 'drawImage',
 	'line': 'drawLine',
+	'path': 'drawPath',
 	'polygon': 'drawPolygon',
 	'slice': 'drawSlice',
 	'quadratic': 'drawQuadratic',
@@ -2221,9 +2327,9 @@ $.fn.draw = function draw(args) {
 		layer;
 			
 	// Draw using any other method
-	if (drawingMap[params.type]) {
+	if (maps.drawings[params.type]) {
 		
-		$canvases[drawingMap[params.type]](args);
+		$canvases[maps.drawings[params.type]](args);
 		
 	} else {
 	
@@ -2494,22 +2600,83 @@ function _getCoterminal(angle) {
 }
 
 // Retrieves the x-coordinate for the given angle in a circle
-function _getX(params, angle) {
+function _getArcX(params, angle) {
 	return params.x + (params.radius * cos(angle));
 }
 // Retrieves the y-coordinate for the given angle in a circle
-function _getY(params, angle) {
+function _getArcY(params, angle) {
 	return params.y + (params.radius * sin(angle));
+}
+
+// Draw arc (internal)
+function _drawArc(canvas, ctx, params, path) {
+	var x1, y1, x2, y2,
+		x3, y3, x4, y4,
+		offsetX, offsetY,
+		diff;
+	
+	// Determine offset from dragging
+	if (params === path) {
+		offsetX = 0;
+		offsetY = 0;
+	} else {
+		offsetX = params.x;
+		offsetY = params.y;
+	}
+	
+	// Convert default end angle to radians
+	if (!path.inDegrees && path.end === 360) {
+		path.end = PI * 2;
+	}
+
+	// Convert angles to radians
+	path.start *= params._toRad;
+	path.end *= params._toRad;
+	// Consider 0deg due north of arc
+	path.start -= (PI / 2);
+	path.end -= (PI / 2);
+	
+	// Ensure arrows are pointed correctly for CCW arcs
+	diff = PI / 180 * 1;
+	if (path.ccw) {
+		diff *= -1;
+	}
+	
+	// Calculate coordinates for start arrow
+	x1 = _getArcX(path, path.start + diff);
+	y1 = _getArcY(path, path.start + diff);
+	x2 = _getArcX(path, path.start);
+	y2 = _getArcY(path, path.start);
+	
+	_addStartArrow(
+		canvas, ctx,
+		params, path,
+		x1, y1,
+		x2, y2
+	);
+	
+	// Draw arc
+	ctx.arc(path.x + offsetX, path.y + offsetY, path.radius, path.start, path.end, path.ccw);
+	
+	// Calculate coordinates for end arrow
+	x3 = _getArcX(path, path.end + diff);
+	y3 = _getArcY(path, path.end + diff);
+	x4 = _getArcX(path, path.end);
+	y4 = _getArcY(path, path.end);
+
+	_addEndArrow(
+		canvas, ctx,
+		params, path,
+		x4, y4,
+		x3, y3
+	);
 }
 
 // Draw arc or circle
 $.fn.drawArc = function drawArc(args) {
 	var $canvases = this, e, ctx,
-		params, layer,
-		x1, y1, x2, y2,
-		x3, y3, x4, y4,
-		diff;
-			
+		params, layer;
+	
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
@@ -2521,47 +2688,8 @@ $.fn.drawArc = function drawArc(args) {
 				_setGlobalProps($canvases[e], ctx, params);
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
 				
-				if (!params.inDegrees && params.end === 360) {
-					// Convert default end angle to radians if necessary	
-					params.end = PI * 2;
-				}
-				
-				// Convert angles to radians
-				params.start *= params._toRad;
-				params.end *= params._toRad;
-				// Consider 0deg due north of arc
-				params.start -= (PI / 2);
-				params.end -= (PI / 2);
-				
-				// Draw arc
 				ctx.beginPath();
-				ctx.arc(params.x, params.y, params.radius, params.start, params.end, params.ccw);
-				
-				diff = PI / 180 * 1;
-				// Ensure arrows are pointed correctly for CCW arcs
-				if (params.ccw) {
-					diff *= -1;
-				}
-				// Calculate coordinates for start arrow
-				x1 = _getX(params, params.start + diff);
-				y1 = _getY(params, params.start + diff);
-				x2 = _getX(params, params.start);
-				y2 = _getY(params, params.start);
-				// Calculate coordinates for end arrow
-				x3 = _getX(params, params.end + diff);
-				y3 = _getY(params, params.end + diff);
-				x4 = _getX(params, params.end);
-				y4 = _getY(params, params.end);
-				
-				// Optionally add arrows to path
-				_addArrows(
-					$canvases[e], ctx, params,
-					x1, y1,
-					x2, y2,
-					x4, y4,
-					x3, y3
-				);
-				
+				_drawArc($canvases[e], ctx, params, params);
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
@@ -2643,7 +2771,7 @@ $.fn.drawPolygon = function drawPolygon(args) {
 				// Distance from polygon's center to the middle of its side
 				apothem = params.radius * cos(hdtheta);
 				
-				// Calculate points and draw
+				// Calculate path and draw
 				ctx.beginPath();
 				for (i = 0; i < params.sides; i += 1) {
 					
@@ -2744,14 +2872,14 @@ $.fn.drawSlice = function drawSlice(args) {
 /* Path API */
 
 // Add arrow to path using the given properties
-function _addArrow(canvas, ctx, params, x1, y1, x2, y2) {
+function _addArrow(canvas, ctx, params, path, x1, y1, x2, y2) {
 	var leftX, leftY,
 		rightX, rightY,
 		offsetX, offsetY,
 		angle;
 	
 	// If arrow radius is given and path is not closed
-	if (params.arrowRadius && !params.closed) {
+	if (path.arrowRadius && !params.closed) {
 		
 		// Calculate angle
 		angle = atan2((y2 - y1), (x2 - x1));
@@ -2762,11 +2890,11 @@ function _addArrow(canvas, ctx, params, x1, y1, x2, y2) {
 		offsetY = (params.strokeWidth * sin(angle));
 		
 		// Calculate coordinates for left half of arrow
-		leftX = x2 + (params.arrowRadius * cos(angle + (params.arrowAngle / 2)));
-		leftY = y2 + (params.arrowRadius * sin(angle + (params.arrowAngle / 2)));
+		leftX = x2 + (path.arrowRadius * cos(angle + (path.arrowAngle / 2)));
+		leftY = y2 + (path.arrowRadius * sin(angle + (path.arrowAngle / 2)));
 		// Calculate coordinates for right half of arrow
-		rightX = x2 + (params.arrowRadius * cos(angle - (params.arrowAngle / 2)));
-		rightY = y2 + (params.arrowRadius * sin(angle - (params.arrowAngle / 2)));
+		rightX = x2 + (path.arrowRadius * cos(angle - (path.arrowAngle / 2)));
+		rightY = y2 + (path.arrowRadius * sin(angle - (path.arrowAngle / 2)));
 		
 		// Draw left half of arrow
 		ctx.moveTo(leftX - offsetX, leftY - offsetY);
@@ -2777,27 +2905,81 @@ function _addArrow(canvas, ctx, params, x1, y1, x2, y2) {
 		// Visually connect arrow to path
 		ctx.moveTo(x2 - offsetX, y2 - offsetY);
 		ctx.lineTo(x2 + offsetX, y2 + offsetY);
+		// Move back to end of path
+		ctx.moveTo(x2, y2);
 		
 	}
 }
 
-// Add start and/or end arrows to path
-function _addArrows(canvas, ctx, params, x1, y1, x2, y2, x3, y3, x4, y4) {
-	if (params.startArrow) {
-		// Optionally draw arrow at start point of path
-		_addArrow(canvas, ctx, params, x1, y1, x2, y2);
+// Optionally add arrow to start of path
+function _addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2) {
+	if (!path._arrowAngleConverted) {
+		path.arrowAngle *= params._toRad;
+		path._arrowAngleConverted = TRUE;
 	}
-	if (params.endArrow) {
-		// Optionally draw arrow at end point of path
-		_addArrow(canvas, ctx, params, x3, y3, x4, y4);
+	if (path.startArrow) {
+		_addArrow(canvas, ctx, params, path, x1, y1, x2, y2);
 	}
+}
+
+// Optionally add arrow to end of path
+function _addEndArrow(canvas, ctx, params, path, x1, y1, x2, y2) {
+	if (!path._arrowAngleConverted) {
+		path.arrowAngle *= params._toRad;
+		path._arrowAngleConverted = TRUE;
+	}
+	if (path.endArrow) {
+		_addArrow(canvas, ctx, params, path, x1, y1, x2, y2);
+	}
+}
+
+// Draw line (internal)
+function _drawLine(canvas, ctx, params, path) {
+	var l,
+		lx, ly;
+	l = 2;
+	_addStartArrow(
+		canvas, ctx,
+		params, path,
+		path.x2 + params.x,
+		path.y2 + params.y,
+		path.x1 + params.x,
+		path.y1 + params.y
+	);
+	if (path.x1 !== UNDEFINED && path.y1 !== UNDEFINED) {
+		ctx.moveTo(path.x1 + params.x, path.y1 + params.y);
+	}
+	while (TRUE) {
+		// Calculate next coordinates
+		lx = path['x' + l];
+		ly = path['y' + l];
+		// If coordinates are given
+		if (lx !== UNDEFINED && ly !== UNDEFINED) {
+			// Draw next line
+			ctx.lineTo(lx + params.x, ly + params.y);
+			l += 1;
+		} else {
+			// Otherwise, stop drawing
+			break;
+		}
+	}
+	l -= 1;
+	// Optionally add arrows to path
+	_addEndArrow(
+		canvas, ctx,
+		params,
+		path,
+		path['x' + (l - 1)] + params.x,
+		path['y' + (l - 1)] + params.y,
+		path['x' + l] + params.x,
+		path['y' + l] + params.y
+	);
 }
 
 // Draw line
 $.fn.drawLine = function drawLine(args) {
 	var $canvases = this, e, ctx,
-		params, layer,
-		l, lx, ly;
+		params, layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2811,37 +2993,8 @@ $.fn.drawLine = function drawLine(args) {
 				_transformShape($canvases[e], ctx, params);
 				
 				// Draw each point
-				l = 1;
 				ctx.beginPath();
-				while (TRUE) {
-					// Calculate next coordinates
-					lx = params['x' + l];
-					ly = params['y' + l];
-					// If coordinates are given
-					if (lx !== UNDEFINED && ly !== UNDEFINED) {
-						// Draw next line
-						ctx.lineTo(lx + params.x, ly + params.y);
-						l += 1;
-					} else {
-						// Otherwise, stop drawing
-						break;
-					}
-				}
-				l -= 1;
-				// Optionally add arrows to path
-				_addArrows(
-					$canvases[e],
-					ctx,
-					params,
-					params.x2 + params.x,
-					params.y2 + params.y,
-					params.x1 + params.x,
-					params.y1 + params.y,
-					params['x' + (l - 1)] + params.x,
-					params['y' + (l - 1)] + params.y,
-					params['x' + l] + params.x,
-					params['y' + l] + params.y
-				);
+				_drawLine($canvases[e], ctx, params, params);
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
@@ -2854,11 +3007,61 @@ $.fn.drawLine = function drawLine(args) {
 	return $canvases;
 };
 
+// Draw quadratic curve (internal)
+function _drawQuadratic(canvas, ctx, params, path) {
+	var l,
+		lx, ly,
+		lcx, lcy;
+	
+	l = 2;
+	
+	_addStartArrow(
+		canvas,
+		ctx,
+		params,
+		path,
+		path.cx1 + params.x,
+		path.cy1 + params.y,
+		path.x1 + params.x,
+		path.y1 + params.y
+	);
+	
+	if (path.x1 !== UNDEFINED && path.y1 !== UNDEFINED) {
+		ctx.moveTo(path.x1 + params.x, path.y1 + params.y);
+	}
+	while (TRUE) {
+		// Calculate next coordinates
+		lx = path['x' + l];
+		ly = path['y' + l];
+		lcx = path['cx' + (l - 1)];
+		lcy = path['cy' + (l - 1)];
+		// If coordinates are given
+		if (lx !== UNDEFINED && ly !== UNDEFINED && lcx !== UNDEFINED && lcy !== UNDEFINED) {
+			// Draw next curve
+			ctx.quadraticCurveTo(lcx + params.x, lcy + params.y, lx + params.x, ly + params.y);
+			l += 1;
+		} else {
+			// Otherwise, stop drawing
+			break;
+		}
+	}
+	l -= 1;
+	_addEndArrow(
+		canvas,
+		ctx,
+		params,
+		path,
+		path['cx' + (l - 1)] + params.x,
+		path['cy' + (l - 1)] + params.y,
+		path['x' + l] + params.x,
+		path['y' + l] + params.y
+	);
+}
+
 // Draw quadratic curve
 $.fn.drawQuadratic = function drawQuadratic(args) {
 	var $canvases = this, e, ctx,
-		params, layer,
-		l, lx, ly, lcx, lcy;
+		params, layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2872,41 +3075,8 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 				_transformShape($canvases[e], ctx, params);
 				
 				// Draw each point
-				l = 2;
 				ctx.beginPath();
-				ctx.moveTo(params.x1 + params.x, params.y1 + params.y);
-				while (TRUE) {
-					// Calculate next coordinates
-					lx = params['x' + l];
-					ly = params['y' + l];
-					lcx = params['cx' + (l - 1)];
-					lcy = params['cy' + (l - 1)];
-					// If coordinates are given
-					if (lx !== UNDEFINED && ly !== UNDEFINED && lcx !== UNDEFINED && lcy !== UNDEFINED) {
-						// Draw next curve
-						ctx.quadraticCurveTo(lcx + params.x, lcy + params.y, lx + params.x, ly + params.y);
-						l += 1;
-					} else {
-						// Otherwise, stop drawing
-						break;
-					}
-					
-				}
-				l -= 1;
-				// Optionally add arrows to path
-				_addArrows(
-					$canvases[e],
-					ctx,
-					params,
-					params.cx1 + params.x,
-					params.cy1 + params.y,
-					params.x1 + params.x,
-					params.y1 + params.y,
-					params['cx' + (l - 1)] + params.x,
-					params['cy' + (l - 1)] + params.y,
-					params['x' + l] + params.x,
-					params['y' + l] + params.y
-				);
+				_drawQuadratic($canvases[e], ctx, params, params);
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
@@ -2918,14 +3088,66 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 	return $canvases;
 };
 
-// Draw Bezier curve
-$.fn.drawBezier = function drawBezier(args) {
-	var $canvases = this, e, ctx,
-		params, layer,
-		l , lc,
+function _drawBezier(canvas, ctx, params, path) {
+	var l, lc,
 		lx, ly,
 		lcx1, lcy1,
 		lcx2, lcy2;
+	
+	l = 2;
+	lc = 1;
+	
+	_addStartArrow(
+		canvas,
+		ctx,
+		params,
+		path,
+		path.cx1 + params.x,
+		path.cy1 + params.y,
+		params.x1 + params.x,
+		params.y1 + params.y
+	);
+	
+	if (params.x1 !== UNDEFINED && params.y1 !== UNDEFINED) {
+		ctx.moveTo(params.x1 + params.x, params.y1 + params.y);
+	}
+	while (TRUE) {
+		// Calculate next coordinates
+		lx = path['x' + l];
+		ly = path['y' + l];
+		lcx1 = path['cx' + lc];
+		lcy1 = path['cy' + lc];
+		lcx2 = path['cx' + (lc + 1)];
+		lcy2 = path['cy' + (lc + 1)];
+		// If next coordinates are given
+		if (lx !== UNDEFINED && ly !== UNDEFINED && lcx1 !== UNDEFINED && lcy1 !== UNDEFINED && lcx2 !== UNDEFINED && lcy2 !== UNDEFINED) {
+			// Draw next curve
+			ctx.bezierCurveTo(lcx1 + params.x, lcy1 + params.y, lcx2 + params.x, lcy2 + params.y, lx + params.x, ly + params.y);
+			l += 1;
+			lc += 2;
+		} else {
+			// Otherwise, stop drawing
+			break;
+		}
+	}
+	l -= 1;
+	lc -= 2;
+	_addEndArrow(
+		canvas,
+		ctx,
+		params,
+		path,
+		path['cx' + (lc + 1)] + params.x,
+		path['cy' + (lc + 1)] + params.y,
+		path['x' + l] + params.x,
+		path['y' + l] + params.y
+	);
+}
+
+// Draw Bezier curve
+$.fn.drawBezier = function drawBezier(args) {
+	var $canvases = this, e, ctx,
+		params, layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2939,45 +3161,8 @@ $.fn.drawBezier = function drawBezier(args) {
 				_transformShape($canvases[e], ctx, params);
 				
 				// Draw each point
-				l = 2;
-				lc = 1;
 				ctx.beginPath();
-				ctx.moveTo(params.x1 + params.x, params.y1 + params.y);
-				while (TRUE) {
-					// Calculate next coordinates
-					lx = params['x' + l];
-					ly = params['y' + l];
-					lcx1 = params['cx' + lc];
-					lcy1 = params['cy' + lc];
-					lcx2 = params['cx' + (lc + 1)];
-					lcy2 = params['cy' + (lc + 1)];
-					// If next coordinates are given
-					if (lx !== UNDEFINED && ly !== UNDEFINED && lcx1 !== UNDEFINED && lcy1 !== UNDEFINED && lcx2 !== UNDEFINED && lcy2 !== UNDEFINED) {
-						// Draw next curve
-						ctx.bezierCurveTo(lcx1 + params.x, lcy1 + params.y, lcx2 + params.x, lcy2 + params.y, lx + params.x, ly + params.y);
-						l += 1;
-						lc += 2;
-					} else {
-						// Otherwise, stop drawing
-						break;
-					}
-				}
-				l -= 1;
-				lc -= 2;
-				// Optionally add arrows to path
-				_addArrows(
-					$canvases[e],
-					ctx,
-					params,
-					params.cx1 + params.x,
-					params.cy1 + params.y,
-					params.x1 + params.x,
-					params.y1 + params.y,
-					params['cx' + (lc + 1)] + params.x,
-					params['cy' + (lc + 1)] + params.y,
-					params['x' + l] + params.x,
-					params['y' + l] + params.y
-				);
+				_drawBezier($canvases[e], ctx, params, params);
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
@@ -2989,13 +3174,93 @@ $.fn.drawBezier = function drawBezier(args) {
 	return $canvases;
 };
 
+// Retrieves the x-coordinate for the given vector angle and length
+function _getVectorX(params, angle, length) {
+	angle *= params._toRad;
+	angle -= (PI / 2);
+	return (length * cos(angle));
+}
+// Retrieves the y-coordinate for the given vector angle and length
+function _getVectorY(params, angle, length) {
+	angle *= params._toRad;
+	angle -= (PI / 2);
+	return (length * sin(angle));
+}
+
+// Draw vector (internal) #2
+function _drawVector(canvas, ctx, params, path) {
+	var l, angle, length,
+		offsetX, offsetY,
+		x, y,
+		x2, y2,
+		x3, y3,
+		x4, y4;
+	
+	// Determine offset from dragging
+	if (params === path) {
+		offsetX = 0;
+		offsetY = 0;
+	} else {
+		offsetX = params.x;
+		offsetY = params.y;
+	}
+	
+	l = 1;
+	x = x2 = x3 = x4 = path.x + offsetX;
+	y = y2 = y3 = y4 = path.y + offsetY;
+	
+	_addStartArrow(
+		canvas, ctx,
+		params, path,
+		x + _getVectorX(params, path.a1, path.l1),
+		y + _getVectorY(params, path.a1, path.l1),
+		x,
+		y
+	);
+	
+	// The vector starts at the given (x, y) coordinates
+	if (path.x !== UNDEFINED && path.y !== UNDEFINED) {
+		ctx.moveTo(x, y);
+	}
+	while (TRUE) {
+		
+		angle = path['a' + l];
+		length = path['l' + l];
+		
+		if (angle !== UNDEFINED && length !== UNDEFINED) {
+			// Convert the angle to radians with 0 degrees starting at north
+			// Keep track of last two coordinates
+			x3 = x4;
+			y3 = y4;
+			// Compute (x, y) coordinates from angle and length
+			x4 += _getVectorX(params, angle, length);
+			y4 += _getVectorY(params, angle, length);
+			// Store the second point
+			if (l === 1) {
+				x2 = x4;
+				y2 = y4;
+			}
+			ctx.lineTo(x4, y4);
+			l += 1;
+		} else {
+			// Otherwise, stop drawing
+			break;
+		}
+		
+	}
+	_addEndArrow(
+		canvas, ctx,
+		params, path,
+		x3, y3,
+		x4, y4
+	);
+}
+
 // Draw vector
 $.fn.drawVector = function drawVector(args) {
 	var $canvases = this, e, ctx,
-		params, layer,
-		l, angle, length,
-		x, y, x2, y2, x3, y3, x4, y4;
-
+		params, layer;
+	
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
@@ -3008,55 +3273,66 @@ $.fn.drawVector = function drawVector(args) {
 				_transformShape($canvases[e], ctx, params);
 				
 				// Draw each point
-				l = 1;
 				ctx.beginPath();
-				x = x3 = x4 = x2 = params.x;
-				y = y3 = y4 = y2 = params.y;
-				// The vector starts at the given (x, y) coordinates
-				ctx.moveTo(params.x, params.y);
-				while (TRUE) {
-					
-					angle = params['a' + l];
-					length = params['l' + l];
-					
-					if (angle !== UNDEFINED && length !== UNDEFINED) {
-						// Convert the angle to radians with 0 degrees starting at north
-						angle *= params._toRad;
-						angle -= (PI / 2);
-						// Keep track of last two coordinates
-						x3 = x4;
-						y3 = y4;
-						// Compute (x, y) coordinates from angle and length
-						x4 += (length * cos(angle));
-						y4 += (length * sin(angle));
-						// Store the second point
-						if (l === 1) {
-							x2 = x4;
-							y2 = y4;
-						}
-						ctx.lineTo(x4, y4);
-						l += 1;
-					} else {
-						// Otherwise, stop drawing
-						break;
-					}
-					
-				}
-				// Optionally add arrows to path
-				_addArrows(
-					$canvases[e],
-					ctx, params,
-					x2, y2,
-					params.x, params.y,
-					x3, y3,
-					x4, y4
-				);
+				_drawVector($canvases[e], ctx, params, params);
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
 				_closePath($canvases[e], ctx, params);
 		
 			}
+		}
+	}
+	return $canvases;
+};
+
+// Draw a path consisting of one or more subpaths
+$.fn.drawPath = function drawPath(args) {
+	var $canvases = this, e, ctx,
+		params, layer,
+		l, lp;
+	
+	for (e = 0; e < $canvases.length; e += 1) {
+		ctx = _getContext($canvases[e]);
+		if (ctx) {
+			
+			params = new jCanvasObject(args);
+			layer = _addLayer($canvases[e], params, args, drawPath);
+			if (params.visible) {
+			
+				_setGlobalProps($canvases[e], ctx, params);
+				_transformShape($canvases[e], ctx, params);
+			
+				ctx.beginPath();
+				l = 1;
+				while (TRUE) {
+					lp = params['p' + l];
+					if (lp !== UNDEFINED) {
+						lp = new jCanvasObject(lp);
+						if (lp.type === 'line') {
+							_drawLine($canvases[e], ctx, params, lp);
+						} else if (lp.type === 'quadratic') {
+							_drawQuadratic($canvases[e], ctx, params, lp);
+						} else if (lp.type === 'bezier') {
+							_drawBezier($canvases[e], ctx, params, lp);
+						} else if (lp.type === 'vector') {
+							_drawVector($canvases[e], ctx, params, lp);
+						} else if (lp.type === 'arc') {
+							_drawArc($canvases[e], ctx, params, lp);
+						}
+						l += 1;
+					} else {
+						break;
+					}
+				}
+			
+				// Check for jCanvas events
+				_detectEvents($canvases[e], ctx, params);
+				// Optionally close path
+				_closePath($canvases[e], ctx, params);
+			
+			}
+			
 		}
 	}
 	return $canvases;
@@ -3081,7 +3357,7 @@ function _measureText(canvas, ctx, params, lines) {
 		propCache = caches.propCache;
 	
 	// Used cached width/height if possible
-	if (propCache.text === params.text && propCache.fontStyle === params.fontStyle && propCache.fontSize === params.fontSize && propCache.fontFamily === params.fontFamily && propCache.maxWidth === params.maxWidth && propCache.lineHeight === params.lineHeight) {
+	if (propCache.text === params.text && propCache.fontStyle === params.fontStyle && propCache.fontSize === params. fontSize && propCache.fontFamily === params.fontFamily && propCache.maxWidth === params.maxWidth && propCache.lineHeight === params.lineHeight) {
 				
 		params.width = propCache.width;
 		params.height = propCache.height;
@@ -3431,11 +3707,16 @@ $.fn.drawImage = function drawImage(args) {
 	}
 	// On load function
 	function onload(canvas, ctx, data, params, layer) {
-		return function() {
+		return function () {
 			var $canvas = $(canvas);
 			draw(canvas, ctx, data, params, layer);
-			// Run callback function if defined
-			_triggerLayerEvent($canvas, data, layer, 'load');
+			if (params.layer) {
+				// Trigger 'load' event for layers
+				_triggerLayerEvent($canvas, data, layer, 'load');
+			} else if (params.load) {
+				// Run 'load' callback for non-layers
+				params.load.call($canvas[0], layer);
+			}
 			// Continue drawing successive layers after this image layer has loaded
 			if (params.layer) {
 				// Store list of previous masks for each layer
@@ -3580,7 +3861,7 @@ $.fn.createGradient = function createGradient(args) {
 	ctx = _getContext($canvases[0]);
 	if (ctx) {
 		
-		// Gradient coordinates must be numbers
+		// Gradient coordinates must be defined
 		params.x1 = params.x1 || 0;
 		params.y1 = params.y1 || 0;
 		params.x2 = params.x2 || 0;
@@ -3815,6 +4096,7 @@ $.support.canvas = ($('<canvas />')[0].getContext !== UNDEFINED);
 
 // Export jCanvas functions
 jCanvas.defaults = defaults;
+jCanvas.prefs = prefs;
 jCanvas.setGlobalProps = _setGlobalProps;
 jCanvas.transformShape = _transformShape;
 jCanvas.detectEvents = _detectEvents;

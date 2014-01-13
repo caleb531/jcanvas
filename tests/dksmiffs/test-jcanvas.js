@@ -24,6 +24,8 @@ test("drawArc, simplest possible", function(assert) {
 	assert.pixelEqual(ac.canvas, 50, 50, 0, 255, 0, 255)
 })
 
+/*
+
 // -----
 module("jCanvas Images")
 
@@ -65,6 +67,8 @@ asyncTest("drawImage cropped", 1, function(assert) {
 			QUnit.start();
 		})
 })
+
+*/
 
 // -----
 module("jCanvas Layers")

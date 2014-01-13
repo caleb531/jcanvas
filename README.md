@@ -10,7 +10,7 @@ jCanvas requires jQuery 1.4 or newer, and supports both desktop and mobile brows
 
 ## [Documentation](http://calebevans.me/projects/jcanvas/docs/)
 
-Please read the documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:calebevans.me@gmail.com) for clarification.
+Please search the online documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:calebevans.me@gmail.com) for clarification.
 
 ## [Support](http://calebevans.me/projects/jcanvas/support/)
 

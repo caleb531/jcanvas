@@ -21,6 +21,7 @@ then
 	SOURCE=jcanvas.js
 	MINIFIED=jcanvas.min.js
 	MANIFEST=jcanvas.jquery.json
+	BOWER=bower.json
 	README=README.md
 	LICENSE=LICENSE.txt
 	COMPILER=build/compiler.jar
@@ -48,6 +49,7 @@ then
 		VERSION_PATT="([0-9]{2})\.([0-9]{2})\.([0-9]{2})"
 		replace $VERSION_PATT $VERSION $SOURCE
 		replace $VERSION_PATT $VERSION $MANIFEST
+		replace $VERSION_PATT $VERSION $BOWER
 		
 		# Update copyright year in all files
 		YEAR_PATT="([0-9]{4})"
@@ -91,7 +93,6 @@ then
 			# Tag commit with the version
 			git tag $VERSION
 		fi
-		echo "Changes successfully committed."
 		# Ask before pushing to GitHub
 		echo -n "Push changes to GitHub? ";
 		read PUSH_CONFIRM
@@ -102,7 +103,6 @@ then
 			# Push all tags to GitHub
 			git push --tags origin
 			echo
-			echo "Commit successfully pushed to GitHub."
 		else
 			echo "Commit not pushed to GitHub."
 		fi

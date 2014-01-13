@@ -43,6 +43,7 @@ function addPathHandle($canvas, parent, xProp, yProp) {
 	}, parent.handle, {
 		// Define constant properties for handle
 		layer: true,
+		type: 'arc',
 		draggable: true,
 		x: parent[xProp],
 		y: parent[yProp],
@@ -85,6 +86,7 @@ function addRectHandle($canvas, parent, px, py) {
 		}
 	}, parent.handle, {
 		// Define constant properties for handle
+		type: 'arc',
 		layer: true,
 		draggable: true,
 		x: parent.x + (px * parent.width / 2),

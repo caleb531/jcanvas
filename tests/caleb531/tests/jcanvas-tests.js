@@ -1,36 +1,36 @@
 (function($) {
+/* global module, test, asyncTest, expect, start, ok, strictEqual, notStrictEqual, deepEqual, notDeepEqual */
 
 var $fixture = $('#qunit-fixture');
 var $canvas;
-var firedEvents = {};
+var firedEvents;
 
 // Event callbacks
 
-function layerEventCallback(layer) {
-	firedEvents.layer = true;
+function layerEventCallback() {
+	firedEvents.layer += 1;
 }
-function canvasEventHook(layer) {
-	firedEvents.canvas = true;
+function canvasEventHook() {
+	firedEvents.canvas += 1;
 }
-function globalEventHook(layer) {
-	firedEvents.global = true;
+function globalEventHook() {
+	firedEvents.global += 1;
 }
 
 // Bind event callbacks for the given event type
 function bindEventCallbacks(eventType) {
 	var eventHooks = {};
 	eventHooks[eventType] = layerEventCallback;
-	$.jCanvas(eventHooks);
 	eventHooks[eventType] = canvasEventHook;
 	$canvas.setEventHooks(eventHooks);
 	$.jCanvas.eventHooks[eventType] = globalEventHook;
 }
 
 // Test if the bound event callbacks triggered
-function testEventCallbacks() {
-	ok(firedEvents.layer, 'Triggers layer event callbacks');
-	ok(firedEvents.canvas, 'Triggers canvas event hooks');
-	ok(firedEvents.global, 'Triggers global event hooks');
+function testEventCallbacks(n) {
+	strictEqual(firedEvents.layer, n, 'Triggers layer event callbacks');
+	strictEqual(firedEvents.canvas, n, 'Triggers canvas event hooks');
+	strictEqual(firedEvents.global, n, 'Triggers global event hooks');
 }
 
 // Setup test
@@ -41,7 +41,11 @@ function setup() {
 // Teardown test
 function teardown() {
 	// Reset map of event callbacks that fired
-	firedEvents = {};
+	firedEvents = {
+		layer: 0,
+		canvas: 0,
+		global: 0
+	};
 	// Clear jCanvas cache
 	$.jCanvas.clearCache();
 	// Remove all global event hooks
@@ -50,19 +54,15 @@ function teardown() {
 	$.jCanvas();
 }
 
+teardown();
+
 module('Core API', {
 	setup: setup,
 	teardown: teardown
 });
 
-test('jCanvas()', function(assert) {
-	$canvas.jCanvas({
-		fillStyle: 'green',
-		strokeStyle: 'red'
-	});
-	notDeepEqual($.jCanvas.defaults, $.jCanvas.prefs, 'Modifies preferences');
-	$canvas.jCanvas();
-	deepEqual($.jCanvas.defaults, $.jCanvas.prefs, 'Restores preferences to defaults');
+test('$.support.canvas', function() {
+	strictEqual($.support.canvas, true, 'Detects canvas support');
 });
 
 test('saveCanvas()', function() {
@@ -119,24 +119,16 @@ module('Layer API', {
 
 test('getLayers()', function() {
 	var layers;
-	deepEqual($().getLayers(), [], 'Returns array for empty collection');	
+	deepEqual($().getLayers(), [], 'Returns array for empty collection');
 	deepEqual($fixture.getLayers(), [], 'Returns array for non-canvas');
 	layers = $canvas.getLayers();
 	deepEqual(layers, [], 'Returns empty array for initial canvas');
 	strictEqual($canvas.getLayers(), layers, 'Returns a reference to the layers array');
 });
 
-test('addLayer()', function() {
-	$canvas.addLayer({
-		type: 'rectangle'
-	});
-	var layers = $canvas.getLayers();
-	strictEqual(layers.length, 1, 'Layers was added');
-	strictEqual($.type(layers[0]), 'object', 'Layers is object');
-});
-
 test('getLayer()', function() {
-	var square, circle;
+	var square;
+	// Test values returned for non-existant layers
 	strictEqual($().getLayer('square'), undefined, 'Returns undefined for empty collection');
 	strictEqual($fixture.getLayer('square'), undefined, 'Returns undefined for non-canvas');
 	strictEqual($canvas.getLayer('square'), undefined, 'Returns undefined for non-existent layer');
@@ -148,8 +140,9 @@ test('getLayer()', function() {
 		type: 'arc',
 		name: 'circle'
 	});
+	// Test values returned for existing layes
 	square = $canvas.getLayer(0);
-	strictEqual($.type(square), 'object', 'Layer can be retrieved by positive index')
+	strictEqual($.type(square), 'object', 'Layer can be retrieved by positive index');
 	strictEqual($canvas.getLayer(-2), square, 'Layer can be retrieved by negative index');
 	strictEqual($canvas.getLayer('square'), square, 'Layer can be retrieved by name');
 	strictEqual($canvas.getLayer(/^square$/gi), square, 'Layer can be retrieved by regex');
@@ -158,9 +151,10 @@ test('getLayer()', function() {
 
 test('getLayerGroup()', function() {
 	var squares;
+	// Test values returned for non-existant layer groups
 	strictEqual($().getLayerGroup('squares'), undefined, 'Returns undefined for empty collection');
 	strictEqual($fixture.getLayerGroup('squares'), undefined, 'Returns undefined for non-canvas');
-	strictEqual($canvas.getLayerGroup('squares'), undefined, 'Returns undefined for non-existent group');	
+	strictEqual($canvas.getLayerGroup('squares'), undefined, 'Returns undefined for non-existent group');
 	$canvas.addLayer({
 		type: 'rectangle',
 		name: 'square',
@@ -171,6 +165,7 @@ test('getLayerGroup()', function() {
 		name: 'circle',
 		groups: ['ovals']
 	});
+	// Test values returned for existing layer groups
 	squares = $canvas.getLayerGroup('squares');
 	strictEqual($.type(squares), 'array', 'Group can be retrieved by index');
 	strictEqual($canvas.getLayerGroup(/^squares$/gi), squares, 'Group can be retrieved by regex');
@@ -180,6 +175,7 @@ test('getLayerGroup()', function() {
 });
 
 test('getLayerIndex()', function() {
+	// Test values returned for non-existant layers
 	strictEqual($().getLayerIndex('foo'), -1, 'Returns -1 for empty collection');
 	strictEqual($fixture.getLayerIndex('foo'), -1, 'Returns -1 for non-canvases');
 	strictEqual($canvas.getLayerIndex('foo'), -1, 'Returns -1 for non-existent layer');
@@ -191,40 +187,65 @@ test('getLayerIndex()', function() {
 		type: 'arc',
 		name: 'circle'
 	});
+	// Test values returned for existing layers
 	strictEqual($canvas.getLayerIndex('square'), 0, 'Returns index of first layer');
 	strictEqual($canvas.getLayerIndex('circle'), 1, 'Returns index of second layer');
 });
 
 test('setLayer()', function() {
-	var square;
+	var square, groups, data;
 	bindEventCallbacks('change');
 	$canvas.addLayer({
 		type: 'rectangle',
 		name: 'square',
-		fillStyle: 'black'
+		fillStyle: 'black',
+		width: 100, height: 100,
+		change: layerEventCallback
 	});
+	$canvas.addLayer({
+		type: 'arc',
+		name: 'circle',
+		change: layerEventCallback
+	});
+	// Test how properties of a layer are set
 	square = $canvas.getLayer('square');
+	groups = ['boxes'];
+	data = {};
 	$canvas.setLayer(square, {
 		fillStyle: 'green',
-		name: 'box'
+		opacity: 0.5,
+		name: 'box',
+		groups: groups,
+		data: data,
+		width: '+=10',
+		height: '-=10'
 	});
 	strictEqual(square.fillStyle, 'green', 'Sets fillStyle of layer');
+	strictEqual(square.opacity, 0.5, 'Sets opacity of layer');
 	strictEqual($canvas.getLayer('box'), square, 'Sets name of layer');
-	testEventCallbacks();
+	notStrictEqual(square.groups, groups, 'Clones arrays in property map');
+	notStrictEqual(square.data, data, 'Clones objects in property map');
+	strictEqual(square.width, 110, 'Increments width by 10');
+	strictEqual(square.height, 90, 'Decrements width by 10');
+	testEventCallbacks(1);
 });
 
 test('setLayers()', function() {
 	var square, circle;
+	bindEventCallbacks('change');
 	$canvas.addLayer({
 		type: 'rectangle',
 		name: 'square',
-		fillStyle: 'black'
+		fillStyle: 'black',
+		change: layerEventCallback
 	});
 	$canvas.addLayer({
-		type: 'rectangle',
+		type: 'arc',
 		name: 'circle',
-		fillStyle: 'red'
+		fillStyle: 'red',
+		change: layerEventCallback
 	});
+	// Test how properties of all layers are set
 	square = $canvas.getLayer('square');
 	circle = $canvas.getLayer('circle');
 	$canvas.setLayers({
@@ -232,40 +253,48 @@ test('setLayers()', function() {
 	});
 	strictEqual(square.fillStyle, 'green', 'Sets fillStyle of first layer');
 	strictEqual(circle.fillStyle, 'green', 'Sets fillStyle of second layer');
+	testEventCallbacks(2);
 });
 
 test('setLayerGroup()', function() {
-	var square, circle, oval, ovals;
+	var square, circle, oval;
+	bindEventCallbacks('change');
 	$canvas.addLayer({
 		type: 'rectangle',
-		name: 'square'
+		name: 'square',
+		change: layerEventCallback
 	});
 	$canvas.addLayer({
 		type: 'arc',
 		name: 'circle',
-		groups: ['ovals']
+		groups: ['ovals'],
+		change: layerEventCallback
 	});
 	$canvas.addLayer({
 		type: 'ellipse',
 		name: 'oval',
-		groups: ['ovals']
+		groups: ['ovals'],
+		change: layerEventCallback
 	});
+	// Test how the properties of the layers in a group are set
 	square = $canvas.getLayer('square');
 	circle = $canvas.getLayer('circle');
 	oval = $canvas.getLayer('oval');
 	$canvas.setLayerGroup('ovals', {
 		fillStyle: 'green'
 	});
-	strictEqual(circle.fillStyle, 'green', 'Sets properties of first layer in group')
+	strictEqual(circle.fillStyle, 'green', 'Sets properties of first layer in group');
 	strictEqual(oval.fillStyle, 'green', 'Sets properties of second layer in group');
 	notStrictEqual(square.fillStyle, 'green', 'Does not set properties of layer outside of group');
+	testEventCallbacks(2);
 });
 
 test('moveLayer()', function() {
 	bindEventCallbacks('move');
 	$canvas.addLayer({
 		type: 'rectangle',
-		name: 'square'
+		name: 'square',
+		move: layerEventCallback
 	});
 	$canvas.addLayer({
 		type: 'arc',
@@ -276,44 +305,50 @@ test('moveLayer()', function() {
 		name: 'oval'
 	});
 	$canvas.jCanvas();
+	// Test how layers are moved
 	$canvas.moveLayer('square', 1);
 	strictEqual($canvas.getLayerIndex('square'), 1, 'Layer can be moved to positive index');
 	$canvas.moveLayer('square', -1);
 	strictEqual($canvas.getLayerIndex('square'), 1, 'Layer can be moved to negative index');
-	testEventCallbacks();
+	testEventCallbacks(2);
 });
 
 test('removeLayer()', function() {
 	bindEventCallbacks('remove');
 	$canvas.addLayer({
 		type: 'rectangle',
-		name: 'square'
+		name: 'square',
+		remove: layerEventCallback
 	});
 	$canvas.addLayer({
 		type: 'arc',
 		name: 'circle'
 	});
+	// Test how layers are removed
 	$canvas.removeLayer('square');
 	strictEqual($canvas.getLayers().length, 1, undefined, 'Removes layer from layers array');
 	strictEqual($canvas.getLayer('square'), undefined, 'Layer is no longer retrievable');
-	testEventCallbacks();
+	testEventCallbacks(1);
 });
 
 test('removeLayers()', function() {
 	bindEventCallbacks('remove');
 	$canvas.addLayer({
 		type: 'rectangle',
-		name: 'square'
+		name: 'square',
+		remove: layerEventCallback
 	});
 	$canvas.addLayer({
 		type: 'arc',
-		name: 'circle'
+		name: 'circle',
+		remove: layerEventCallback
 	});
+	// Test how all layers are removed
 	$canvas.removeLayers();
 	strictEqual($canvas.getLayers().length, 0, 'Removes all layers from layers array');
 	strictEqual($canvas.getLayer('square'), undefined, 'First layer is no longer retrievable');
 	strictEqual($canvas.getLayer('circle'), undefined, 'Second layer is no longer retrievable');
-	testEventCallbacks();
+	testEventCallbacks(2);
 });
 
 test('removeLayerGroup()', function() {
@@ -325,21 +360,24 @@ test('removeLayerGroup()', function() {
 	$canvas.addLayer({
 		type: 'arc',
 		name: 'circle',
-		groups: ['ovals']
+		groups: ['ovals'],
+		remove: layerEventCallback
 	});
 	$canvas.addLayer({
 		type: 'ellipse',
 		name: 'oval',
-		groups: ['ovals']
+		groups: ['ovals'],
+		remove: layerEventCallback
 	});
+	// Test how layer groups are removed
 	$canvas.removeLayerGroup('ovals');
 	strictEqual($canvas.getLayers().length, 1, 'Removes layer group from layers array');
 	strictEqual($canvas.getLayerGroup('ovals'), undefined, 'Layer group is no longer retrievable');
-	testEventCallbacks();
+	testEventCallbacks(2);
 });
 
 test('addLayerToGroup()', function() {
-	var squares, ovals;
+	var groups, squares, ovals;
 	$canvas.addLayer({
 		type: 'rectangle',
 		name: 'square',
@@ -354,6 +392,7 @@ test('addLayerToGroup()', function() {
 		name: 'oval',
 		groups: []
 	});
+	// Test how layers are added to groups
 	$canvas.addLayerToGroup('square', 'squares');
 	$canvas.addLayerToGroup('circle', 'ovals');
 	$canvas.addLayerToGroup('oval', 'ovals');
@@ -361,6 +400,20 @@ test('addLayerToGroup()', function() {
 	ovals = $canvas.getLayerGroup('ovals');
 	strictEqual(squares.length, 1, 'Adds layer to group if layer is associated with at least one group');
 	strictEqual(ovals.length, 2, 'Adds layer to group if layer is not associated with any groups');
+	$canvas.removeLayers();
+	groups = ['ovals'];
+	$canvas.addLayer({
+		type: 'arc',
+		name: 'circle',
+		groups: groups
+	});
+	$canvas.addLayer({
+		type: 'ellipse',
+		name: 'oval',
+		groups: groups
+	});
+	$canvas.addLayerToGroup('oval', 'ellipses');
+	strictEqual($canvas.getLayerGroup('ellipses').length, 1, 'Groups array is cloned upon layer creation');
 });
 
 test('removeLayerFromGroup()', function() {
@@ -370,6 +423,7 @@ test('removeLayerFromGroup()', function() {
 		name: 'square',
 		groups: ['shapes', 'squares']
 	});
+	// Test how layers are removed from groups
 	$canvas.removeLayerFromGroup('square', 'squares');
 	shapes = $canvas.getLayerGroup('shapes');
 	squares = $canvas.getLayerGroup('squares');
@@ -383,12 +437,14 @@ module('Event API', {
 });
 
 test('getEventHooks()', function() {
+	// Test how event hooks are retrieved
 	deepEqual($().getEventHooks(), {}, 'Returns object for empty collecion');
 	deepEqual($fixture.getEventHooks(), {}, 'Returns object for non-canvas');
 	deepEqual($canvas.getEventHooks(), {}, 'Returns object for canvas');
 });
 
 test('setEventHooks()', function() {
+	// Test how event hooks are set
 	$canvas.setEventHooks({
 		add: $.noop
 	});
@@ -399,29 +455,124 @@ test('triggerLayerEvent()', function() {
 	bindEventCallbacks('mousedown');
 	$canvas.addLayer({
 		type: 'rectangle',
-		name: 'square'
+		name: 'square',
+		mousedown: layerEventCallback
 	});
 	$canvas.triggerLayerEvent('square', 'mousedown');
-	testEventCallbacks();
+	testEventCallbacks(1);
 });
 
-module('Drawing API', {
+module('Animation API', {
+	setup: setup,
+	teardown: teardown
+});
+
+asyncTest('animateLayer()', function() {
+	expect(9);
+	$canvas.addLayer({
+		type: 'path',
+		opacity: 1,
+		fillStyle: 'rgba(0, 0, 0)',
+		strokeStyle: '#000',
+		shadowColor: 'rgba(0, 0, 0, 1)',
+		strokeWidth: 2,
+		p1: {
+			type: 'line',
+			x1: 0, y1: 0,
+			x2: 100, y2: 100
+		}
+	});
+	$canvas.animateLayer(0, {
+		fillStyle: '#f00',
+		strokeStyle: 'rgb(255, 0, 0)',
+		shadowColor: 'rgba(255, 0, 0, 0.5)',
+		strokeWidth: 10,
+		p1: {
+			x1: 50
+		}
+	}, 10, function(layer) {
+		var testedStep;
+		// Test general animation
+		strictEqual(layer.fillStyle, 'rgb(255,0,0)', 'Animates hexadecimal color');
+		strictEqual(layer.strokeStyle, 'rgb(255,0,0)', 'Animates RGB color');
+		strictEqual(layer.shadowColor, 'rgba(255,0,0,0.5)', 'Animates RGBA color');
+		strictEqual(layer.strokeWidth, 10, 'Animates strokeWidth property');
+		// Test sub-property animation
+		strictEqual(layer.p1.x1, 50, 'Sub-property is animated');
+		strictEqual(layer['p1.x1'], undefined, 'Sub-property alias is deleted');
+		// Test another set of assertions using another animation
+		testedStep = false;
+		$canvas.animateLayer(0, {
+			opacity: 0.5
+		}, {
+			duration: 10,
+			step: function(now, fx) {
+				// Run assertion once during animation
+				if (!testedStep) {
+					ok(now >= layer.opacity, 'Layer opacity is animating from 1 to 0.5');
+					strictEqual(fx.prop, 'opacity', 'Hidden properties do not begin with underscore when step callback is running');
+					testedStep = true;
+				}
+			},
+			complete: function(layer) {
+				// Continue other tests upon completion of animation
+				strictEqual(layer, $canvas.getLayer(0), 'Layer object is passed to complete callback');
+				start();
+			}
+		});
+	});
+});
+
+module('Text API', {
+	setup: setup,
+	teardown: teardown
+});
+
+test('drawText()', function() {
+	var text;
+	$canvas.drawText({
+		layer: true,
+		name: 'text',
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: 'Hello'
+	});
+	// Test calculated dimensions of text layer
+	text = $canvas.getLayer('text');
+	ok(text.width, 'Width is calculated');
+	ok(text.height, 'Height is calculated');
+});
+
+test('measureText()', function() {
+	var text;
+	text = $canvas.measureText({
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: 'Hello'
+	});
+	// Test calculated dimensions of text object
+	ok(text.width, 'Width is calculated');
+	ok(text.height, 'Height is calculated');
+});
+
+module('Image API', {
 	setup: setup,
 	teardown: teardown
 });
 
 asyncTest('drawImage()', function() {
-	var timesLoaded = 0;
 	expect(4);
+	var timesLoaded = 0;
 	$canvas.drawImage({
 		layer: true,
 		name: 'fish',
-		source: 'fish.jpg',
+		source: 'images/fish.jpg',
 		load: function(layer) {
 			timesLoaded += 1;
 			if (timesLoaded === 1) {
 				// Run tests when image loads for first time
 				strictEqual($canvas.getLayer('fish'), layer, 'Layer is passed to callback initially');
+				// Test dimensions of layer
 				strictEqual(layer.width, 220, 'Width is calculated');
 				strictEqual(layer.height, 138, 'Height is calculated');
 			} else if (timesLoaded === 2) {
@@ -434,28 +585,23 @@ asyncTest('drawImage()', function() {
 	$canvas.drawLayers();
 });
 
-test('drawText()', function() {
-	var text;
-	$canvas.drawText({
-		layer: true,
-		name: 'text',
-		fontFamily: 'sans-serif',
-		fontSize: 36,
-		text: 'Hello'
-	});
-	text = $canvas.getLayer('text');
-	ok(text.width, 'Width is calculated');
-	ok(text.height, 'Height is calculated');
-});
-
-test('measureText()', function() {
-	text = $canvas.measureText({
-		fontFamily: 'sans-serif',
-		fontSize: 36,
-		text: 'Hello'
-	});
-	ok(text.width, 'Width is calculated');
-	ok(text.height, 'Height is calculated');
+test('getCanvasImage()', function() {
+	var url1, url2;
+	// Test non-canvas elements
+	url1 = $fixture.getCanvasImage();
+	strictEqual(url1, null, 'Returns null for non-canvas elements');
+	// Test no arguments
+	url1 = $canvas.getCanvasImage();
+	strictEqual(url1.indexOf('data:image/png;base64,'), 0, 'Returns data URL of type image/png by default');
+	// Test PNG images
+	url1 = $canvas.getCanvasImage('png');
+	strictEqual(url1.indexOf('png'), 11, 'Returns data URL of type image/png');
+	// Test JPEG images
+	url1 = $canvas.getCanvasImage('jpeg');
+	strictEqual(url1.indexOf('jpeg'), 11, 'Returns data URL of type image/jpeg');
+	// Test JPEG images with quality reduction
+	url2 = $canvas.getCanvasImage('jpeg', 0.5);
+	notStrictEqual(url1, url2, 'Returns data URL of type image/jpeg with 50% compression');
 });
 
 }(jQuery));
