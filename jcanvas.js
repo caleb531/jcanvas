@@ -1,16 +1,16 @@
 /**
- * @license jCanvas v14.01.12
+ * @license jCanvas v14.01.21
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
-(function ($, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED) {
+(function ($, document, Image, Array, Math, parseFloat, console, TRUE, FALSE, NULL, UNDEFINED) {
 
 // Define local aliases to frequently used properties
-var defaults, prefs,
-	// Helper traversal functions
+var defaults,
+	prefs,
+	// Aliases to jQuery methods
 	extendObject = $.extend,
 	inArray = $.inArray,
-	// Type-checking functions
 	typeOf = $.type,
 	isFunction = $.isFunction,
 	// Math constants and functions
@@ -25,11 +25,13 @@ var defaults, prefs,
 	jQueryEventFix = $.event.fix,
 	// Object for storing a number of internal property maps
 	maps = {},
+	// jQuery internal caches
 	caches = {
 		dataCache: {},
 		propCache: {},
 		imageCache: {}
 	},
+	// Base transformations
 	baseTransforms = {
 		rotate: 0,
 		scaleX: 1,
@@ -39,14 +41,17 @@ var defaults, prefs,
 		// Store all previous masks
 		masks: []
 	},
-	cssProps,
-	cssPropsObj,
-	css3Cursors,
-	prefix;
+	// Warnings that jCanvas may display
+	warnings = {
+		jCanvas: FALSE
+	},
+	// Object for storing CSS-related properties
+	css = {};
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
 function jCanvasObject(params) {
 	var propName;
+	// If future inheritance is enabled
 	if (jCanvas.future.inheritance) {
 		// Copy the given parameters into new object
 		for (propName in params) {
@@ -56,11 +61,12 @@ function jCanvasObject(params) {
 			}
 		}
 	} else {
+		// Otherwise, extend new object with the given parameters
 		extendObject(this, params);
 	}
 }
 
-// jCanvas function for setting property defaults (it's also an object)
+// jCanvas function for setting property defaults
 // This function is deprecated and will be removed in a future release
 function jCanvas(args) {
 	var prefName;
@@ -74,6 +80,10 @@ function jCanvas(args) {
 				delete prefs[prefName];
 			}
 		}
+	}
+	if (console && console.warn && !warnings.jCanvas) {
+		warnings.jCanvas = TRUE;
+		console.warn('The jCanvas() method has been deprecated and will be removed in a future release.');
 	}
 	return this;
 }
@@ -479,7 +489,7 @@ function _getCanvasData(canvas) {
 		
 	} else {
 		
-		// Get canvas data
+		// Retrieve canvas data from jQuery's internal data storage
 		data = $.data(canvas, 'jCanvas');
 		if (!data) {
 			
@@ -1284,23 +1294,19 @@ function _handleLayerDrag($canvas, data, eventType) {
 
 
 // List of CSS3 cursors that need to be prefixed
-css3Cursors = ['grab', 'grabbing', 'zoom-in', 'zoom-out'];
+css.cursors = ['grab', 'grabbing', 'zoom-in', 'zoom-out'];
 
 // Function to detect vendor prefix
 // Modified version of David Walsh's implementation
 // http://davidwalsh.name/vendor-prefix
-prefix = (function () {
+css.prefix = (function () {
 	var styles = getComputedStyle(document.documentElement, ''),
 		pre = (arraySlice
 			.call(styles)
 			.join('')
 			.match(/-(moz|webkit|ms)-/) || (styles.OLink === '' && ['', 'o'])
 		)[1];
-	return {
-		lowercase: pre,
-		css: '-' + pre + '-',
-		js: pre[0].toUpperCase() + pre.substr(1)
-	};
+	return '-' + pre + '-';
 })();
 
 // Set cursor on canvas
@@ -1311,8 +1317,8 @@ function _setCursor($canvas, data, layer, eventType) {
 		cursor = layer.cursors[eventType];
 	}
 	// Prefix any CSS3 cursor
-	if ($.inArray(cursor, css3Cursors) !== -1) {
-		cursor = prefix.css + cursor;
+	if ($.inArray(cursor, css.cursors) !== -1) {
+		cursor = css.prefix + cursor;
 	}
 	// If cursor is defined	
 	if (cursor) {
@@ -1334,9 +1340,11 @@ function _resetCursor($canvas, data) {
 function _runEventCallback($canvas, layer, eventType, callbacks, arg) {
 	// Prevent callback from firing recursively
 	if (callbacks[eventType] && layer._running && !layer._running[eventType]) {
+		// Signify the start of callback execution for this event
 		layer._running[eventType] = TRUE;
-		// Run callback
+		// Run event callback with the given arguments
 		callbacks[eventType].call($canvas[0], layer, arg);
+		// Signify the end of callback execution for this event
 		layer._running[eventType] = FALSE;
 	}
 }
@@ -1346,7 +1354,11 @@ function _triggerLayerEvent($canvas, data, layer, eventType, arg) {
 	// If events are not disabled for this layer
 	if (!layer.disableEvents) {
 		
-		_setCursor($canvas, data, layer, eventType);
+		// Do not set a custom cursor on layer mouseout
+		if (eventType !== 'mouseout') {
+			// Update cursor if one is defined for this event
+			_setCursor($canvas, data, layer, eventType);
+		}
 		
 		// Trigger the user-defined event callback
 		_runEventCallback($canvas, layer, eventType, layer, arg);
@@ -1374,7 +1386,7 @@ $.fn.triggerLayerEvent = function (layer, eventType) {
 	return $canvases;
 };
 
-// Draw individual layer
+// Draw layer with the given ID
 $.fn.drawLayer = function drawLayer(layerId) {
 	var $canvases = this, e, ctx,
 		$canvas, layer;
@@ -1382,8 +1394,6 @@ $.fn.drawLayer = function drawLayer(layerId) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
 		ctx = _getContext($canvases[e]);
-		
-		// Retrieve the specified layer
 		layer = $canvas.getLayer(layerId);
 		_drawLayer($canvas, ctx, layer);
 	}
@@ -1656,30 +1666,30 @@ $.fn.addLayer = function addLayer(args) {
 /* Animation API */
 
 // Define properties used in both CSS and jCanvas
-cssProps = [
+css.props = [
 	'width',
 	'height',
 	'opacity',
 	'lineHeight'
 ];
-cssPropsObj = {};
+css.propsObj = {};
 
 // Hide/show jCanvas/CSS properties so they can be animated using jQuery
 function _showProps(obj) {
 	var cssProp, p;
-	for (p = 0; p < cssProps.length; p += 1) {
-		cssProp = cssProps[p];
+	for (p = 0; p < css.props.length; p += 1) {
+		cssProp = css.props[p];
 		obj[cssProp] = obj['_' + cssProp];
 	}
 }
 function _hideProps(obj, reset) {
 	var cssProp, p;
-	for (p = 0; p < cssProps.length; p += 1) {
-		cssProp = cssProps[p];
+	for (p = 0; p < css.props.length; p += 1) {
+		cssProp = css.props[p];
 		// Hide property using same name with leading underscore
 		if (obj[cssProp] !== UNDEFINED) {
 			obj['_' + cssProp] = obj[cssProp];
-			cssPropsObj[cssProp] = TRUE;
+			css.propsObj[cssProp] = TRUE;
 			if (reset) {
 				delete obj[cssProp];
 			}
@@ -1976,7 +1986,7 @@ $.fn.animateLayer = function animateLayer() {
 				_hideProps(layer);
 				
 				// Fix for jQuery's vendor prefixing support, which affects how width/height/opacity are animated
-				layer.style = cssPropsObj;
+				layer.style = css.propsObj;
 											
 				// Animate layer
 				$(layer).animate(props, {
@@ -3539,18 +3549,28 @@ $.fn.drawText = function drawText(args) {
 					ctx.strokeText(lines[l], x, y);
 					
 				}
-									
+				
+				// Adjust bounding box according to text baseline
+				y = 0;
+				if (params.baseline === 'top') {
+					y += params.height / 2;
+				} else if (params.baseline === 'bottom') {
+					y -= params.height / 2;
+				}
+								
 				// Detect jCanvas events
 				if (params._event) {
 					ctx.beginPath();
+					ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
 					ctx.rect(
 						params.x - params.width / 2,
-						params.y - params.height / 2,
+						params.y - params.height / 2 + y,
 						params.width,
 						params.height
 					);
 					_detectEvents($canvases[e], ctx, params);
 					// Close path and configure masking
+					ctx.fill();
 					ctx.closePath();
 				}
 				_restoreTransform(ctx, params);
@@ -3954,7 +3974,6 @@ $.fn.setPixels = function setPixels(args) {
 			
 			params = new jCanvasObject(args);
 			layer = _addLayer(canvas, params, args, setPixels);
-			// Measure (x, y) from center of region by default
 			_transformShape($canvases[e], ctx, params, params.width, params.height);
 			
 			// Use entire canvas of x, y, width, or height is not defined
@@ -3990,6 +4009,7 @@ $.fn.setPixels = function setPixels(args) {
 				}
 				// Put pixels on canvas
 				ctx.putImageData(imgData, params.x - (params.width / 2), params.y - (params.height / 2));
+				// Restore transformation
 				ctx.restore();
 			
 			}
@@ -4103,4 +4123,4 @@ jCanvas.detectEvents = _detectEvents;
 jCanvas.closePath = _closePath;
 $.jCanvas = jCanvas;
 
-}(jQuery, document, Image, Array, Math, parseFloat, true, false, null));
+}(jQuery, document, Image, Array, Math, parseFloat, console, true, false, null));
