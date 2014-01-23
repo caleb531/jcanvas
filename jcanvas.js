@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.01.21
+ * @license jCanvas v14.01.22
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -3561,7 +3561,6 @@ $.fn.drawText = function drawText(args) {
 				// Detect jCanvas events
 				if (params._event) {
 					ctx.beginPath();
-					ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
 					ctx.rect(
 						params.x - params.width / 2,
 						params.y - params.height / 2 + y,
@@ -3570,7 +3569,6 @@ $.fn.drawText = function drawText(args) {
 					);
 					_detectEvents($canvases[e], ctx, params);
 					// Close path and configure masking
-					ctx.fill();
 					ctx.closePath();
 				}
 				_restoreTransform(ctx, params);
