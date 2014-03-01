@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.01.22
+ * @license jCanvas v14.03.01
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -16,6 +16,7 @@ var defaults,
 	// Math constants and functions
 	PI = Math.PI,
 	round = Math.round,
+	abs = Math.abs,
 	sin = Math.sin,
 	cos = Math.cos,
 	atan2 = Math.atan2,
@@ -160,6 +161,7 @@ function jCanvasDefaults() {
 		sHeight: NULL,
 		sides: 0,
 		source: '',
+		letterSpacing: NULL,
 		spread: 0,
 		start: 0,
 		strokeCap: 'butt',
@@ -1310,7 +1312,7 @@ css.prefix = (function () {
 })();
 
 // Set cursor on canvas
-function _setCursor($canvas, data, layer, eventType) {
+function _setCursor($canvas, layer, eventType) {
 	var cursor;
 	if (layer.cursors) {
 		// Retrieve cursor from cursors object if it exists
@@ -1357,7 +1359,7 @@ function _triggerLayerEvent($canvas, data, layer, eventType, arg) {
 		// Do not set a custom cursor on layer mouseout
 		if (eventType !== 'mouseout') {
 			// Update cursor if one is defined for this event
-			_setCursor($canvas, data, layer, eventType);
+			_setCursor($canvas, layer, eventType);
 		}
 		
 		// Trigger the user-defined event callback
@@ -1474,7 +1476,7 @@ $.fn.drawLayers = function drawLayers(args) {
 				data.lastIntersected = NULL;
 				lastLayer._fired = TRUE;
 				lastLayer._hovered = FALSE;
-		
+				
 				_triggerLayerEvent($canvas, data, lastLayer, 'mouseout');
 				_resetCursor($canvas, data);
 				
@@ -1532,7 +1534,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			
 			// If cursor is not intersecting with any layer
 			if (layer === NULL && !data.drag.dragging) {
-				// Revert cursor to previous state
+				// Reset cursor to previous state
 				_resetCursor($canvas, data);
 			}
 						
@@ -1559,8 +1561,7 @@ function _addLayer(canvas, params, args, method) {
 	
 	// Store arguments object for later use
 	params._args = args;
-	params.canvas = canvas;
-	
+		
 	// Convert all draggable drawings into jCanvas layers
 	if (params.draggable || params.dragGroups) {
 		params.layer = TRUE;
@@ -1589,21 +1590,29 @@ function _addLayer(canvas, params, args, method) {
 		
 		// Do not add duplicate layers of same name		
 		if (layer.name === NULL || (isString(layer.name) && data.layer.names[layer.name] === UNDEFINED)) {
-						
+			
 			// Ensure layers are unique across canvases by cloning them
 			layer = new jCanvasObject(params);
+			layer.canvas = canvas;
+			layer.$canvas = $(canvas);
 			// Indicate that this is a layer for future checks
 			layer.layer = TRUE;
 			layer._layer = TRUE;
 			layer._running = {};
+			// If layer stores user-defined data
 			if (layer.data !== NULL) {
+				// Clone object
 				layer.data = extendObject({}, layer.data);
 			} else {
+				// Otherwise, create data object
 				layer.data = {};
 			}
+			// If layer stores a list of associated groups
 			if (layer.groups !== NULL) {
+				// Clone list
 				layer.groups = layer.groups.slice(0);
 			} else {
+				// Otherwise, create empty list
 				layer.groups = [];
 			}
 			
@@ -2233,7 +2242,7 @@ function _detectEvents(canvas, ctx, params) {
 	layer = params._args;
 	// Canvas must have event bindings
 	if (layer) {
-
+		
 		data = _getCanvasData(canvas);
 		eventCache = data.event;
 		if (eventCache.x !== NULL && eventCache.y !== NULL) {
@@ -2271,8 +2280,9 @@ function _detectEvents(canvas, ctx, params) {
 		layer._eventX /= transforms.scaleX;
 		layer._eventY /= transforms.scaleY;
 		
-		// If layer intersects with cursor, add it to the list
+		// If layer intersects with cursor
 		if (intersects) {
+			// Add it to a list of layers that intersect with cursor
 			data.intersecting.push(layer);
 		}
 		layer.intersects = intersects;
@@ -2327,7 +2337,12 @@ maps.drawings = {
 	'quadratic': 'drawQuadratic',
 	'rectangle': 'drawRect',
 	'text': 'drawText',
-	'vector': 'drawVector'
+	'vector': 'drawVector',
+	'save': 'saveCanvas',
+	'restore': 'restoreCanvas',
+	'rotate': 'rotateCanvas',
+	'scale': 'scaleCanvas',
+	'translate': 'translateCanvas'
 };
 
 // Draw on canvas using a function
@@ -2541,7 +2556,9 @@ $.fn.translateCanvas = function translateCanvas(args) {
 $.fn.drawRect = function drawRect(args) {
 	var $canvases = this, e, ctx,
 		params, layer,
-		x1, y1, x2, y2, r;
+		x1, y1,
+		x2, y2,
+		r, temp;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2557,38 +2574,55 @@ $.fn.drawRect = function drawRect(args) {
 				ctx.beginPath();
 				x1 = params.x - (params.width / 2);
 				y1 = params.y - (params.height / 2);
-				r = params.cornerRadius;
-				// If corner radius is defined and is not zero
-				if (r) {
-					// Draw rectangle with rounded corners if cornerRadius is defined
+				r = abs(params.cornerRadius);
+				if (params.width &&	 params.height) {
+					// If corner radius is defined and is not zero
+					if (r) {
+						// Draw rectangle with rounded corners if cornerRadius is defined
 					
-					x2 = params.x + (params.width / 2);
-					y2 = params.y + (params.height / 2);
-					// Prevent over-rounded corners
-					if ((x2 - x1) - (2 * r) < 0) {
-						r = (x2 - x1) / 2;
+						x2 = params.x + (params.width / 2);
+						y2 = params.y + (params.height / 2);
+						
+						// Handle negative width
+						if (params.width < 0) {
+							temp = x1;
+							x1 = x2;
+							x2 = temp;
+						}
+						// Handle negative height
+						if (params.height < 0) {
+							temp = y1;
+							y1 = y2;
+							y2 = temp;
+						}
+						
+						// Prevent over-rounded corners
+						if ((x2 - x1) - (2 * r) < 0) {
+							r = (x2 - x1) / 2;
+						}
+						if ((y2 - y1) - (2 * r) < 0) {
+							r = (y2 - y1) / 2;
+						}
+						
+						// Draw rectangle
+						ctx.moveTo(x1 + r, y1);
+						ctx.lineTo(x2 - r, y1);
+						ctx.arc(x2 - r, y1 + r, r, 3 * PI / 2, PI * 2, FALSE);
+						ctx.lineTo(x2, y2 - r);
+						ctx.arc(x2 - r, y2 - r, r, 0, PI / 2, FALSE);
+						ctx.lineTo(x1 + r, y2);
+						ctx.arc(x1 + r, y2 - r, r, PI / 2, PI, FALSE);
+						ctx.lineTo(x1, y1 + r);
+						ctx.arc(x1 + r, y1 + r, r, PI, 3 * PI / 2, FALSE);
+						// Always close path
+						params.closed = TRUE;
+					
+					} else {
+					
+						// Otherwise, draw rectangle with square corners
+						ctx.rect(x1, y1, params.width, params.height);
+					
 					}
-					if ((y2 - y1) - (2 * r) < 0) {
-						r = (y2 - y1) / 2;
-					}
-					// Draw rectangle
-					ctx.moveTo(x1 + r, y1);
-					ctx.lineTo(x2 - r, y1);
-					ctx.arc(x2 - r, y1 + r, r, 3 * PI / 2, PI * 2, FALSE);
-					ctx.lineTo(x2, y2 - r);
-					ctx.arc(x2 - r, y2 - r, r, 0, PI / 2, FALSE);
-					ctx.lineTo(x1 + r, y2);
-					ctx.arc(x1 + r, y2 - r, r, PI / 2, PI, FALSE);
-					ctx.lineTo(x1, y1 + r);
-					ctx.arc(x1 + r, y1 + r, r, PI, 3 * PI / 2, FALSE);
-					// Always close path
-					params.closed = TRUE;
-					
-				} else {
-					
-					// Otherwise, draw rectangle with square corners
-					ctx.rect(x1, y1, params.width, params.height);
-					
 				}
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
@@ -3114,12 +3148,12 @@ function _drawBezier(canvas, ctx, params, path) {
 		path,
 		path.cx1 + params.x,
 		path.cy1 + params.y,
-		params.x1 + params.x,
-		params.y1 + params.y
+		path.x1 + params.x,
+		path.y1 + params.y
 	);
 	
-	if (params.x1 !== UNDEFINED && params.y1 !== UNDEFINED) {
-		ctx.moveTo(params.x1 + params.x, params.y1 + params.y);
+	if (path.x1 !== UNDEFINED && path.y1 !== UNDEFINED) {
+		ctx.moveTo(path.x1 + params.x, path.y1 + params.y);
 	}
 	while (TRUE) {
 		// Calculate next coordinates
@@ -3471,7 +3505,10 @@ function _wrapText(ctx, params) {
 $.fn.drawText = function drawText(args) {
 	var $canvases = this, $canvas, e, ctx,
 		params, layer,
-		lines, l, x, y;
+		lines, line, l,
+		fontSize, constantCloseness = 500,
+		nchars, ch, c,
+		x, y;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
@@ -3532,22 +3569,61 @@ $.fn.drawText = function drawText(args) {
 						x += params.width / 2;
 					}
 				}
-												
-				// Draw each line of text separately
-				for (l = 0; l < lines.length; l += 1) {
+				
+				if (params.radius) {
 					
-					ctx.shadowColor = params.shadowColor;
-					// Add line offset to center point, but subtract some to center everything
-					y = params.y + (l * params.height / lines.length) - ((lines.length - 1) * params.height / lines.length) / 2;
+					fontSize = parseFloat(params.fontSize);
 					
-					// Fill & stroke text
-					ctx.fillText(lines[l], x, y);
-					// Prevent extra shadow created by stroke (but only when fill is present)
-					if (params.fillStyle !== 'transparent') {
-						ctx.shadowColor = 'transparent';
+					// Greater values move clockwise
+					if (params.letterSpacing === NULL) {
+						params.letterSpacing = fontSize / constantCloseness;
 					}
-					ctx.strokeText(lines[l], x, y);
 					
+					// Loop through each line of text
+					for (l = 0; l < lines.length; l += 1) {
+						ctx.save();
+						ctx.translate(params.x, params.y);
+						line = lines[l];
+						nchars = line.length;
+						ctx.rotate(-(PI * params.letterSpacing * (nchars - 1)) / 2);
+						// Loop through characters on each line
+						for (c = 0; c < nchars; c += 1) {
+							ch = line[c];
+							// If character is not the first character
+							if (c !== 0) {
+								// Rotate character onto arc
+								ctx.rotate(PI * params.letterSpacing);
+							}
+							ctx.save();
+							ctx.translate(0, -params.radius);
+							ctx.fillText(ch, 0, 0);
+							ctx.restore();
+						}
+						params.radius -= fontSize;
+						params.letterSpacing += fontSize / (constantCloseness * 2 * PI);
+						ctx.restore();
+					}
+					
+				} else {
+									
+					// Draw each line of text separately
+					for (l = 0; l < lines.length; l += 1) {
+						line = lines[l];
+						// Add line offset to center point, but subtract some to center everything
+						y = params.y + (l * params.height / lines.length) - ((lines.length - 1) * params.height / lines.length) / 2;
+						
+						ctx.shadowColor = params.shadowColor;
+											
+						// Fill & stroke text
+						ctx.fillText(line, x, y);
+						// Prevent extra shadow created by stroke (but only when fill is present)
+						if (params.fillStyle !== 'transparent') {
+							ctx.shadowColor = 'transparent';
+						}
+						ctx.strokeText(line, x, y);
+					
+					}
+				
 				}
 				
 				// Adjust bounding box according to text baseline
@@ -3557,7 +3633,7 @@ $.fn.drawText = function drawText(args) {
 				} else if (params.baseline === 'bottom') {
 					y -= params.height / 2;
 				}
-								
+				
 				// Detect jCanvas events
 				if (params._event) {
 					ctx.beginPath();
@@ -3616,7 +3692,7 @@ $.fn.drawImage = function drawImage(args) {
 		params, layer,
 		img, imgCtx, source,
 		imageCache = caches.imageCache;
-		
+	
 	// Draw image function
 	function draw(canvas, ctx, data, params, layer) {
 		
@@ -3707,7 +3783,7 @@ $.fn.drawImage = function drawImage(args) {
 			);
 			
 		}
-						
+				
 		// Draw invisible rectangle to allow for events and masking
 		ctx.beginPath();
 		ctx.rect(
@@ -3786,7 +3862,7 @@ $.fn.drawImage = function drawImage(args) {
 						onload(canvas, ctx, data, params, layer)();
 					} else {
 						// Otherwise, draw image when it loads
-						$(img).bind('load', onload(canvas, ctx, data, params, layer));
+						img.onload = onload(canvas, ctx, data, params, layer);
 						// Fix onload() bug in IE9
 						img.src = img.src;
 					}

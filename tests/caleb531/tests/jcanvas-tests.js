@@ -127,11 +127,13 @@ test('getLayers()', function() {
 });
 
 test('getLayer()', function() {
-	var square;
+	var square, obj;
 	// Test values returned for non-existant layers
+	obj = {layer: true};
 	strictEqual($().getLayer('square'), undefined, 'Returns undefined for empty collection');
 	strictEqual($fixture.getLayer('square'), undefined, 'Returns undefined for non-canvas');
 	strictEqual($canvas.getLayer('square'), undefined, 'Returns undefined for non-existent layer');
+	strictEqual($canvas.getLayer(obj), obj, 'Returns the given object');
 	$canvas.addLayer({
 		type: 'rectangle',
 		name: 'square'
@@ -544,15 +546,26 @@ test('drawText()', function() {
 });
 
 test('measureText()', function() {
-	var text;
+	var props, text;
+	props = {
+		layer: true,
+		type: 'text',
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: 'Hello'
+	};
 	text = $canvas.measureText({
 		fontFamily: 'sans-serif',
 		fontSize: 36,
 		text: 'Hello'
 	});
 	// Test calculated dimensions of text object
-	ok(text.width, 'Width is calculated');
-	ok(text.height, 'Height is calculated');
+	strictEqual($.type(text.width), 'number', 'Width is calculated for the given object');
+	strictEqual($.type(text.height), 'number', 'Height is calculated for the given object');
+	$canvas.addLayer(props);
+	text = $canvas.measureText(0);
+	strictEqual($.type(text.width), 'number', 'Width is calculated for the given layer');
+	strictEqual($.type(text.height), 'number', 'Height is calculated for the given layer');
 });
 
 module('Image API', {
