@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v14.01.01
+ * @license jCanvas Handles v14.03.09
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -43,7 +43,6 @@ function addPathHandle($canvas, parent, xProp, yProp) {
 	}, parent.handle, {
 		// Define constant properties for handle
 		layer: true,
-		type: 'arc',
 		draggable: true,
 		x: parent[xProp],
 		y: parent[yProp],
@@ -86,7 +85,6 @@ function addRectHandle($canvas, parent, px, py) {
 		}
 	}, parent.handle, {
 		// Define constant properties for handle
-		type: 'arc',
 		layer: true,
 		draggable: true,
 		x: parent.x + (px * parent.width / 2),
@@ -264,6 +262,7 @@ function updatePathGuides(parent) {
 	}
 }
 
+// Add guides to path layer
 function addPathGuides($canvas, parent) {
 	var handles = parent._handles,
 		prevHandle, nextHandle, otherHandle,
@@ -401,7 +400,6 @@ $.extend($.jCanvas.eventHooks, {
 	},
 	// Update handle positions when animating parent layer
 	animate: function(layer, fx) {
-		var method = fx.elem._method;
 		// If layer is a rectangle or ellipse layer
 		if (isRectLayer(layer)) {
 			// If width or height are animated

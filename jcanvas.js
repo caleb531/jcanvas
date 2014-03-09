@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.03.01
+ * @license jCanvas v14.03.09
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -116,6 +116,7 @@ function jCanvasDefaults() {
 		cornerRadius: 0,
 		count: 1,
 		cropFromCenter: TRUE,
+		crossOrigin: '',
 		cursors: NULL,
 		disableEvents: FALSE,
 		draggable: FALSE,
@@ -2575,7 +2576,7 @@ $.fn.drawRect = function drawRect(args) {
 				x1 = params.x - (params.width / 2);
 				y1 = params.y - (params.height / 2);
 				r = abs(params.cornerRadius);
-				if (params.width &&	 params.height) {
+				if (params.width && params.height) {
 					// If corner radius is defined and is not zero
 					if (r) {
 						// Draw rectangle with rounded corners if cornerRadius is defined
@@ -2628,7 +2629,6 @@ $.fn.drawRect = function drawRect(args) {
 				_detectEvents($canvases[e], ctx, params);
 				// Close rectangle path
 				_closePath($canvases[e], ctx, params);
-				
 			}
 		}
 	}
@@ -3851,6 +3851,7 @@ $.fn.drawImage = function drawImage(args) {
 						// Otherwise, get the image from the given source URL
 						img = new Image();
 						img.src = source;
+						img.crossOrigin = params.crossOrigin;
 						// Save image in cache for improved performance
 						imageCache[source] = img;
 					}
