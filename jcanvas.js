@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.03.09
+ * @license jCanvas v14.03.14
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -949,10 +949,8 @@ $.fn.setLayerGroup = function setLayerGroup(groupId, props) {
 			
 			// Loop through layers in group
 			for (l = 0; l < group.length; l += 1) {
-				
 				// Merge given properties with layer
 				$canvas.setLayer(group[l], props);
-				
 			}
 			
 		}
@@ -3850,8 +3848,8 @@ $.fn.drawImage = function drawImage(args) {
 					} else {
 						// Otherwise, get the image from the given source URL
 						img = new Image();
-						img.src = source;
 						img.crossOrigin = params.crossOrigin;
+						img.src = source;
 						// Save image in cache for improved performance
 						imageCache[source] = img;
 					}
@@ -3922,6 +3920,7 @@ $.fn.createPattern = function createPattern(args) {
 			} else {
 				// Use URL if given to get the image
 				img = new Image();
+				img.crossOrigin = params.crossOrigin;
 				img.src = source;
 			}
 			
@@ -3929,7 +3928,7 @@ $.fn.createPattern = function createPattern(args) {
 			if (img.complete || imgCtx) {
 				onload();
 			} else {
-				$(img).bind('load', onload);
+				img.onload = onload();
 				// Fix onload() bug in IE9
 				img.src = img.src;
 			}
