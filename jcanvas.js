@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.03.14
+ * @license jCanvas v14.03.19
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -1408,7 +1408,7 @@ $.fn.drawLayers = function drawLayers(args) {
 		params = extendObject({}, args),
 		// Other variables
 		layers, layer, lastLayer, l, lastIndex,
-		data, eventCache, eventType;
+		data, eventCache, eventType, isImageLayer;
 	
 	// The layer index from which to start redrawing the canvas
 	if (!params.index) {
@@ -1448,9 +1448,16 @@ $.fn.drawLayers = function drawLayers(args) {
 								
 				// Allow image layers to load before drawing successive layers
 				if (layer._method === $.fn.drawImage && layer.visible) {
+					isImageLayer = true;
 					break;
 				}
 				
+			}
+			
+			// If layer is an image layer
+			if (isImageLayer) {
+				// Stop and wait for drawImage() to call drawLayers()
+				break;
 			}
 			
 			// Store the latest
@@ -1475,7 +1482,6 @@ $.fn.drawLayers = function drawLayers(args) {
 				data.lastIntersected = NULL;
 				lastLayer._fired = TRUE;
 				lastLayer._hovered = FALSE;
-				
 				_triggerLayerEvent($canvas, data, lastLayer, 'mouseout');
 				_resetCursor($canvas, data);
 				
@@ -1495,13 +1501,12 @@ $.fn.drawLayers = function drawLayers(args) {
 																
 					// Detect mouseover events
 					if ((layer.mouseover || layer.mouseout || layer.cursors) && !data.drag.dragging) {
-								
+													
 						if (!layer._hovered && !layer._fired) {
 												
 							// Prevent events from firing excessively
 							layer._fired = TRUE;
 							layer._hovered = TRUE;
-							
 							_triggerLayerEvent($canvas, data, layer, 'mouseover');
 											
 						}
@@ -3383,7 +3388,7 @@ $.fn.drawPath = function drawPath(args) {
 /* Text API */
 
 // Calculate font string and set it as the canvas font
-function _setCanvasFont(ctx, params) {
+function _setCanvasFont(canvas, ctx, params) {
 	// Otherwise, use the given font attributes
 	if (!isNaN(Number(params.fontSize))) {
 		// Give font size units if it doesn't have any
@@ -3524,7 +3529,7 @@ $.fn.drawText = function drawText(args) {
 				ctx.textAlign = params.align;
 				
 				// Set canvas font using given properties
-				_setCanvasFont(ctx, params);
+				_setCanvasFont($canvases[e], ctx, params);
 										
 				if (params.maxWidth !== NULL) {
 					// Wrap text using an internal function
@@ -3671,7 +3676,7 @@ $.fn.measureText = function measureText(args) {
 	if (ctx) {
 		
 		// Set canvas font using given properties
-		_setCanvasFont(ctx, params);
+		_setCanvasFont($canvases[e], ctx, params);
 		// Calculate width and height of text
 		lines = _wrapText(ctx, params);
 		_measureText($canvases[0], ctx, params, lines);
@@ -4189,12 +4194,16 @@ jCanvas.clearCache = function clearCache() {
 $.support.canvas = ($('<canvas />')[0].getContext !== UNDEFINED);
 
 // Export jCanvas functions
-jCanvas.defaults = defaults;
-jCanvas.prefs = prefs;
-jCanvas.setGlobalProps = _setGlobalProps;
-jCanvas.transformShape = _transformShape;
-jCanvas.detectEvents = _detectEvents;
-jCanvas.closePath = _closePath;
+extendObject(jCanvas, {
+	defaults: defaults,
+	prefs: prefs,
+	setGlobalProps: _setGlobalProps,
+	transformShape: _transformShape,
+	detectEvents: _detectEvents,
+	closePath: _closePath,
+	setCanvasFont: _setCanvasFont,
+	measureText: _measureText
+});
 $.jCanvas = jCanvas;
 
 }(jQuery, document, Image, Array, Math, parseFloat, console, true, false, null));
