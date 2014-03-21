@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.03.19
+ * @license jCanvas v14.03.20
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -3676,7 +3676,7 @@ $.fn.measureText = function measureText(args) {
 	if (ctx) {
 		
 		// Set canvas font using given properties
-		_setCanvasFont($canvases[e], ctx, params);
+		_setCanvasFont($canvases[0], ctx, params);
 		// Calculate width and height of text
 		lines = _wrapText(ctx, params);
 		_measureText($canvases[0], ctx, params, lines);
