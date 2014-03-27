@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.03.20
+ * @license jCanvas v14.03.27
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -166,6 +166,8 @@ function jCanvasDefaults() {
 		spread: 0,
 		start: 0,
 		strokeCap: 'butt',
+		strokeDash: NULL,
+		strokeDashOffset: 0,
 		strokeJoin: 'miter',
 		strokeStyle: 'transparent',
 		strokeWidth: 1,
@@ -249,13 +251,19 @@ function _setGlobalProps(canvas, ctx, params) {
 	_setStyle(canvas, ctx, params, 'fillStyle');
 	_setStyle(canvas, ctx, params, 'strokeStyle');
 	ctx.lineWidth = params.strokeWidth;
-	// Rounded corners for paths if chosen
+	// Optionally round corners for paths
 	if (params.rounded) {
 		ctx.lineCap = ctx.lineJoin = 'round';
 	} else {
 		ctx.lineCap = params.strokeCap;
 		ctx.lineJoin = params.strokeJoin;
 		ctx.miterLimit = params.miterLimit;
+	}
+	// Optionally dash lines
+	if (params.strokeDash) {
+		ctx.setLineDash(params.strokeDash);
+		ctx.webkitLineDash = ctx.mozDash = params.strokeDash;
+		ctx.lineDashOffset = ctx.webkitLineDashOffset = ctx.mozDashOffset = params.strokeDashOffset;
 	}
 	// Drop shadow
 	ctx.shadowOffsetX = params.shadowX;
@@ -348,64 +356,6 @@ function _closePath(canvas, ctx, params) {
 		
 }
 
-// Rotate canvas (internal)
-function _rotateCanvas(ctx, params, transforms) {
-	
-	// Get conversion factor for radians
-	params._toRad = (params.inDegrees ? (PI / 180) : 1);
-	
-	// Rotate canvas using shape as center of rotation
-	ctx.translate(params.x, params.y);
-	ctx.rotate(params.rotate * params._toRad);
-	ctx.translate(-params.x, -params.y);
-	
-	// If transformation data was given
-	if (transforms) {
-		// Update transformation data
-		transforms.rotate += (params.rotate * params._toRad);
-	}
-}
-
-// Scale canvas (internal)
-function _scaleCanvas(ctx, params, transforms) {
-	
-	// Scale both the x- and y- axis using the 'scale' property
-	if (params.scale !== 1) {
-		params.scaleX = params.scaleY = params.scale;
-	}
-	
-	// Scale canvas using shape as center of rotation
-	ctx.translate(params.x, params.y);
-	ctx.scale(params.scaleX, params.scaleY);
-	ctx.translate(-params.x, -params.y);
-	
-	// If transformation data was given
-	if (transforms) {
-		// Update transformation data
-		transforms.scaleX *= params.scaleX;
-		transforms.scaleY *= params.scaleY;
-	}
-}
-
-// Translate canvas (internal)
-function _translateCanvas(ctx, params, transforms) {
-	
-	// Translate both the x- and y-axis using the 'translate' property
-	if (params.translate) {
-		params.translateX = params.translateY = params.translate;
-	}
-	
-	// Translate canvas
-	ctx.translate(params.translateX, params.translateY);
-	
-	// If transformation data was given
-	if (transforms) {
-		// Update transformation data
-		transforms.translateX += params.translateX;
-		transforms.translateY += params.translateY;
-	}
-}
-
 // Transform (translate, scale, or rotate) shape
 function _transformShape(canvas, ctx, params, width, height) {
 	
@@ -425,7 +375,6 @@ function _transformShape(canvas, ctx, params, width, height) {
 		params.y += height / 2;
 		params._centered = TRUE;
 	}
-	
 	// Optionally rotate shape
 	if (params.rotate) {
 		_rotateCanvas(ctx, params, NULL);
@@ -2472,6 +2421,64 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 	}
 	return $canvases;
 };
+
+// Rotate canvas (internal)
+function _rotateCanvas(ctx, params, transforms) {
+	
+	// Get conversion factor for radians
+	params._toRad = (params.inDegrees ? (PI / 180) : 1);
+	
+	// Rotate canvas using shape as center of rotation
+	ctx.translate(params.x, params.y);
+	ctx.rotate(params.rotate * params._toRad);
+	ctx.translate(-params.x, -params.y);
+	
+	// If transformation data was given
+	if (transforms) {
+		// Update transformation data
+		transforms.rotate += (params.rotate * params._toRad);
+	}
+}
+
+// Scale canvas (internal)
+function _scaleCanvas(ctx, params, transforms) {
+	
+	// Scale both the x- and y- axis using the 'scale' property
+	if (params.scale !== 1) {
+		params.scaleX = params.scaleY = params.scale;
+	}
+	
+	// Scale canvas using shape as center of rotation
+	ctx.translate(params.x, params.y);
+	ctx.scale(params.scaleX, params.scaleY);
+	ctx.translate(-params.x, -params.y);
+	
+	// If transformation data was given
+	if (transforms) {
+		// Update transformation data
+		transforms.scaleX *= params.scaleX;
+		transforms.scaleY *= params.scaleY;
+	}
+}
+
+// Translate canvas (internal)
+function _translateCanvas(ctx, params, transforms) {
+	
+	// Translate both the x- and y-axis using the 'translate' property
+	if (params.translate) {
+		params.translateX = params.translateY = params.translate;
+	}
+	
+	// Translate canvas
+	ctx.translate(params.translateX, params.translateY);
+	
+	// If transformation data was given
+	if (transforms) {
+		// Update transformation data
+		transforms.translateX += params.translateX;
+		transforms.translateY += params.translateY;
+	}
+}
 
 // Rotate canvas
 $.fn.rotateCanvas = function rotateCanvas(args) {
