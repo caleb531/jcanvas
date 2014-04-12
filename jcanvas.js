@@ -3738,8 +3738,8 @@ $.fn.drawImage = function drawImage(args) {
 			
 			// Optionally crop from top-left corner of region
 			if (!params.cropFromCenter) {
-				params.sx += params.sWidth / 2;
-				params.sy += params.sHeight / 2;
+				params.sx = parseFloat(params.sx) + parseFloat(params.sWidth / 2);
+				params.sy = parseFloat(params.sy) + parseFloat(params.sHeight / 2);
 			}
 			
 			// Ensure cropped region does not escape image boundaries
