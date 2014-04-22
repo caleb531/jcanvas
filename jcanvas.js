@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.04.14
+ * @license jCanvas v14.04.22
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -2312,7 +2312,7 @@ $.fn.draw = function draw( args ) {
 		layer;
 			
 	// Draw using any other method
-	if ( maps.drawings[ params.type ] ) {
+	if ( maps.drawings[ params.type ] && params.type !== 'function' ) {
 		
 		$canvases[ maps.drawings[ params.type ] ]( args );
 		
@@ -2590,10 +2590,10 @@ $.fn.drawRect = function drawRect( args ) {
 				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
 				
 				ctx.beginPath();
-				x1 = params.x - ( params.width / 2 );
-				y1 = params.y - ( params.height / 2 );
-				r = abs( params.cornerRadius );
 				if ( params.width && params.height ) {
+					x1 = params.x - ( params.width / 2 );
+					y1 = params.y - ( params.height / 2 );
+					r = abs( params.cornerRadius );
 					// If corner radius is defined and is not zero
 					if ( r ) {
 						// Draw rectangle with rounded corners if cornerRadius is defined
