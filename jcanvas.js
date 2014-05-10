@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.05.09
+ * @license jCanvas v14.05.10
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -260,14 +260,16 @@ function _setGlobalProps( canvas, ctx, params ) {
 		ctx.lineJoin = params.strokeJoin;
 		ctx.miterLimit = params.miterLimit;
 	}
-	// Optionally dash lines
-	if ( params.strokeDash ) {
-		if ( ctx.setLineDash ) {
-			ctx.setLineDash( params.strokeDash );
-		}
-		ctx.webkitLineDash = ctx.mozDash = params.strokeDash;
-		ctx.lineDashOffset = ctx.webkitLineDashOffset = ctx.mozDashOffset = params.strokeDashOffset;
+	// Reset strokeDash if null
+	if ( !params.strokeDash ) {
+		params.strokeDash = [0];
 	}
+	// Dashed lines
+	if ( ctx.setLineDash ) {
+		ctx.setLineDash( params.strokeDash );
+	}
+	ctx.webkitLineDash = ctx.mozDash = params.strokeDash;
+	ctx.lineDashOffset = ctx.webkitLineDashOffset = ctx.mozDashOffset = params.strokeDashOffset;
 	// Drop shadow
 	ctx.shadowOffsetX = params.shadowX;
 	ctx.shadowOffsetY = params.shadowY;
