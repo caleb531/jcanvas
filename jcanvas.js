@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.04.22
+ * @license jCanvas v14.05.09
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -262,7 +262,9 @@ function _setGlobalProps( canvas, ctx, params ) {
 	}
 	// Optionally dash lines
 	if ( params.strokeDash ) {
-		ctx.setLineDash( params.strokeDash );
+		if ( ctx.setLineDash ) {
+			ctx.setLineDash( params.strokeDash );
+		}
 		ctx.webkitLineDash = ctx.mozDash = params.strokeDash;
 		ctx.lineDashOffset = ctx.webkitLineDashOffset = ctx.mozDashOffset = params.strokeDashOffset;
 	}
