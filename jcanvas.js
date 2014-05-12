@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.05.10
+ * @license jCanvas v14.05.12
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -4224,4 +4224,4 @@ extendObject( jCanvas, {
 } );
 $.jCanvas = jCanvas;
 
-}( jQuery, document, Image, Array, Math, parseFloat, console, true, false, null ) );
+}( jQuery, document, Image, Array, Math, parseFloat, window.console, true, false, null ) );
