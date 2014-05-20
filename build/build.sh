@@ -22,6 +22,7 @@ then
 	MINIFIED=jcanvas.min.js
 	MANIFEST=jcanvas.jquery.json
 	BOWER=bower.json
+	PACKAGE=package.json
 	README=README.md
 	LICENSE=LICENSE.txt
 	COMPILER=build/compiler.jar

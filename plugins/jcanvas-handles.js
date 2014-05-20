@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v14.03.09
+ * @license jCanvas Handles v14.04.24
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -16,7 +16,6 @@ $.extend($.jCanvas.defaults, {
 	minWidth: 0,
 	minHeight: 0
 });
-$.jCanvas();
 
 // Determines if the given layer is a rectangular layer
 function isRectLayer(layer) {

@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.05.15
+ * @license jCanvas v14.05.20
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -43,154 +43,121 @@ var defaults,
 		// Store all previous masks
 		masks: []
 	},
-	// Warnings that jCanvas may display
-	warnings = {
-		jCanvas: FALSE
-	},
 	// Object for storing CSS-related properties
 	css = {};
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
-function jCanvasObject( params ) {
-	var propName;
-	// If future inheritance is enabled
-	if ( jCanvas.future.inheritance ) {
-		// Copy the given parameters into new object
-		for ( propName in params ) {
-			// Do not merge defaults into parameters
-			if ( params.hasOwnProperty( propName ) ) {
-				this[ propName ] = params[ propName ];
-			}
-		}
-	} else {
-		// Otherwise, extend new object with the given parameters
-		extendObject( this, params );
-	}
-}
-
-// jCanvas function for setting property defaults
-// This function is deprecated and will be removed in a future release
-function jCanvas( args ) {
-	var prefName;
-	if ( args ) {
-		// Merge arguments with preferences
-		extendObject( prefs, args );
-	} else {
-		// Reset preferences to defaults if nothing is passed
-		for ( prefName in prefs ) {
-			if ( prefs.hasOwnProperty( prefName ) ) {
-				delete prefs[ prefName ];
-			}
+function jCanvasObject( args ) {
+	var params = this,
+		propName;
+	// Copy the given parameters into new object
+	for ( propName in args ) {
+		// Do not merge defaults into parameters
+		if ( args.hasOwnProperty( propName ) ) {
+			params[ propName ] = args[ propName ];
 		}
 	}
-	if ( console && console.warn && !warnings.jCanvas ) {
-		warnings.jCanvas = TRUE;
-		console.warn( 'The jCanvas() method has been deprecated and will be removed in a future release.' );
-	}
-	return this;
+	return params;
 }
-// Allow jCanvas function to be "chained" to other methods
-$.fn.jCanvas = jCanvas;
 
-// Events object for maintaining jCanvas event initiation functions
-jCanvas.events = {};
-// Object containing all jCanvas event hooks
-jCanvas.eventHooks = {};
-// Settings for enabling future jCanvas features
-jCanvas.future = {
-	inheritance: false
+// jCanvas object in which global settings are other data are stored
+var jCanvas = {
+	// Events object for storing jCanvas event initiation functions
+	events: {},
+	// Object containing all jCanvas event hooks
+	eventHooks: {},
+	// Settings for enabling future jCanvas features
+	future: {}
 };
 
 // jCanvas default property values
 function jCanvasDefaults() {
-	extendObject( this, {
-		align: 'center',
-		arrowAngle: 90,
-		arrowRadius: 0,
-		autosave: TRUE,
-		baseline: 'middle',
-		bringToFront: FALSE,
-		ccw: FALSE,
-		closed: FALSE,
-		compositing: 'source-over',
-		concavity: 0,
-		cornerRadius: 0,
-		count: 1,
-		cropFromCenter: TRUE,
-		crossOrigin: '',
-		cursors: NULL,
-		disableEvents: FALSE,
-		draggable: FALSE,
-		dragGroups: NULL,
-		groups: NULL,
-		data: NULL,
-		dx: NULL,
-		dy: NULL,
-		end: 360,
-		eventX: NULL,
-		eventY: NULL,
-		fillStyle: 'transparent',
-		fontStyle: 'normal',
-		fontSize: '12pt',
-		fontFamily: 'sans-serif',
-		fromCenter: TRUE,
-		height: NULL,
-		imageSmoothing: TRUE,
-		inDegrees: TRUE,
-		index: NULL,
-		lineHeight: 1,
-		layer: FALSE,
-		mask: FALSE,
-		maxWidth: NULL,
-		miterLimit: 10,
-		name: NULL,
-		opacity: 1,
-		r1: NULL,
-		r2: NULL,
-		radius: 0,
-		repeat: 'repeat',
-		respectAlign: FALSE,
-		rotate: 0,
-		rounded: FALSE,
-		scale: 1,
-		scaleX: 1,
-		scaleY: 1,
-		shadowBlur: 0,
-		shadowColor: 'transparent',
-		shadowStroke: FALSE,
-		shadowX: 0,
-		shadowY: 0,
-		sHeight: NULL,
-		sides: 0,
-		source: '',
-		letterSpacing: NULL,
-		spread: 0,
-		start: 0,
-		strokeCap: 'butt',
-		strokeDash: NULL,
-		strokeDashOffset: 0,
-		strokeJoin: 'miter',
-		strokeStyle: 'transparent',
-		strokeWidth: 1,
-		sWidth: NULL,
-		sx: NULL,
-		sy: NULL,
-		text: '',
-		translate: 0,
-		translateX: 0,
-		translateY: 0,
-		type: NULL,
-		visible: TRUE,
-		width: NULL,
-		x: 0,
-		y: 0
-	} );
+	extendObject( this, jCanvasDefaults.baseDefaults );
 }
+jCanvasDefaults.baseDefaults = {
+	align: 'center',
+	arrowAngle: 90,
+	arrowRadius: 0,
+	autosave: TRUE,
+	baseline: 'middle',
+	bringToFront: FALSE,
+	ccw: FALSE,
+	closed: FALSE,
+	compositing: 'source-over',
+	concavity: 0,
+	cornerRadius: 0,
+	count: 1,
+	cropFromCenter: TRUE,
+	crossOrigin: '',
+	cursors: NULL,
+	disableEvents: FALSE,
+	draggable: FALSE,
+	dragGroups: NULL,
+	groups: NULL,
+	data: NULL,
+	dx: NULL,
+	dy: NULL,
+	end: 360,
+	eventX: NULL,
+	eventY: NULL,
+	fillStyle: 'transparent',
+	fontStyle: 'normal',
+	fontSize: '12pt',
+	fontFamily: 'sans-serif',
+	fromCenter: TRUE,
+	height: NULL,
+	imageSmoothing: TRUE,
+	inDegrees: TRUE,
+	index: NULL,
+	letterSpacing: NULL,
+	lineHeight: 1,
+	layer: FALSE,
+	mask: FALSE,
+	maxWidth: NULL,
+	miterLimit: 10,
+	name: NULL,
+	opacity: 1,
+	r1: NULL,
+	r2: NULL,
+	radius: 0,
+	repeat: 'repeat',
+	respectAlign: FALSE,
+	rotate: 0,
+	rounded: FALSE,
+	scale: 1,
+	scaleX: 1,
+	scaleY: 1,
+	shadowBlur: 0,
+	shadowColor: 'transparent',
+	shadowStroke: FALSE,
+	shadowX: 0,
+	shadowY: 0,
+	sHeight: NULL,
+	sides: 0,
+	source: '',
+	spread: 0,
+	start: 0,
+	strokeCap: 'butt',
+	strokeDash: NULL,
+	strokeDashOffset: 0,
+	strokeJoin: 'miter',
+	strokeStyle: 'transparent',
+	strokeWidth: 1,
+	sWidth: NULL,
+	sx: NULL,
+	sy: NULL,
+	text: '',
+	translate: 0,
+	translateX: 0,
+	translateY: 0,
+	type: NULL,
+	visible: TRUE,
+	width: NULL,
+	x: 0,
+	y: 0
+};
 defaults = new jCanvasDefaults();
-function jCanvasPrefs() {}
-jCanvasPrefs.prototype = defaults;
-prefs = new jCanvasPrefs();
-jCanvasObject.prototype = prefs;
+jCanvasObject.prototype = defaults;
 
 /* Internal helper methods */
 
@@ -410,7 +377,7 @@ jCanvas.extend = function extend( plugin ) {
 		$.fn[ plugin.name ] = function self( args ) {
 			var $canvases = this, canvas, e, ctx,
 				params, layer;
-						
+			
 			for ( e = 0; e < $canvases.length; e += 1 ) {
 				canvas = $canvases[ e ];
 				ctx = _getContext( canvas );
@@ -1144,7 +1111,7 @@ function _getIntersectingLayer( data ) {
 	return layer;
 }
 
-// Draw individual layer ( internal )
+// Draw individual layer (internal)
 function _drawLayer( $canvas, ctx, layer, nextLayerIndex ) {
 	if ( layer && layer.visible && layer._method ) {
 		if ( nextLayerIndex ) {
@@ -1260,7 +1227,7 @@ css.prefix = ( function () {
 		pre = ( arraySlice
 			.call( styles )
 			.join( '' )
-			.match( /-( moz|webkit|ms )-/ ) || ( styles.OLink === '' && [ '', 'o' ] )
+			.match( /-(moz|webkit|ms)-/ ) || ( styles.OLink === '' && [ '', 'o' ] )
 		)[ 1 ];
 	return '-' + pre + '-';
 } )();
@@ -1513,7 +1480,7 @@ $.fn.drawLayers = function drawLayers( args ) {
 	return $canvases;
 };
 
-// Add a jCanvas layer ( internal )
+// Add a jCanvas layer (internal)
 function _addLayer( canvas, params, args, method ) {
 	var $canvas, data,
 		layers, layer = ( params._layer ? args : params );
@@ -1553,7 +1520,6 @@ function _addLayer( canvas, params, args, method ) {
 			// Ensure layers are unique across canvases by cloning them
 			layer = new jCanvasObject( params );
 			layer.canvas = canvas;
-			layer.$canvas = $( canvas );
 			// Indicate that this is a layer for future checks
 			layer.layer = TRUE;
 			layer._layer = TRUE;
@@ -2214,13 +2180,13 @@ function _detectEvents( canvas, ctx, params ) {
 			x = eventCache.x * data.pixelRatio;
 			y = eventCache.y * data.pixelRatio;
 			// Determine if the given coordinates are in the current path
-			intersects = ctx.isPointInPath( x, y ) || ( ctx.isPointInStroke && ctx.isPointInStroke( x, y ) );
+			intersects = !!( ctx.isPointInPath( x, y ) || ( ctx.isPointInStroke && ctx.isPointInStroke( x, y ) ) );
 		}
 		transforms = data.transforms;
 
 		// Allow callback functions to retrieve the mouse coordinates
-		layer.eventX = layer.mouseX = eventCache.x;
-		layer.eventY = layer.mouseY = eventCache.y;
+		layer.eventX = eventCache.x;
+		layer.eventY = eventCache.y;
 		layer.event = eventCache.event;
 
 		// Adjust coordinates to match current canvas transformation
@@ -2249,7 +2215,7 @@ function _detectEvents( canvas, ctx, params ) {
 			// Add it to a list of layers that intersect with cursor
 			data.intersecting.push( layer );
 		}
-		layer.intersects = intersects;
+		layer.intersects = !!intersects;
 	}
 }
 
@@ -2309,7 +2275,7 @@ maps.drawings = {
 	'translate': 'translateCanvas'
 };
 
-// Draw on canvas using a function
+// Draws on canvas using a function
 $.fn.draw = function draw( args ) {
 	var $canvases = this, $canvas, e, ctx,
 		params = new jCanvasObject( args ),
@@ -2345,7 +2311,7 @@ $.fn.draw = function draw( args ) {
 	return $canvases;
 };
 
-// Clear canvas
+// Clears canvas
 $.fn.clearCanvas = function clearCanvas( args ) {
 	var $canvases = this, e, ctx,
 		params = new jCanvasObject( args ),
@@ -2383,7 +2349,7 @@ $.fn.clearCanvas = function clearCanvas( args ) {
 
 /* Transformation API */
 
-// Restore canvas
+// Restores canvas
 $.fn.saveCanvas = function saveCanvas( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2408,7 +2374,7 @@ $.fn.saveCanvas = function saveCanvas( args ) {
 	return $canvases;
 };
 
-// Restore canvas
+// Restores canvas
 $.fn.restoreCanvas = function restoreCanvas( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2433,7 +2399,7 @@ $.fn.restoreCanvas = function restoreCanvas( args ) {
 	return $canvases;
 };
 
-// Rotate canvas ( internal )
+// Rotates canvas (internal)
 function _rotateCanvas( ctx, params, transforms ) {
 	
 	// Get conversion factor for radians
@@ -2451,7 +2417,7 @@ function _rotateCanvas( ctx, params, transforms ) {
 	}
 }
 
-// Scale canvas ( internal )
+// Scales canvas (internal)
 function _scaleCanvas( ctx, params, transforms ) {
 	
 	// Scale both the x- and y- axis using the 'scale' property
@@ -2472,7 +2438,7 @@ function _scaleCanvas( ctx, params, transforms ) {
 	}
 }
 
-// Translate canvas ( internal )
+// Translates canvas (internal)
 function _translateCanvas( ctx, params, transforms ) {
 	
 	// Translate both the x- and y-axis using the 'translate' property
@@ -2491,7 +2457,7 @@ function _translateCanvas( ctx, params, transforms ) {
 	}
 }
 
-// Rotate canvas
+// Rotates canvas
 $.fn.rotateCanvas = function rotateCanvas( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2518,7 +2484,7 @@ $.fn.rotateCanvas = function rotateCanvas( args ) {
 	return $canvases;
 };
 
-// Scale canvas
+// Scales canvas
 $.fn.scaleCanvas = function scaleCanvas( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2545,7 +2511,7 @@ $.fn.scaleCanvas = function scaleCanvas( args ) {
 	return $canvases;
 };
 
-// Translate canvas
+// Translates canvas
 $.fn.translateCanvas = function translateCanvas( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2574,7 +2540,7 @@ $.fn.translateCanvas = function translateCanvas( args ) {
 
 /* Shape API */
 
-// Draw rectangle
+// Draws rectangle
 $.fn.drawRect = function drawRect( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2656,7 +2622,7 @@ $.fn.drawRect = function drawRect( args ) {
 	return $canvases;
 };
 
-// Get a coterminal angle between 0 and 2pi for the given angle
+// Retrieves a coterminal angle between 0 and 2pi for the given angle
 function _getCoterminal( angle ) {
 	while ( angle < 0 ) {
 		angle += ( 2 * PI );
@@ -2673,7 +2639,7 @@ function _getArcY( params, angle ) {
 	return params.y + ( params.radius * sin( angle ) );
 }
 
-// Draw arc ( internal )
+// Draws arc (internal)
 function _drawArc( canvas, ctx, params, path ) {
 	var x1, y1, x2, y2,
 		x3, y3, x4, y4,
@@ -2702,7 +2668,7 @@ function _drawArc( canvas, ctx, params, path ) {
 	path.end -= ( PI / 2 );
 	
 	// Ensure arrows are pointed correctly for CCW arcs
-	diff = PI / 180 * 1;
+	diff = PI / 180;
 	if ( path.ccw ) {
 		diff *= -1;
 	}
@@ -2737,7 +2703,7 @@ function _drawArc( canvas, ctx, params, path ) {
 	);
 }
 
-// Draw arc or circle
+// Draws arc or circle
 $.fn.drawArc = function drawArc( args ) {
 	var $canvases = this, e, ctx,
 		params, layer;
@@ -2767,7 +2733,7 @@ $.fn.drawArc = function drawArc( args ) {
 	return $canvases;
 };
 
-// Draw ellipse
+// Draws ellipse
 $.fn.drawEllipse = function drawEllipse( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2808,7 +2774,7 @@ $.fn.drawEllipse = function drawEllipse( args ) {
 	return $canvases;
 };
 
-// Draw a regular ( equal-angled ) polygon
+// Draws a regular ( equal-angled ) polygon
 $.fn.drawPolygon = function drawPolygon( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -2871,7 +2837,7 @@ $.fn.drawPolygon = function drawPolygon( args ) {
 	return $canvases;
 };
 
-// Draw pie-shaped slice
+// Draws pie-shaped slice
 $.fn.drawSlice = function drawSlice( args ) {
 	var $canvases = this, $canvas, e, ctx,
 		params, layer,
@@ -2936,7 +2902,7 @@ $.fn.drawSlice = function drawSlice( args ) {
 
 /* Path API */
 
-// Add arrow to path using the given properties
+// Adds arrow to path using the given properties
 function _addArrow( canvas, ctx, params, path, x1, y1, x2, y2 ) {
 	var leftX, leftY,
 		rightX, rightY,
@@ -2976,7 +2942,7 @@ function _addArrow( canvas, ctx, params, path, x1, y1, x2, y2 ) {
 	}
 }
 
-// Optionally add arrow to start of path
+// Optionally adds arrow to start of path
 function _addStartArrow( canvas, ctx, params, path, x1, y1, x2, y2 ) {
 	if ( !path._arrowAngleConverted ) {
 		path.arrowAngle *= params._toRad;
@@ -2987,7 +2953,7 @@ function _addStartArrow( canvas, ctx, params, path, x1, y1, x2, y2 ) {
 	}
 }
 
-// Optionally add arrow to end of path
+// Optionally adds arrow to end of path
 function _addEndArrow( canvas, ctx, params, path, x1, y1, x2, y2 ) {
 	if ( !path._arrowAngleConverted ) {
 		path.arrowAngle *= params._toRad;
@@ -2998,7 +2964,7 @@ function _addEndArrow( canvas, ctx, params, path, x1, y1, x2, y2 ) {
 	}
 }
 
-// Draw line ( internal )
+// Draws line (internal)
 function _drawLine( canvas, ctx, params, path ) {
 	var l,
 		lx, ly;
@@ -3041,7 +3007,7 @@ function _drawLine( canvas, ctx, params, path ) {
 	);
 }
 
-// Draw line
+// Draws line
 $.fn.drawLine = function drawLine( args ) {
 	var $canvases = this, e, ctx,
 		params, layer;
@@ -3072,7 +3038,7 @@ $.fn.drawLine = function drawLine( args ) {
 	return $canvases;
 };
 
-// Draw quadratic curve ( internal )
+// Draws quadratic curve (internal)
 function _drawQuadratic( canvas, ctx, params, path ) {
 	var l,
 		lx, ly,
@@ -3123,7 +3089,7 @@ function _drawQuadratic( canvas, ctx, params, path ) {
 	);
 }
 
-// Draw quadratic curve
+// Draws quadratic curve
 $.fn.drawQuadratic = function drawQuadratic( args ) {
 	var $canvases = this, e, ctx,
 		params, layer;
@@ -3153,6 +3119,7 @@ $.fn.drawQuadratic = function drawQuadratic( args ) {
 	return $canvases;
 };
 
+// Draws Bezier curve (internal)
 function _drawBezier( canvas, ctx, params, path ) {
 	var l, lc,
 		lx, ly,
@@ -3209,7 +3176,7 @@ function _drawBezier( canvas, ctx, params, path ) {
 	);
 }
 
-// Draw Bezier curve
+// Draws Bezier curve
 $.fn.drawBezier = function drawBezier( args ) {
 	var $canvases = this, e, ctx,
 		params, layer;
@@ -3252,7 +3219,7 @@ function _getVectorY( params, angle, length ) {
 	return ( length * sin( angle ) );
 }
 
-// Draw vector ( internal ) #2
+// Draws vector (internal) #2
 function _drawVector( canvas, ctx, params, path ) {
 	var l, angle, length,
 		offsetX, offsetY,
@@ -3321,7 +3288,7 @@ function _drawVector( canvas, ctx, params, path ) {
 	);
 }
 
-// Draw vector
+// Draws vector
 $.fn.drawVector = function drawVector( args ) {
 	var $canvases = this, e, ctx,
 		params, layer;
@@ -3351,7 +3318,7 @@ $.fn.drawVector = function drawVector( args ) {
 	return $canvases;
 };
 
-// Draw a path consisting of one or more subpaths
+// Draws a path consisting of one or more subpaths
 $.fn.drawPath = function drawPath( args ) {
 	var $canvases = this, e, ctx,
 		params, layer,
@@ -3405,7 +3372,7 @@ $.fn.drawPath = function drawPath( args ) {
 
 /* Text API */
 
-// Calculate font string and set it as the canvas font
+// Calculates font string and set it as the canvas font
 function _setCanvasFont( canvas, ctx, params ) {
 	// Otherwise, use the given font attributes
 	if ( !isNaN( Number( params.fontSize ) ) ) {
@@ -3416,7 +3383,7 @@ function _setCanvasFont( canvas, ctx, params ) {
 	ctx.font = params.fontStyle + ' ' + params.fontSize + ' ' + params.fontFamily;
 }
 
-// Measure canvas text
+// Measures canvas text
 function _measureText( canvas, ctx, params, lines ) {
 	var originalSize, curWidth, l,
 		propCache = caches.propCache;
@@ -3455,7 +3422,7 @@ function _measureText( canvas, ctx, params, lines ) {
 	}
 }
 
-// Wrap a string of text within a defined width
+// Wraps a string of text within a defined width
 function _wrapText( ctx, params ) {
 	var allText = params.text,
 		// Maximum line width ( optional )
@@ -3522,7 +3489,7 @@ function _wrapText( ctx, params ) {
 	return allLines;
 }
 
-// Draw text
+// Draws text on canvas
 $.fn.drawText = function drawText( args ) {
 	var $canvases = this, $canvas, e, ctx,
 		params, layer,
@@ -3641,7 +3608,10 @@ $.fn.drawText = function drawText( args ) {
 						if ( params.fillStyle !== 'transparent' ) {
 							ctx.shadowColor = 'transparent';
 						}
-						ctx.strokeText( line, x, y );
+						if ( params.strokeWidth !== 0 ) {
+							// Only stroke if the stroke is not 0
+							ctx.strokeText( line, x, y );
+						}
 					
 					}
 				
@@ -3678,7 +3648,7 @@ $.fn.drawText = function drawText( args ) {
 	return $canvases;
 };
 
-// Measure text width/height using the given parameters
+// Measures text width/height using the given parameters
 $.fn.measureText = function measureText( args ) {
 	var $canvases = this, ctx,
 		params, lines;
@@ -3707,7 +3677,7 @@ $.fn.measureText = function measureText( args ) {
 
 /* Image API */
 
-// Draw image
+// Draws image on canvas
 $.fn.drawImage = function drawImage( args ) {
 	var $canvases = this, canvas, e, ctx, data,
 		params, layer,
@@ -3748,7 +3718,7 @@ $.fn.drawImage = function drawImage( args ) {
 			}
 			
 			// Optionally crop from top-left corner of region
-			if ( !params.cropFromCenter ) {
+			if ( params.cropFromCenter ) {
 				params.sx += params.sWidth / 2;
 				params.sy += params.sHeight / 2;
 			}
@@ -3896,7 +3866,7 @@ $.fn.drawImage = function drawImage( args ) {
 	return $canvases;
 };
 
-// Create canvas pattern
+// Creates a canvas pattern object
 $.fn.createPattern = function createPattern( args ) {
 	var $canvases = this, ctx,
 		params,
@@ -3965,7 +3935,7 @@ $.fn.createPattern = function createPattern( args ) {
 	return pattern;
 };
 
-// Create a canvas gradient object
+// Creates a canvas gradient object
 $.fn.createGradient = function createGradient( args ) {
 	var $canvases = this, ctx,
 		params,
@@ -4056,7 +4026,7 @@ $.fn.createGradient = function createGradient( args ) {
 	return gradient;
 };
 
-// Get pixels on the canvas
+// Manipulates pixels on the canvas
 $.fn.setPixels = function setPixels( args ) {
 	var $canvases = this,
 		canvas, e, ctx,
@@ -4116,7 +4086,7 @@ $.fn.setPixels = function setPixels( args ) {
 	return $canvases;
 };
 
-// Get canvas image as data URL
+// Retrieves canvas image as data URL
 $.fn.getCanvasImage = function getCanvasImage( type, quality ) {
 	var $canvases = this, canvas,
 		dataURL = NULL;
@@ -4133,7 +4103,7 @@ $.fn.getCanvasImage = function getCanvasImage( type, quality ) {
 	return dataURL;
 };
 
-// Scale canvas based on the device's pixel ratio
+// Scales canvas based on the device's pixel ratio
 $.fn.detectPixelRatio = function detectPixelRatio( callback ) {
 	var $canvases = this,
 		$canvas, canvas, e, ctx,
@@ -4198,7 +4168,7 @@ $.fn.detectPixelRatio = function detectPixelRatio( callback ) {
 	return $canvases;
 };
 
-// Clear the jCanvas cache
+// Clears the jCanvas cache
 jCanvas.clearCache = function clearCache() {
 	var cacheName;
 	for ( cacheName in caches ) {
@@ -4223,5 +4193,6 @@ extendObject( jCanvas, {
 	measureText: _measureText
 } );
 $.jCanvas = jCanvas;
+$.jCanvasObject = jCanvasObject;
 
 }( jQuery, document, Image, Array, Math, parseFloat, window.console, true, false, null ) );
