@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.05.20
+ * @license jCanvas v14.06.06
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -2180,7 +2180,7 @@ function _detectEvents( canvas, ctx, params ) {
 			x = eventCache.x * data.pixelRatio;
 			y = eventCache.y * data.pixelRatio;
 			// Determine if the given coordinates are in the current path
-			intersects = !!( ctx.isPointInPath( x, y ) || ( ctx.isPointInStroke && ctx.isPointInStroke( x, y ) ) );
+			intersects = ctx.isPointInPath( x, y ) || ( ctx.isPointInStroke && ctx.isPointInStroke( x, y ) );
 		}
 		transforms = data.transforms;
 
@@ -3763,7 +3763,7 @@ $.fn.drawImage = function drawImage( args ) {
 			
 			// Position/transform image if necessary
 			_transformShape( canvas, ctx, params, params.width, params.height );
-						
+			
 			// Draw image on canvas
 			ctx.drawImage(
 				img,
@@ -3841,7 +3841,11 @@ $.fn.drawImage = function drawImage( args ) {
 					} else {
 						// Otherwise, get the image from the given source URL
 						img = new Image();
-						img.crossOrigin = params.crossOrigin;
+						// If source URL is not a data URL
+						if ( ! source.match( '^data:' ) ) {
+							// Set crossOrigin for this image
+							img.crossOrigin = params.crossOrigin;
+						}
 						img.src = source;
 						// Save image in cache for improved performance
 						imageCache[ source ] = img;
