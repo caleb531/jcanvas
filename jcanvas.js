@@ -1,9 +1,9 @@
 /**
- * @license jCanvas v14.06.06
+ * @license jCanvas v14.07.04
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
-( function ( $, document, Image, Array, Math, parseFloat, console, TRUE, FALSE, NULL, UNDEFINED ) {
+( function ( $, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED ) {
 
 // Define local aliases to frequently used properties
 var defaults,
@@ -169,6 +169,23 @@ function isString( operand ) {
 // Get 2D context for the given canvas
 function _getContext( canvas ) {
 	return ( canvas && canvas.getContext ? canvas.getContext( '2d' ) : NULL );
+}
+
+// Coerce designated number properties from strings to numbers
+function _coerceNumericProps( props ) {
+	var propName, propType, propValue;
+	// Loop through all properties in given property map
+	for ( propName in props ) {
+		if ( props.hasOwnProperty( propName ) ) {
+			propValue = props[ propName ];
+			propType = typeOf( propValue );
+			// If property is non-empty string and value is numeric
+			if ( propType === 'string' && propValue !== '' && !isNaN( propValue ) ) {
+				// Convert value to number
+				props[ propName ] = parseFloat( propValue );
+			}
+		}
+	}
 }
 
 // Clone the given transformations object
@@ -802,24 +819,32 @@ $.fn.setLayer = function setLayer( layerId, props ) {
 			_updateLayerGroups( $canvas, data, layer, props );
 			
 			// Merge properties with layer
-			// extendObject( layer, props );
 			for ( propName in props ) {
 				if ( props.hasOwnProperty( propName ) ) {
 					propValue = props[ propName ];
 					propType = typeOf( propValue );
 					if ( propType === 'object' && isPlainObject( propValue ) ) {
+						// Clone objects
 						layer[ propName ] = extendObject( {}, propValue );
 					} else if ( propType === 'array' ) {
+						// Clone arrays
 						layer[ propName ] = propValue.slice( 0 );
 					} else if ( propType === 'string' ) {
 						if ( propValue.indexOf( '+=' ) === 0 ) {
+							// Increment numbers prefixed with +=
 							layer[ propName ] += parseFloat( propValue.substr( 2 ) );
 						} else if ( propValue.indexOf( '-=' ) === 0 ) {
+							// Decrement numbers prefixed with -=
 							layer[ propName ] -= parseFloat( propValue.substr( 2 ) );
+						} else if ( ! isNaN( propValue ) ) {
+							// Convert numeric values as strings to numbers
+							layer[ propName ] = parseFloat( propValue );
 						} else {
+							// Otherwise, set given string value
 							layer[ propName ] = propValue;
 						}
 					} else {
+						// Otherwise, set given value
 						layer[ propName ] = propValue;
 					}
 				}
@@ -1378,7 +1403,7 @@ $.fn.drawLayers = function drawLayers( args ) {
 			
 			// If layer is an image layer
 			if ( isImageLayer ) {
-				// Stop and wait for drawImage() to call drawLayers()
+				// Stop and wait for drawImage() to resume drawLayers()
 				break;
 			}
 			
@@ -1517,6 +1542,9 @@ function _addLayer( canvas, params, args, method ) {
 		// Do not add duplicate layers of same name		
 		if ( layer.name === NULL || ( isString( layer.name ) && data.layer.names[ layer.name ] === UNDEFINED ) ) {
 			
+			// Convert number properties to numbers
+			_coerceNumericProps( params );
+			
 			// Ensure layers are unique across canvases by cloning them
 			layer = new jCanvasObject( params );
 			layer.canvas = canvas;
@@ -1563,7 +1591,7 @@ function _addLayer( canvas, params, args, method ) {
 			if ( layer.index === NULL ) {
 				layer.index = layers.length;
 			}
-			
+						
 			// Add layer to layers array at specified index
 			layers.splice( layer.index, 0, layer );
 			
@@ -1575,7 +1603,10 @@ function _addLayer( canvas, params, args, method ) {
 		
 		}
 		
+	} else if ( !params.layer ) {
+		_coerceNumericProps( params );
 	}
+	
 	return layer;
 }
 
@@ -3842,7 +3873,7 @@ $.fn.drawImage = function drawImage( args ) {
 						// Otherwise, get the image from the given source URL
 						img = new Image();
 						// If source URL is not a data URL
-						if ( ! source.match( '^data:' ) ) {
+						if ( ! source.match( /^data:/i ) ) {
 							// Set crossOrigin for this image
 							img.crossOrigin = params.crossOrigin;
 						}
@@ -4199,4 +4230,4 @@ extendObject( jCanvas, {
 $.jCanvas = jCanvas;
 $.jCanvasObject = jCanvasObject;
 
-}( jQuery, document, Image, Array, Math, parseFloat, window.console, true, false, null ) );
+}( jQuery, document, Image, Array, Math, parseFloat, true, false, null ) );

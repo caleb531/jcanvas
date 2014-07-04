@@ -63,6 +63,9 @@ then
 		
 	fi
 	
+	# Display status of repository
+	git status
+	
 	# Ask to commit changes
 	echo -n "Commit changes? "
 	read CONFIRM_COMMIT
@@ -83,7 +86,7 @@ then
 		git commit
 		echo
 		# If jCanvas was built and version does not already exist as tag
-		if [[ $CONFIRM_BUILD =~ ^y ]] 
+		if [[ $CONFIRM_BUILD =~ ^y && $BRANCH == master ]] 
 		then
 			# If tag already exists
 			if (git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
