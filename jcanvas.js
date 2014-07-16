@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.07.04
+ * @license jCanvas v14.07.16
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -186,6 +186,8 @@ function _coerceNumericProps( props ) {
 			}
 		}
 	}
+    // Ensure text property is always a string
+    props.text = String(props.text);
 }
 
 // Clone the given transformations object
@@ -1342,8 +1344,10 @@ $.fn.drawLayer = function drawLayer( layerId ) {
 	for ( e = 0; e < $canvases.length; e += 1 ) {
 		$canvas = $( $canvases[ e ] );
 		ctx = _getContext( $canvases[ e ] );
-		layer = $canvas.getLayer( layerId );
-		_drawLayer( $canvas, ctx, layer );
+		if (ctx) {
+			layer = $canvas.getLayer( layerId );
+			_drawLayer( $canvas, ctx, layer );
+		}
 	}
 	return $canvases;
 };
@@ -3546,7 +3550,7 @@ $.fn.drawText = function drawText( args ) {
 				
 				// Set canvas font using given properties
 				_setCanvasFont( $canvases[ e ], ctx, params );
-										
+				
 				if ( params.maxWidth !== NULL ) {
 					// Wrap text using an internal function
 					lines = _wrapText( ctx, params );
