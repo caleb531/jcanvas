@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v14.04.24
+ * @license jCanvas Handles v14.07.28
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -50,11 +50,21 @@ function addPathHandle($canvas, parent, xProp, yProp) {
 		_yProp: yProp,
 		fromCenter: true,
 		// Adjust line path when dragging a handle
+		dragstart: function(layer) {
+			$(this).triggerLayerEvent(layer._parent, 'handlestart');
+		},
 		drag: function(layer) {
 			var parent = layer._parent;
 			parent[layer._xProp] = layer.x - parent.x;
 			parent[layer._yProp] = layer.y - parent.y;
 			updatePathGuides(parent);
+			$(this).triggerLayerEvent(parent, 'handlemove');
+		},
+		dragstop: function(layer) {
+			$(this).triggerLayerEvent(layer._parent, 'handlestop');
+		},
+		dragcancel: function(layer) {
+			$(this).triggerLayerEvent(layer._parent, 'handlecancel');
 		}
 	});
 	$canvas.draw(handle);
@@ -93,7 +103,7 @@ function addRectHandle($canvas, parent, px, py) {
 		_py: py,
 		fromCenter: true,
 		dragstart: function(layer) {
-			$(this).triggerLayerEvent(layer._parent, 'resizestart');
+			$(this).triggerLayerEvent(layer._parent, 'handlestart');
 		},
 		// Resize rectangle when dragging a handle
 		drag: function(layer) {
@@ -137,15 +147,15 @@ function addRectHandle($canvas, parent, px, py) {
 				}
 			}
 			updateRectHandles(parent);
-			$(this).triggerLayerEvent(parent, 'resize');
+			$(this).triggerLayerEvent(parent, 'handlemove');
 		},
 		dragstop: function(layer) {
 			var parent = layer._parent;
-			$(this).triggerLayerEvent(parent, 'resizestop');
+			$(this).triggerLayerEvent(parent, 'handlestop');
 		},
 		dragcancel: function(layer) {
 			var parent = layer._parent;
-			$(this).triggerLayerEvent(parent, 'resizecancel');
+			$(this).triggerLayerEvent(parent, 'handlecancel');
 		}
 	});
 	$canvas.draw(handle);

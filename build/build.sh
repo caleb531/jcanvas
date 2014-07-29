@@ -50,6 +50,7 @@ then
 		VERSION_PATT="([0-9]{2})\.([0-9]{2})\.([0-9]{2})"
 		replace $VERSION_PATT $VERSION $SOURCE
 		replace $VERSION_PATT $VERSION $MANIFEST
+		replace $VERSION_PATT $VERSION $PACKAGE
 		replace $VERSION_PATT $VERSION $BOWER
 		
 		# Update copyright year in all files
@@ -62,6 +63,9 @@ then
 		java -jar $COMPILER --js $SOURCE --js_output_file $MINIFIED
 		
 	fi
+	
+	# Stage all files
+	git add -A
 	
 	# Display status of repository
 	git status
@@ -78,9 +82,6 @@ then
 			# Switch to the default branch
 			git checkout $BRANCH
 		fi
-		
-		# Stage all files
-		git add -A
 		
 		# Enter a message to commit
 		git commit
@@ -111,6 +112,8 @@ then
 			echo "Commit not pushed to GitHub."
 		fi
 	
+	else
+		git reset
 	fi
 	
 fi
