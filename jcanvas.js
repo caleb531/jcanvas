@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.07.16
+ * @license jCanvas v14.08.07
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -44,7 +44,17 @@ var defaults,
 		masks: []
 	},
 	// Object for storing CSS-related properties
-	css = {};
+	css = {},
+	tangibleEvents = [
+		'mousedown',
+		'mousemove',
+		'mouseup',
+		'mouseover',
+		'mouseout',
+		'touchstart',
+		'touchmove',
+		'touchend'
+	];
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
 function jCanvasObject( args ) {
@@ -108,6 +118,7 @@ jCanvasDefaults.baseDefaults = {
 	height: NULL,
 	imageSmoothing: TRUE,
 	inDegrees: TRUE,
+	intangible: FALSE,
 	index: NULL,
 	letterSpacing: NULL,
 	lineHeight: 1,
@@ -1113,12 +1124,14 @@ function _getIntersectingLayer( data ) {
 		// If layer has previous masks
 		if ( layer._masks ) {
 			
-			// Search previous masks to ensure layer is visible at event coordinates
+			// Search previous masks to ensure
+			// layer is visible at event coordinates
 			for ( m = layer._masks.length - 1; m >= 0; m -= 1 ) {
 				mask = layer._masks[ m ];
 				// If mask does not intersect event coordinates
 				if ( !mask.intersects ) {
-					// Indicate that the mask does not intersect event coordinates
+					// Indicate that the mask does not
+					// intersect event coordinates
 					layer.intersects = FALSE;
 					// Stop searching previous masks
 					break;
@@ -1127,13 +1140,19 @@ function _getIntersectingLayer( data ) {
 			}
 		
 			// If event coordinates intersect all previous masks
-			if ( layer.intersects ) {
+			// and layer is not intangible
+			if ( layer.intersects && !layer.intangible ) {
 				// Stop searching for topmost layer
 				break;
 			}
 			
 		}
 		
+	}
+	// If resulting layer is intangible
+	if ( layer && layer.intangible ) {
+		// Cursor does not intersect this layer
+		layer = NULL;
 	}
 	return layer;
 }
@@ -1299,11 +1318,19 @@ function _runEventCallback( $canvas, layer, eventType, callbacks, arg ) {
 	}
 }
 
+// Determine if the given layer can "legally" fire the given event
+function _layerCanFireEvent( layer, eventType ) {
+	// If events are disable and if
+	// layer is tangible or event is not tangible
+	return ( !layer.disableEvents &&
+		( !layer.intangible || $.inArray( eventType, tangibleEvents ) === -1 ) );
+}
+
 // Trigger the given event on the given layer
 function _triggerLayerEvent( $canvas, data, layer, eventType, arg ) {
-	// If events are not disabled for this layer
-	if ( !layer.disableEvents ) {
-		
+	// If layer can legally fire this event type
+	if ( _layerCanFireEvent( layer, eventType ) ) {
+				
 		// Do not set a custom cursor on layer mouseout
 		if ( eventType !== 'mouseout' ) {
 			// Update cursor if one is defined for this event

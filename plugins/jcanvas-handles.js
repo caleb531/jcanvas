@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v14.07.28
+ * @license jCanvas Handles v14.08.07
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -361,12 +361,20 @@ function addHandles(parent) {
 		// Add four handles to corners of a rectangle/ellipse/image
 		addRectHandles($canvas, parent);
 		// Ensure handles move when rectangle is dragged
-		parent.drag = updateRectHandles;
+		$.jCanvas.eventHooks.drag = function (layer) {
+			if (isRectLayer(layer)) {
+				updateRectHandles(layer);
+			}
+		};
 	} else if (isPathLayer(parent)) {
 		// Add two or more handles to a line path
 		addPathHandles($canvas, parent);
-		// Ensure handles move when path is dragged
-		parent.drag = updatePathHandles;
+		// Ensure handles move when rectangle is dragged
+		$.jCanvas.eventHooks.drag = function (layer) {
+			if (isPathLayer(layer)) {
+				updatePathHandles(layer);
+			}
+		};
 	}
 }
 
