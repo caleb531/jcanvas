@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.08.07
+ * @license jCanvas v14.08.15
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -7,7 +7,6 @@
 
 // Define local aliases to frequently used properties
 var defaults,
-	prefs,
 	// Aliases to jQuery methods
 	extendObject = $.extend,
 	inArray = $.inArray,
@@ -831,6 +830,8 @@ $.fn.setLayer = function setLayer( layerId, props ) {
 			_updateLayerName( $canvas, data, layer, props );
 			_updateLayerGroups( $canvas, data, layer, props );
 			
+			_coerceNumericProps( props );
+			
 			// Merge properties with layer
 			for ( propName in props ) {
 				if ( props.hasOwnProperty( propName ) ) {
@@ -839,6 +840,7 @@ $.fn.setLayer = function setLayer( layerId, props ) {
 					if ( propType === 'object' && isPlainObject( propValue ) ) {
 						// Clone objects
 						layer[ propName ] = extendObject( {}, propValue );
+						_coerceNumericProps( layer[ propName ] );
 					} else if ( propType === 'array' ) {
 						// Clone arrays
 						layer[ propName ] = propValue.slice( 0 );
@@ -1383,14 +1385,15 @@ $.fn.drawLayer = function drawLayer( layerId ) {
 $.fn.drawLayers = function drawLayers( args ) {
 	var $canvases = this, $canvas, e, ctx,
 		// Internal parameters for redrawing the canvas
-		params = extendObject( {}, args ),
+		params = args,
 		// Other variables
-		layers, layer, lastLayer, l, lastIndex,
+		layers, layer, lastLayer, l, index, lastIndex,
 		data, eventCache, eventType, isImageLayer;
 	
 	// The layer index from which to start redrawing the canvas
-	if ( !params.index ) {
-		params.index = 0;
+	index = params.index;
+	if ( !index ) {
+		index = 0;
 	}
 		
 	for ( e = 0; e < $canvases.length; e += 1 ) {
@@ -1409,7 +1412,7 @@ $.fn.drawLayers = function drawLayers( args ) {
 			layers = data.layers;
 			
 			// Draw layers from first to last ( bottom to top )
-			for ( l = params.index; l < layers.length; l += 1 ) {
+			for ( l = index; l < layers.length; l += 1 ) {
 				layer = layers[ l ];
 				
 				// Ensure layer index is up-to-date
@@ -1750,7 +1753,7 @@ function _colorToRgbArray( color ) {
 	if ( color.match( /^([a-z]+|#[0-9a-f]+)$/gi ) ) {
 		// Deal with complete transparency
 		if ( color === 'transparent' ) {
-			color = 'rgba( 0,0,0,0 )';
+			color = 'rgba(0, 0, 0, 0)';
 		}
 		elem = document.head;
 		originalColor = elem.style.color;
@@ -4250,7 +4253,6 @@ $.support.canvas = ( $( '<canvas />' )[ 0 ].getContext !== UNDEFINED );
 // Export jCanvas functions
 extendObject( jCanvas, {
 	defaults: defaults,
-	prefs: prefs,
 	setGlobalProps: _setGlobalProps,
 	transformShape: _transformShape,
 	detectEvents: _detectEvents,
