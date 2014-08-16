@@ -14,9 +14,6 @@ then
 	cd $(dirname $0)
 	cd ../
 	
-	# Define default branch
-	BRANCH=master
-	
 	# Define file paths
 	SOURCE=jcanvas.js
 	MINIFIED=jcanvas.min.js
@@ -75,6 +72,16 @@ then
 	read CONFIRM_COMMIT
 	if [[ $CONFIRM_COMMIT =~ ^y ]]
 	then
+		
+		# Define default branch
+		echo -n "Commit to develop branch? "
+		read CONFIRM_DEVELOP
+		if [[ $CONFIRM_DEVELOP =~ ^y ]]
+		then
+			BRANCH=develop
+		else
+			BRANCH=master
+		fi
 		
 		# If current branch is not the default branch
 		if [[ $(git rev-parse --abbrev-ref HEAD) != $BRANCH ]]

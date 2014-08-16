@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.08.15
+ * @license jCanvas v14.08.16
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -1385,7 +1385,7 @@ $.fn.drawLayer = function drawLayer( layerId ) {
 $.fn.drawLayers = function drawLayers( args ) {
 	var $canvases = this, $canvas, e, ctx,
 		// Internal parameters for redrawing the canvas
-		params = args,
+		params = args || {},
 		// Other variables
 		layers, layer, lastLayer, l, index, lastIndex,
 		data, eventCache, eventType, isImageLayer;
