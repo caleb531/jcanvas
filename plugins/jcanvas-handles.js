@@ -250,10 +250,12 @@ function updatePathGuides(parent) {
 	if (parent._method === $.fn.drawQuadratic) {
 		if (handles) {
 			guide = parent._guide;
-			for (h = 0; h < handles.length; h += 1) {
-				handle = parent._handles[h];
-				guide['x' + (h + 1)] = handle.x;
-				guide['y' + (h + 1)] = handle.y;
+			if (guide) {
+				for (h = 0; h < handles.length; h += 1) {
+					handle = parent._handles[h];
+					guide['x' + (h + 1)] = handle.x;
+					guide['y' + (h + 1)] = handle.y;
+				}
 			}
 		}
 	} else if (parent._method === $.fn.drawBezier) {
@@ -261,10 +263,12 @@ function updatePathGuides(parent) {
 			for (g = 0; g < guides.length; g += 1) {
 				guide = guides[g];
 				handles = guide._handles;
-				for (h = 0; h < handles.length; h += 1) {
-					handle = handles[h];
-					guide['x' + (h + 1)] = handle.x;
-					guide['y' + (h + 1)] = handle.y;
+				if (guide && handles) {
+					for (h = 0; h < handles.length; h += 1) {
+						handle = handles[h];
+						guide['x' + (h + 1)] = handle.x;
+						guide['y' + (h + 1)] = handle.y;
+					}
 				}
 			}
 		}

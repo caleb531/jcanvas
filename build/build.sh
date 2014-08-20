@@ -73,7 +73,7 @@ then
 	if [[ $CONFIRM_COMMIT =~ ^y ]]
 	then
 		
-		# Define default branch
+		# Optionally push to develop branch
 		echo -n "Commit to develop branch? "
 		read CONFIRM_DEVELOP
 		if [[ $CONFIRM_DEVELOP =~ ^y ]]
