@@ -14,6 +14,9 @@ then
 	cd $(dirname $0)
 	cd ../
 	
+	# Retrieve name of current branch
+	BRANCH=$(git rev-parse --abbrev-ref HEAD)
+	
 	# Define file paths
 	SOURCE=jcanvas.js
 	MINIFIED=jcanvas.min.js
@@ -73,28 +76,11 @@ then
 	if [[ $CONFIRM_COMMIT =~ ^y ]]
 	then
 		
-		# Optionally push to develop branch
-		echo -n "Commit to develop branch? "
-		read CONFIRM_DEVELOP
-		if [[ $CONFIRM_DEVELOP =~ ^y ]]
-		then
-			BRANCH=develop
-		else
-			BRANCH=master
-		fi
-		
-		# If current branch is not the default branch
-		if [[ $(git rev-parse --abbrev-ref HEAD) != $BRANCH ]]
-		then
-			# Switch to the default branch
-			git checkout $BRANCH
-		fi
-		
 		# Enter a message to commit
 		git commit
 		echo
-		# If jCanvas was built and version does not already exist as tag
-		if [[ $CONFIRM_BUILD =~ ^y && $BRANCH == master ]] 
+		# If jCanvas was built
+		if [[ $CONFIRM_BUILD =~ ^y ]] 
 		then
 			# If tag already exists
 			if (git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
@@ -120,7 +106,9 @@ then
 		fi
 	
 	else
+	
 		git reset
+		
 	fi
 	
 fi
