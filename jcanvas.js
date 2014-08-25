@@ -1,8 +1,9 @@
 /**
- * @license jCanvas v14.08.16
+ * @license jCanvas v14.08.25
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
+/* jshint -W004 */
 ( function ( $, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED ) {
 
 // Define local aliases to frequently used properties
@@ -22,8 +23,6 @@ var defaults,
 	atan2 = Math.atan2,
 	// The Array slice() method
 	arraySlice = Array.prototype.slice,
-	// jQuery's internal event normalization function
-	jQueryEventFix = $.event.fix,
 	// Object for storing a number of internal property maps
 	maps = {},
 	// jQuery internal caches
@@ -55,8 +54,8 @@ var defaults,
 		'touchend'
 	];
 
-// Constructor for creating objects that inherit from jCanvas preferences and defaults
-function jCanvasObject( args ) {
+// Constructor for creating jCanvas layers
+function jCanvasLayer( args ) {
 	var params = this,
 		propName;
 	// Copy the given parameters into new object
@@ -67,6 +66,15 @@ function jCanvasObject( args ) {
 		}
 	}
 	return params;
+}
+
+// Constructor for instantiating jCanvasParams objects
+function jCanvasParams( layer ) {
+	function jCanvasParams() {}
+	jCanvasParams.prototype = layer;
+	var inst = new jCanvasParams();
+	inst._layer = layer;
+	return inst;
 }
 
 // jCanvas object in which global settings are other data are stored
@@ -167,7 +175,7 @@ jCanvasDefaults.baseDefaults = {
 	y: 0
 };
 defaults = new jCanvasDefaults();
-jCanvasObject.prototype = defaults;
+jCanvasLayer.prototype = defaults;
 
 /* Internal helper methods */
 
@@ -282,16 +290,17 @@ function _setGlobalProps( canvas, ctx, params ) {
 
 // Optionally enable masking support for this path
 function _enableMasking( ctx, data, params ) {
-	if ( params.mask ) {
+	var layer = params._layer;
+	if ( layer.mask ) {
 		// If jCanvas autosave is enabled
-		if ( params.autosave ) {
+		if ( layer.autosave ) {
 			// Automatically save transformation state by default
 			_saveCanvas( ctx, data );
 		}
 		// Clip the current path
 		ctx.clip();
 		// Keep track of current masks
-		data.transforms.masks.push( params._args );
+		data.transforms.masks.push( layer );
 	}
 }
 
@@ -412,8 +421,8 @@ jCanvas.extend = function extend( plugin ) {
 				ctx = _getContext( canvas );
 				if ( ctx ) {
 					
-					params = new jCanvasObject( args );
-					layer = _addLayer( canvas, params, args, self );
+					layer = _addLayer( canvas, args, self );
+					params = new jCanvasParams( layer );
 					
 					_setGlobalProps( canvas, ctx, params );
 					plugin.fn.call( canvas, ctx, params );
@@ -458,7 +467,7 @@ function _getCanvasData( canvas ) {
 					groups: {}
 				},
 				eventHooks: {},
-				// All layers that intersect with the event coordinates ( regardless of visibility )
+				// All layers that intersect with the event coordinates (regardless of visibility)
 				intersecting: [],
 				// The topmost layer whose area contains the event coordinates
 				lastIntersected: NULL,
@@ -725,7 +734,7 @@ $.fn.getLayer = function getLayer( layerId ) {
 		layers = data.layers;
 		idType = typeOf( layerId );
 	
-		if ( layerId && layerId.layer ) {
+		if ( layerId && layerId._layerAdded ) {
 		
 			// Return the actual layer object if given
 			layer = layerId;
@@ -1204,8 +1213,8 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 			}
 	
 			// Set drag properties for this layer
-			layer._startX = layer.x;
-			layer._startY = layer.y;
+			layer._startX = layer.translateX;
+			layer._startY = layer.translateY;
 			layer._endX = layer._eventX;
 			layer._endY = layer._eventY;
 			
@@ -1219,10 +1228,10 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 			// Calculate position after drag
 			newX = layer._eventX - ( layer._endX - layer._startX );
 			newY = layer._eventY - ( layer._endY - layer._startY );
-			layer.dx = newX - layer.x;
-			layer.dy = newY - layer.y;
-			layer.x = newX;
-			layer.y = newY;
+			layer.dx = newX - layer.translateX;
+			layer.dy = newY - layer.translateY;
+			layer.translateX = newX;
+			layer.translateY = newY;
 			
 			// Trigger drag event
 			_triggerLayerEvent( $canvas, data, layer, 'drag' );
@@ -1332,7 +1341,7 @@ function _layerCanFireEvent( layer, eventType ) {
 function _triggerLayerEvent( $canvas, data, layer, eventType, arg ) {
 	// If layer can legally fire this event type
 	if ( _layerCanFireEvent( layer, eventType ) ) {
-				
+		
 		// Do not set a custom cursor on layer mouseout
 		if ( eventType !== 'mouseout' ) {
 			// Update cursor if one is defined for this event
@@ -1405,7 +1414,7 @@ $.fn.drawLayers = function drawLayers( args ) {
 			
 			// Clear canvas first unless otherwise directed
 			if ( params.clear !== FALSE ) {
-				$canvas.clearCanvas();
+				_clearCanvas( $canvases[ e ], ctx );
 			}
 			
 			// Cache the layers array
@@ -1540,52 +1549,40 @@ $.fn.drawLayers = function drawLayers( args ) {
 };
 
 // Add a jCanvas layer (internal)
-function _addLayer( canvas, params, args, method ) {
+function _addLayer( canvas, args, method ) {
 	var $canvas, data,
-		layers, layer = ( params._layer ? args : params );
+		layers, layer;
 	
-	// Store arguments object for later use
-	params._args = args;
-		
-	// Convert all draggable drawings into jCanvas layers
-	if ( params.draggable || params.dragGroups ) {
-		params.layer = TRUE;
-		params.draggable = TRUE;
-	}
-	
-	// Determine the layer's type using the available information
-	if ( method ) {
-		params._method = method;
-	} else if ( params.method ) {
-		params._method = $.fn[ params.method ];
-	} else if ( params.type ) {
-		params._method = $.fn[ maps.drawings[ params.type ] ];
-	} else {
-		params._method = function () {};
-	}
-		
 	// If layer hasn't been added yet
-	if ( params.layer && !params._layer ) {
+	if ( !args._layerAdded ) {
 		// Add layer to canvas
 		
 		$canvas = $( canvas );
 				
 		data = _getCanvasData( canvas );
 		layers = data.layers;
-		
+				
 		// Do not add duplicate layers of same name		
-		if ( layer.name === NULL || ( isString( layer.name ) && data.layer.names[ layer.name ] === UNDEFINED ) ) {
-			
-			// Convert number properties to numbers
-			_coerceNumericProps( params );
-			
+		if ( args.name === UNDEFINED || ( isString( args.name ) && data.layer.names[ args.name ] === UNDEFINED ) ) {
+				
 			// Ensure layers are unique across canvases by cloning them
-			layer = new jCanvasObject( params );
+			layer = new jCanvasLayer( args );
 			layer.canvas = canvas;
 			// Indicate that this is a layer for future checks
-			layer.layer = TRUE;
-			layer._layer = TRUE;
+			layer._layerAdded = TRUE;
 			layer._running = {};
+			
+			// Determine the layer's type using the available information
+			if ( method ) {
+				layer._method = method;
+			} else if ( layer.method ) {
+				layer._method = $.fn[ layer.method ];
+			} else if ( layer.type ) {
+				layer._method = $.fn[ maps.drawings[ layer.type ] ];
+			} else {
+				layer._method = function () {};
+			}
+			
 			// If layer stores user-defined data
 			if ( layer.data !== NULL ) {
 				// Clone object
@@ -1594,6 +1591,7 @@ function _addLayer( canvas, params, args, method ) {
 				// Otherwise, create data object
 				layer.data = {};
 			}
+			
 			// If layer stores a list of associated groups
 			if ( layer.groups !== NULL ) {
 				// Clone list
@@ -1606,16 +1604,13 @@ function _addLayer( canvas, params, args, method ) {
 			// Update layer group maps
 			_updateLayerName( $canvas, data, layer );
 			_updateLayerGroups( $canvas, data, layer );
-		
+			
 			// Check for any associated jCanvas events and enable them
 			_addLayerEvents( $canvas, data, layer );
 		
 			// Optionally enable drag-and-drop support and cursor support
 			_enableDrag( $canvas, data, layer );
-			
-			// Copy _event property to parameters object
-			params._event = layer._event;
-			
+						
 			// Calculate width/height for text layers
 			if ( layer._method === $.fn.drawText ) {
 				$canvas.measureText( layer );
@@ -1625,37 +1620,39 @@ function _addLayer( canvas, params, args, method ) {
 			if ( layer.index === NULL ) {
 				layer.index = layers.length;
 			}
-						
+			
+			// Convert number properties to numbers
+			_coerceNumericProps( layer );
+			
 			// Add layer to layers array at specified index
 			layers.splice( layer.index, 0, layer );
-			
-			// Store layer on parameters object
-			params._args = layer;
 			
 			// Trigger an 'add' event
 			_triggerLayerEvent( $canvas, data, layer, 'add' );
 		
 		}
 		
-	} else if ( !params.layer ) {
-		_coerceNumericProps( params );
+		return layer;
+		
+	} else {
+		
+		return args;
+		
 	}
 	
-	return layer;
 }
 
 // Add a jCanvas layer
 $.fn.addLayer = function addLayer( args ) {
-	var $canvases = this, e, ctx,
-		params;
+	var $canvases = this, e, ctx;
 	
 	for ( e = 0; e < $canvases.length; e += 1 ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			params.layer = TRUE;
-			_addLayer( $canvases[ e ], params, args );
+			_addLayer( $canvases[ e ], extendObject( args, {
+				layer: true
+			} ) );
 			
 		}
 	}
@@ -2182,9 +2179,10 @@ function _createEvent( eventName ) {
 		touchEventName = _getTouchEventName( helperEventName );
 		
 		function eventCallback( event ) {
+			var eventCoords = _getEventCoords( event );
 			// Cache current mouse position and redraw layers
-			eventCache.x = event.offsetX;
-			eventCache.y = event.offsetY;
+			eventCache.x = eventCoords.x;
+			eventCache.y = eventCoords.y;
 			eventCache.type = helperEventName;
 			eventCache.event = event;
 			// Redraw layers on every trigger of the event
@@ -2232,9 +2230,9 @@ _createEvents( [
 function _detectEvents( canvas, ctx, params ) {
 	var layer, data, eventCache, intersects,
 		transforms, x, y, angle;
-
-	// Use the layer object stored by the given parameters object
-	layer = params._args;
+	
+	layer = params._layer;
+	
 	// Canvas must have event bindings
 	if ( layer ) {
 		
@@ -2284,37 +2282,39 @@ function _detectEvents( canvas, ctx, params ) {
 	}
 }
 
-// Normalize offsetX and offsetY for all browsers
-$.event.fix = function ( event ) {
-	var offset, originalEvent, touches;
+// Retrieve pointer coordinates for event
+function _getEventCoords( event ) {
+	var offset, originalEvent, touches,
+		eventCoords = {
+			x: null,
+			y: null
+		};
 	
-	event = jQueryEventFix.call( $.event, event );
 	originalEvent = event.originalEvent;
+	offset = $( event.currentTarget ).offset();
 	
 	// originalEvent does not exist for manually-triggered events
-	if ( originalEvent ) {
+	if ( originalEvent && offset ) {
 		
 		touches = originalEvent.changedTouches;
 		
 		// If offsetX and offsetY are not supported, define them
-		if ( event.pageX !== UNDEFINED && event.offsetX === UNDEFINED ) {
-			offset = $( event.currentTarget ).offset();
-			if ( offset ) {
-				event.offsetX = event.pageX - offset.left;
-				event.offsetY = event.pageY - offset.top;
-			}
+		if ( event.pageX !== UNDEFINED ) {
+			eventCoords = {
+				x: event.pageX - offset.left,
+				y: event.pageY - offset.top
+			};
 		} else if ( touches ) {
 			// Enable offsetX and offsetY for mobile devices
-			offset = $( event.currentTarget ).offset();
-			if ( offset ) {
-				event.offsetX = touches[ 0 ].pageX - offset.left;
-				event.offsetY = touches[ 0 ].pageY - offset.top;
-			}
+			eventCoords = {
+				x: touches[ 0 ].pageX - offset.left,
+				y: touches[ 0 ].pageY - offset.top
+			};
 		}
 	
 	}
-	return event;
-};
+	return eventCoords;
+}
 
 /* Drawing API */
 
@@ -2343,7 +2343,7 @@ maps.drawings = {
 // Draws on canvas using a function
 $.fn.draw = function draw( args ) {
 	var $canvases = this, $canvas, e, ctx,
-		params = new jCanvasObject( args ),
+		params = new jCanvasParams( args ),
 		layer;
 			
 	// Draw using any other method
@@ -2358,9 +2358,9 @@ $.fn.draw = function draw( args ) {
 			ctx = _getContext( $canvases[ e ] );
 			if ( ctx ) {
 			
-				params = new jCanvasObject( args );
-				layer = _addLayer( $canvases[ e ], params, args, draw );
-				if ( params.visible ) {
+				layer = _addLayer( $canvases[ e ], args, draw );
+				params = new jCanvasParams( layer );
+				if ( layer.visible ) {
 											
 					if ( params.fn ) {
 						// Call the given user-defined function
@@ -2376,41 +2376,15 @@ $.fn.draw = function draw( args ) {
 	return $canvases;
 };
 
-// Clears canvas
-$.fn.clearCanvas = function clearCanvas( args ) {
-	var $canvases = this, e, ctx,
-		params = new jCanvasObject( args ),
-		layer;
-		
-	for ( e = 0; e < $canvases.length; e += 1 ) {
-		ctx = _getContext( $canvases[ e ] );
-		if ( ctx ) {
-						
-			if ( params.width === NULL || params.height === NULL ) {
-				// Clear entire canvas if width/height is not given
-				
-				// Reset current transformation temporarily to ensure that the entire canvas is cleared
-				ctx.save();
-				ctx.setTransform( 1, 0, 0, 1, 0, 0 );
-				ctx.clearRect( 0, 0, $canvases[ e ].width, $canvases[ e ].height );
-				ctx.restore();
-				
-			} else {
-				// Otherwise, clear the defined section of the canvas
-								
-				// Transform clear rectangle
-				layer = _addLayer( $canvases[ e ], params, args, clearCanvas );
-				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
-				ctx.clearRect( params.x - ( params.width / 2 ), params.y - ( params.height / 2 ), params.width, params.height );
-				// Restore previous transformation
-				_restoreTransform( ctx, params );
-				
-			}
-			
-		}
-	}
-	return $canvases;
-};
+// Clears canvas (internally)
+function _clearCanvas( canvas, ctx ) {
+	// Reset current transformation temporarily to ensure that entire canvas is cleared
+// 	ctx.save();
+// 	ctx.setTransform( 1, 0, 0, 1, 0, 0 );
+	// Clear entire canvas
+	ctx.clearRect( 0, 0, canvas.width, canvas.height );
+// 	ctx.restore();		
+}
 
 /* Transformation API */
 
@@ -2426,8 +2400,8 @@ $.fn.saveCanvas = function saveCanvas( args ) {
 			
 			data = _getCanvasData( $canvases[ e ] );
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, saveCanvas );
+			layer = _addLayer( $canvases[ e ], args, saveCanvas );
+			params = new jCanvasParams( layer );
 			
 			// Restore a number of times using the given count
 			for ( i = 0; i < params.count; i += 1 ) {
@@ -2451,8 +2425,8 @@ $.fn.restoreCanvas = function restoreCanvas( args ) {
 			
 			data = _getCanvasData( $canvases[ e ] );
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, restoreCanvas );
+			layer = _addLayer( $canvases[ e ], args, restoreCanvas );
+			params = new jCanvasParams( layer );
 						
 			// Restore a number of times using the given count
 			for ( i = 0; i < params.count; i += 1 ) {
@@ -2522,87 +2496,6 @@ function _translateCanvas( ctx, params, transforms ) {
 	}
 }
 
-// Rotates canvas
-$.fn.rotateCanvas = function rotateCanvas( args ) {
-	var $canvases = this, e, ctx,
-		params, layer,
-		data;
-	
-	for ( e = 0; e < $canvases.length; e += 1 ) {
-		ctx = _getContext( $canvases[ e ] );
-		if ( ctx ) {
-			
-			data = _getCanvasData( $canvases[ e ] );
-			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, rotateCanvas );
-			
-			// Autosave transformation state by default
-			if ( params.autosave ) {
-				// Automatically save transformation state by default
-				_saveCanvas( ctx, data );
-			}
-			_rotateCanvas( ctx, params, data.transforms );
-		}
-		
-	}
-	return $canvases;
-};
-
-// Scales canvas
-$.fn.scaleCanvas = function scaleCanvas( args ) {
-	var $canvases = this, e, ctx,
-		params, layer,
-		data;
-		
-	for ( e = 0; e < $canvases.length; e += 1 ) {
-		ctx = _getContext( $canvases[ e ] );
-		if ( ctx ) {
-			
-			data = _getCanvasData( $canvases[ e ] );
-
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, scaleCanvas );
-			
-			// Autosave transformation state by default
-			if ( params.autosave ) {
-				// Automatically save transformation state by default
-				_saveCanvas( ctx, data );
-			}
-			_scaleCanvas( ctx, params, data.transforms );
-			
-		}
-	}
-	return $canvases;
-};
-
-// Translates canvas
-$.fn.translateCanvas = function translateCanvas( args ) {
-	var $canvases = this, e, ctx,
-		params, layer,
-		data;
-
-	for ( e = 0; e < $canvases.length; e += 1 ) {
-		ctx = _getContext( $canvases[ e ] );
-		if ( ctx ) {
-			
-			data = _getCanvasData( $canvases[ e ] );
-
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, translateCanvas );
-			
-			// Autosave transformation state by default
-			if ( params.autosave ) {
-				// Automatically save transformation state by default
-				_saveCanvas( ctx, data );
-			}
-			_translateCanvas( ctx, params, data.transforms );
-			
-		}
-	}
-	return $canvases;
-};
-
 /* Shape API */
 
 // Draws rectangle
@@ -2612,14 +2505,14 @@ $.fn.drawRect = function drawRect( args ) {
 		x1, y1,
 		x2, y2,
 		r, temp;
-
+	
 	for ( e = 0; e < $canvases.length; e += 1 ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawRect );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawRect );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 			
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
@@ -2777,9 +2670,10 @@ $.fn.drawArc = function drawArc( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawArc );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawArc );
+			params = new jCanvasParams( layer );
+			
+			if ( layer.visible ) {
 				
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.radius * 2 );
@@ -2809,9 +2703,9 @@ $.fn.drawEllipse = function drawEllipse( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawEllipse );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawEllipse );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 				
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
@@ -2851,9 +2745,9 @@ $.fn.drawPolygon = function drawPolygon( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawPolygon );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawPolygon );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 				
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.radius * 2 );
@@ -2913,9 +2807,9 @@ $.fn.drawSlice = function drawSlice( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawSlice );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawSlice );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 								
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.radius * 2 );
@@ -3081,9 +2975,9 @@ $.fn.drawLine = function drawLine( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawLine );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawLine );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 				
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
@@ -3163,9 +3057,9 @@ $.fn.drawQuadratic = function drawQuadratic( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawQuadratic );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawQuadratic );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 				
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
@@ -3250,9 +3144,9 @@ $.fn.drawBezier = function drawBezier( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawBezier );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawBezier );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 			
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
@@ -3362,9 +3256,9 @@ $.fn.drawVector = function drawVector( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawVector );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawVector );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 			
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
@@ -3393,9 +3287,9 @@ $.fn.drawPath = function drawPath( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawPath );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawPath );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 			
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
@@ -3405,7 +3299,7 @@ $.fn.drawPath = function drawPath( args ) {
 				while ( TRUE ) {
 					lp = params[ 'p' + l ];
 					if ( lp !== UNDEFINED ) {
-						lp = new jCanvasObject( lp );
+						lp = new jCanvasParams( lp );
 						if ( lp.type === 'line' ) {
 							_drawLine( $canvases[ e ], ctx, params, lp );
 						} else if ( lp.type === 'quadratic' ) {
@@ -3568,9 +3462,9 @@ $.fn.drawText = function drawText( args ) {
 		ctx = _getContext( $canvases[ e ] );
 		if ( ctx ) {
 
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawText );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawText );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 				
 				_setGlobalProps( $canvases[ e ], ctx, params );
 				
@@ -3721,8 +3615,8 @@ $.fn.measureText = function measureText( args ) {
 	// Attempt to retrieve layer
 	params = $canvases.getLayer( args );
 	// If layer does not exist or if returned object is not a jCanvas layer
-	if ( !params || ( params && !params._layer ) ) {
-		params = new jCanvasObject( args );
+	if ( !params || ( params && !params._layerAdded ) ) {
+		params = new jCanvasParams( args );
 	}
 	
 	ctx = _getContext( $canvases[ 0 ] );
@@ -3853,32 +3747,24 @@ $.fn.drawImage = function drawImage( args ) {
 		// Close path and configure masking
 		ctx.closePath();
 		_restoreTransform( ctx, params );
-		_enableMasking( ctx, data, params );
+		_enableMasking( ctx, data, layer );
 	}
 	// On load function
 	function onload( canvas, ctx, data, params, layer ) {
 		return function () {
 			var $canvas = $( canvas );
 			draw( canvas, ctx, data, params, layer );
-			if ( params.layer ) {
-				// Trigger 'load' event for layers
-				_triggerLayerEvent( $canvas, data, layer, 'load' );
-			} else if ( params.load ) {
-				// Run 'load' callback for non-layers
-				params.load.call( $canvas[ 0 ], layer );
-			}
+			_triggerLayerEvent( $canvas, data, layer, 'load' );
 			// Continue drawing successive layers after this image layer has loaded
-			if ( params.layer ) {
-				// Store list of previous masks for each layer
-				layer._masks = data.transforms.masks.slice( 0 );
-				if ( params._next ) {
-					// Draw successive layers
-					$canvas.drawLayers( {
-						clear: FALSE,
-						resetFire: TRUE,
-						index: params._next
-					} );
-				}
+			// Store list of previous masks for each layer
+			layer._masks = data.transforms.masks.slice( 0 );
+			if ( params._next ) {
+				// Draw successive layers
+				$canvas.drawLayers( {
+					clear: FALSE,
+					resetFire: TRUE,
+					index: params._next
+				} );
 			}
 		};
 	}
@@ -3888,9 +3774,9 @@ $.fn.drawImage = function drawImage( args ) {
 		if ( ctx ) {
 
 			data = _getCanvasData( $canvases[ e ] );
-			params = new jCanvasObject( args );
-			layer = _addLayer( $canvases[ e ], params, args, drawImage );
-			if ( params.visible ) {
+			layer = _addLayer( $canvases[ e ], args, drawImage );
+			params = new jCanvasParams( layer );
+			if ( layer.visible ) {
 				
 				// Cache the given source
 				source = params.source;
@@ -3954,8 +3840,8 @@ $.fn.createPattern = function createPattern( args ) {
 	
 	ctx = _getContext( $canvases[ 0 ] );
 	if ( ctx ) {
-	
-		params = new jCanvasObject( args );
+		
+		params = extendObject( {}, defaults, args );
 	
 		// Cache the given source
 		source = params.source;
@@ -4013,7 +3899,7 @@ $.fn.createGradient = function createGradient( args ) {
 		start, end,
 		i, a, n, p;
 	
-	params = new jCanvasObject( args );
+	params = new jCanvasParams( args );
 	ctx = _getContext( $canvases[ 0 ] );
 	if ( ctx ) {
 		
@@ -4108,8 +3994,8 @@ $.fn.setPixels = function setPixels( args ) {
 		ctx = _getContext( canvas );
 		if ( ctx ) {
 			
-			params = new jCanvasObject( args );
-			layer = _addLayer( canvas, params, args, setPixels );
+			layer = _addLayer( canvas, args, setPixels );
+			params = new jCanvasParams( layer );
 			_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
 			
 			// Use entire canvas of x, y, width, or height is not defined
@@ -4261,6 +4147,6 @@ extendObject( jCanvas, {
 	measureText: _measureText
 } );
 $.jCanvas = jCanvas;
-$.jCanvasObject = jCanvasObject;
+$.jCanvasLayer = jCanvasLayer;
 
 }( jQuery, document, Image, Array, Math, parseFloat, true, false, null ) );
