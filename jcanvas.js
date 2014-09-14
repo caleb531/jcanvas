@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.08.16
+ * @license jCanvas v14.09.14
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -513,6 +513,31 @@ function _addLayerEvents( $canvas, data, layer ) {
 			}
 		}
 	}
+	if ( !data.events.mouseout ) {
+		$canvas.bind( 'mouseout.jCanvas', function () {
+			// Retrieve the layer whose drag event was canceled
+			var layer = data.drag.layer, l;
+			// If cursor mouses out of canvas while dragging
+			if ( layer ) {
+				// Cancel drag
+				data.drag = {};
+				_triggerLayerEvent( $canvas, data, layer, 'dragcancel' );
+			}
+			// Loop through all layers
+			for (l = 0; l < data.layers.length; l += 1) {
+				layer = data.layers[l];
+				// If layer thinks it's still being moused over
+				if ( layer._hovered ) {
+					// Trigger mouseout on layer
+					$canvas.triggerLayerEvent( data.layers[l], 'mouseout' );
+				}
+			}
+			// Redraw layers
+			$canvas.drawLayers();
+		} );
+		// Indicate that an event handler has been bound
+		data.events.mouseout = TRUE;
+	}
 }
 
 // Initialize the given event on the given layer
@@ -540,23 +565,6 @@ function _enableDrag( $canvas, data, layer ) {
 			// Bind event
 			_addLayerEvent( $canvas, data, layer, eventName );
 		}
-				
-		// If cursor mouses out of canvas while dragging, cancel drag
-		if ( !data.events.mouseoutdrag ) {
-			$canvas.bind( 'mouseout.jCanvas', function () {
-				// Retrieve the layer whose drag event was canceled
-				var layer = data.drag.layer;
-				if ( layer ) {
-					// Cancel dragging
-					data.drag = {};
-					_triggerLayerEvent( $canvas, data, layer, 'dragcancel' );
-					$canvas.drawLayers();
-				}
-			} );
-			// Indicate that an event handler has been bound
-			data.events.mouseoutdrag = TRUE;
-		}
-		
 		// Indicate that this layer has events bound to it
 		layer._event = TRUE;
 		
