@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.09.14
+ * @license jCanvas v14.09.27
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -197,7 +197,9 @@ function _coerceNumericProps( props ) {
 		}
 	}
     // Ensure text property is always a string
-    props.text = String(props.text);
+    if ( props.text !== UNDEFINED ) {
+    	props.text = String(props.text);
+    }
 }
 
 // Clone the given transformations object
