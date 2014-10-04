@@ -32,9 +32,7 @@ then
 	YEAR=$(date +"%Y")
 	
 	# Ask before building jCanvas
-	echo -n "Build jCanvas? "
-	read CONFIRM_BUILD
-	if [[ $CONFIRM_BUILD =~ ^y ]]
+	if [[ $(git diff --name-only $SOURCE 2> /dev/null) ]]
 	then
 		
 		echo "Building jCanvas v$VERSION..."
@@ -61,7 +59,11 @@ then
 		
 		# Compress jCanvas using Google Closure Compiler
 		java -jar $COMPILER --js $SOURCE --js_output_file $MINIFIED
-		
+	
+	else
+	
+		echo "jCanvas has not changed since last release"
+	
 	fi
 	
 	# Stage all files
@@ -70,45 +72,52 @@ then
 	# Display status of repository
 	git status
 	
-	# Ask to commit changes
-	echo -n "Commit changes? "
-	read CONFIRM_COMMIT
-	if [[ $CONFIRM_COMMIT =~ ^y ]]
+	# If there are changes to be committed
+	if [[ $(git diff 2> /dev/null) != 0 ]]
 	then
-		
-		# Enter a message to commit
-		git commit
-		echo
-		# If jCanvas was built
-		if [[ $CONFIRM_BUILD =~ ^y ]] 
+	
+		# Ask to commit changes
+		echo -n "Commit changes? "
+		read CONFIRM_COMMIT
+		if [[ $CONFIRM_COMMIT =~ ^y ]]
 		then
-			# If tag already exists
-			if (git show-ref --tags --quiet --verify -- "refs/tags/$TAG")
-			then
-				# Delete tag
-				git tag -d $VERSION
-			fi
-			# Tag commit with the version
-			git tag $VERSION
-		fi
-		# Ask before pushing to GitHub
-		echo -n "Push changes to GitHub? ";
-		read PUSH_CONFIRM
-		if [[ $PUSH_CONFIRM =~ ^y ]]
-		then
-			# Push commit to GitHub
-			git push origin $BRANCH
-			# Push all tags to GitHub
-			git push --tags origin
+			
+			# Enter a message to commit
+			git commit
 			echo
+			# If jCanvas was built
+			if [[ $CONFIRM_BUILD =~ ^y ]] 
+			then
+				# If tag already exists
+				if [[ $(git show-ref --tags --quiet --verify -- "refs/tags/$TAG") ]]
+				then
+					# Delete tag
+					git tag -d $VERSION
+				fi
+				# Tag commit with the version
+				git tag $VERSION
+			fi
+			# Ask before pushing to GitHub
+			echo -n "Push changes to GitHub? ";
+			read PUSH_CONFIRM
+			if [[ $PUSH_CONFIRM =~ ^y ]]
+			then
+				# Push commit to GitHub
+				git push origin $BRANCH
+				# Push all tags to GitHub
+				git push --tags origin
+				echo
+			else
+				echo "Commit not pushed to GitHub."
+			fi
+		
 		else
-			echo "Commit not pushed to GitHub."
+			
+			git reset
+			echo "Stage has been reset"
+			
 		fi
 	
-	else
-	
-		git reset
-		
 	fi
 	
 fi
