@@ -186,7 +186,7 @@ function _coerceNumericProps( props ) {
 	var propName, propType, propValue;
 	// Loop through all properties in given property map
 	for ( propName in props ) {
-		if ( props.hasOwnProperty( propName ) ) {
+		if ( props.hasOwnProperty( propName ) && propName !== 'text' ) {
 			propValue = props[ propName ];
 			propType = typeOf( propValue );
 			// If property is non-empty string and value is numeric
