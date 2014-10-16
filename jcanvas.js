@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.09.27
+ * @license jCanvas v14.10.16
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -190,16 +190,12 @@ function _coerceNumericProps( props ) {
 			propValue = props[ propName ];
 			propType = typeOf( propValue );
 			// If property is non-empty string and value is numeric
-			if ( propType === 'string' && propValue !== '' && !isNaN( propValue ) ) {
+			if ( propType === 'string' && propValue !== '' && !isNaN( propValue ) && propName !== 'text' ) {
 				// Convert value to number
 				props[ propName ] = parseFloat( propValue );
 			}
 		}
 	}
-    // Ensure text property is always a string
-    if ( props.text !== UNDEFINED ) {
-    	props.text = String(props.text);
-    }
 }
 
 // Clone the given transformations object
