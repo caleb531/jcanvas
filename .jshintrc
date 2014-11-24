@@ -1,0 +1,60 @@
+{
+
+	// Predefined globals
+	"predef": [],
+	"globals": {
+		"jQuery": true
+	},
+
+	// Recognize browser variables/functions
+	"browser": true,
+
+	// Require curly braces for all blocks
+	"curly": true,
+
+	// Prohibit use of double-equality operators
+	"eqeqeq": true,
+
+	// Require filtered for..in loops
+	"forin" : true,
+
+	// Prohibit extending of native constructors
+	"freeze": true,
+
+	// Force immediately-invoked function expressions to be wrapped in parens
+	"immed": true,
+
+	// Prohibit use of undeclared variables
+	"latedef": true,
+
+	// Do not require constructor names to be capitalized
+	"newcap": false,
+
+	// Prohibit arguments.caller and arguments.callee.
+	"noarg": true,
+
+	// Prohibit empty blocks
+	"noempty": true,
+
+	// Prohibit "non-breaking whitespace" characters.
+	"nonbsp": true,
+
+	// Require use of single quotation marks for strings.
+	"quotmark": "single",
+
+	// Prohibit trailing whitespace.
+	"trailing": true,
+
+	// Prohibit use of explicitly undeclared variables.
+	"undef": true,
+
+	// Prohibit unused variables
+	"unused": true,
+
+	// Do not require 'use strict' at the top function scope
+	"strict": false,
+
+	// Prohibit trailing whitespace.
+	"trailing": true
+
+}

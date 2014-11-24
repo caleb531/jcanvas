@@ -41,7 +41,7 @@ function testEventCallbacks( n ) {
 
 // Setup test
 function setup() {
-	$canvas = $( "<canvas width='500', height='500'></canvas>" );
+	$canvas = $( '<canvas width="500" height="500"></canvas>' );
 }
 
 // Teardown test
@@ -534,18 +534,37 @@ module( 'Text API', {
 } );
 
 test( 'drawText()', function() {
-	var text;
+	var text1, text2, text3;
 	$canvas.drawText( {
 		layer: true,
-		name: 'text',
+		name: 'text1',
 		fontFamily: 'sans-serif',
 		fontSize: 36,
 		text: 'Hello'
 	} );
 	// Test calculated dimensions of text layer
-	text = $canvas.getLayer( 'text' );
-	ok( text.width, 'Width is calculated' );
-	ok( text.height, 'Height is calculated' );
+	text1 = $canvas.getLayer( 'text1' );
+	ok( text1.width, 'Width is calculated' );
+	ok( text1.height, 'Height is calculated' );
+	ok( text1.text, 'Text is defined' );
+	$canvas.drawText( {
+		layer: true,
+		name: 'text2',
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: 3
+	} );
+	text2 = $canvas.getLayer( 'text2' );
+	ok( text2.text === '3', 'Number value for text is cast to string' );
+	$canvas.drawText( {
+		layer: true,
+		name: 'text3',
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: '3'
+	} );
+	text3 = $canvas.getLayer( 'text3' );
+	ok( text3.text === '3', 'Numeric string value for text remains string' );
 } );
 
 test( 'measureText()', function() {

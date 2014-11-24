@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.11.19
+ * @license jCanvas v14.11.24
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -195,6 +195,10 @@ function _coerceNumericProps( props ) {
 				props[ propName ] = parseFloat( propValue );
 			}
 		}
+	}
+	// Ensure value of text property is always a string
+	if ( props.text !== undefined ) {
+		props.text = String(props.text);
 	}
 }
 
