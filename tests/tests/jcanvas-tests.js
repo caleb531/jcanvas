@@ -224,7 +224,10 @@ test( 'setLayer()', function() {
 		groups: groups,
 		data: data,
 		width: '+=10',
-		height: '-=10'
+		height: '-=10',
+		rotate: '30',
+		translate: 0,
+		text: ''
 	} );
 	strictEqual( square.fillStyle, 'green', 'Sets fillStyle of layer' );
 	strictEqual( square.opacity, 0.5, 'Sets opacity of layer' );
@@ -233,6 +236,9 @@ test( 'setLayer()', function() {
 	notStrictEqual( square.data, data, 'Clones objects in property map' );
 	strictEqual( square.width, 110, 'Increments width by 10' );
 	strictEqual( square.height, 90, 'Decrements width by 10' );
+	strictEqual( square.rotate, 30, 'Coerces numeric strings to numbers' );
+	strictEqual( square.translate, 0, 'Handles zero values correctly' );
+	strictEqual( square.text, '', 'Does not coerce text property' );
 	testEventCallbacks( 1 );
 } );
 

@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v14.11.24
+ * @license jCanvas v14.11.25
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -190,7 +190,7 @@ function _coerceNumericProps( props ) {
 			propValue = props[ propName ];
 			propType = typeOf( propValue );
 			// If property is non-empty string and value is numeric
-			if ( propType === 'string' && propValue !== '' && !isNaN( propValue ) && propName !== 'text' ) {
+			if ( propType === 'string' && propValue !== '' && !isNaN( propValue ) && propValue !== '' ) {
 				// Convert value to number
 				props[ propName ] = parseFloat( propValue );
 			}
@@ -861,7 +861,7 @@ $.fn.setLayer = function setLayer( layerId, props ) {
 						} else if ( propValue.indexOf( '-=' ) === 0 ) {
 							// Decrement numbers prefixed with -=
 							layer[ propName ] -= parseFloat( propValue.substr( 2 ) );
-						} else if ( ! isNaN( propValue ) ) {
+						} else if ( !isNaN( propValue ) && propValue !== '' ) {
 							// Convert numeric values as strings to numbers
 							layer[ propName ] = parseFloat( propValue );
 						} else {
