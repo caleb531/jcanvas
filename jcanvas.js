@@ -1,5 +1,5 @@
-/**
- * @license jCanvas v14.11.25
+ /**
+ * @license jCanvas v14.12.10
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -190,7 +190,7 @@ function _coerceNumericProps( props ) {
 			propValue = props[ propName ];
 			propType = typeOf( propValue );
 			// If property is non-empty string and value is numeric
-			if ( propType === 'string' && propValue !== '' && !isNaN( propValue ) && propValue !== '' ) {
+			if ( propType === 'string' && $.isNumeric( propValue ) && propName !== 'text' ) {
 				// Convert value to number
 				props[ propName ] = parseFloat( propValue );
 			}
@@ -278,7 +278,7 @@ function _setGlobalProps( canvas, ctx, params ) {
 	ctx.globalCompositeOperation = params.compositing;
 	// Support cross-browser toggling of image smoothing
 	if ( params.imageSmoothing ) {
-		ctx.webkitImageSmoothingEnabled = ctx.mozImageSmoothingEnabled = params.imageSmoothing;
+		ctx.webkitImageSmoothingEnabled = ctx.mozImageSmoothingEnabled = params.imageSmoothingEnabled;
 	}
 }
 
@@ -861,7 +861,7 @@ $.fn.setLayer = function setLayer( layerId, props ) {
 						} else if ( propValue.indexOf( '-=' ) === 0 ) {
 							// Decrement numbers prefixed with -=
 							layer[ propName ] -= parseFloat( propValue.substr( 2 ) );
-						} else if ( !isNaN( propValue ) && propValue !== '' ) {
+						} else if ( !isNaN( propValue ) && $.isNumeric( propValue ) ) {
 							// Convert numeric values as strings to numbers
 							layer[ propName ] = parseFloat( propValue );
 						} else {

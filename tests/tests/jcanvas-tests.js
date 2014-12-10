@@ -540,7 +540,7 @@ module( 'Text API', {
 } );
 
 test( 'drawText()', function() {
-	var text1, text2, text3;
+	var text;
 	$canvas.drawText( {
 		layer: true,
 		name: 'text1',
@@ -549,10 +549,10 @@ test( 'drawText()', function() {
 		text: 'Hello'
 	} );
 	// Test calculated dimensions of text layer
-	text1 = $canvas.getLayer( 'text1' );
-	ok( text1.width, 'Width is calculated' );
-	ok( text1.height, 'Height is calculated' );
-	ok( text1.text, 'Text is defined' );
+	text = $canvas.getLayer( 'text1' );
+	ok( text.width, 'Width is calculated' );
+	ok( text.height, 'Height is calculated' );
+	ok( text.text, 'Text is defined' );
 	$canvas.drawText( {
 		layer: true,
 		name: 'text2',
@@ -560,8 +560,8 @@ test( 'drawText()', function() {
 		fontSize: 36,
 		text: 3
 	} );
-	text2 = $canvas.getLayer( 'text2' );
-	ok( text2.text === '3', 'Number value for text is cast to string' );
+	text = $canvas.getLayer( 'text2' );
+	strictEqual( text.text, '3', 'Number value for text is cast to string' );
 	$canvas.drawText( {
 		layer: true,
 		name: 'text3',
@@ -569,8 +569,26 @@ test( 'drawText()', function() {
 		fontSize: 36,
 		text: '3'
 	} );
-	text3 = $canvas.getLayer( 'text3' );
-	ok( text3.text === '3', 'Numeric string value for text remains string' );
+	text = $canvas.getLayer( 'text3' );
+	strictEqual( text.text, '3', 'Numeric string value for text remains string' );
+	$canvas.drawText( {
+		layer: true,
+		name: 'text4',
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: '3.0'
+	} );
+	text = $canvas.getLayer( 'text4' );
+	strictEqual( text.text, '3.0', 'Decimal string value for text remains string' );
+	$canvas.drawText( {
+		layer: true,
+		name: 'text5',
+		fontFamily: 'sans-serif',
+		fontSize: 36,
+		text: ' '
+	} );
+	text = $canvas.getLayer( 'text5' );
+	strictEqual( text.text, ' ', 'Whitespace string value for text remains string' );
 } );
 
 test( 'measureText()', function() {
