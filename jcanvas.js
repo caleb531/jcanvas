@@ -1,5 +1,5 @@
  /**
- * @license jCanvas v14.12.10
+ * @license jCanvas v14.12.11
  * Copyright 2014 Caleb Evans
  * Released under the MIT license
  */
@@ -10,7 +10,10 @@ var defaults,
 	// Aliases to jQuery methods
 	extendObject = $.extend,
 	inArray = $.inArray,
-	typeOf = $.type,
+	typeOf = function ( operand ) {
+		return Object.prototype.toString.call( operand )
+			.slice( 8, -1 ).toLowerCase();
+	},
 	isFunction = $.isFunction,
 	isPlainObject = $.isPlainObject,
 	// Math constants and functions
@@ -176,6 +179,11 @@ function isString( operand ) {
 	return ( typeOf( operand ) === 'string' );
 }
 
+// Determines if the given operand is numeric
+function isNumeric( operand ) {
+	return !isNaN( parseFloat( operand ) );
+}
+
 // Get 2D context for the given canvas
 function _getContext( canvas ) {
 	return ( canvas && canvas.getContext ? canvas.getContext( '2d' ) : NULL );
@@ -190,7 +198,7 @@ function _coerceNumericProps( props ) {
 			propValue = props[ propName ];
 			propType = typeOf( propValue );
 			// If property is non-empty string and value is numeric
-			if ( propType === 'string' && $.isNumeric( propValue ) && propName !== 'text' ) {
+			if ( propType === 'string' && isNumeric( propValue ) && propName !== 'text' ) {
 				// Convert value to number
 				props[ propName ] = parseFloat( propValue );
 			}
@@ -861,7 +869,7 @@ $.fn.setLayer = function setLayer( layerId, props ) {
 						} else if ( propValue.indexOf( '-=' ) === 0 ) {
 							// Decrement numbers prefixed with -=
 							layer[ propName ] -= parseFloat( propValue.substr( 2 ) );
-						} else if ( !isNaN( propValue ) && $.isNumeric( propValue ) ) {
+						} else if ( !isNaN( propValue ) && isNumeric( propValue ) ) {
 							// Convert numeric values as strings to numbers
 							layer[ propName ] = parseFloat( propValue );
 						} else {

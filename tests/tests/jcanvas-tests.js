@@ -148,7 +148,7 @@ test( 'getLayer()', function() {
 	} );
 	// Test values returned for existing layes
 	square = $canvas.getLayer( 0 );
-	strictEqual( $.type( square ), 'object', 'Layer can be retrieved by positive index' );
+	ok( typeof square === 'object' && $.isArray( square ) === false, 'Layer can be retrieved by positive index' );
 	strictEqual( $canvas.getLayer( -2 ), square, 'Layer can be retrieved by negative index' );
 	strictEqual( $canvas.getLayer( 'square' ), square, 'Layer can be retrieved by name' );
 	strictEqual( $canvas.getLayer( /^square$/gi ), square, 'Layer can be retrieved by regex' );
@@ -173,7 +173,7 @@ test( 'getLayerGroup()', function() {
 	} );
 	// Test values returned for existing layer groups
 	squares = $canvas.getLayerGroup( 'squares' );
-	strictEqual( $.type( squares ), 'array', 'Group can be retrieved by index' );
+	ok( $.isArray( squares ), 'Group can be retrieved by index' );
 	strictEqual( $canvas.getLayerGroup( /^squares$/gi ), squares, 'Group can be retrieved by regex' );
 	strictEqual( $canvas.getLayerGroup( squares ), squares, 'Group can be retrieved by object' );
 	strictEqual( squares.length, 1, 'Group contains the proper number of layers' );
@@ -479,7 +479,7 @@ module( 'Animation API', {
 } );
 
 asyncTest( 'animateLayer()', function() {
-	expect( 9 );
+	expect( 8 );
 	$canvas.addLayer( {
 		type: 'path',
 		opacity: 1,
@@ -520,7 +520,6 @@ asyncTest( 'animateLayer()', function() {
 			step: function( now, fx ) {
 				// Run assertion once during animation
 				if ( !testedStep ) {
-					ok( now >= layer.opacity, 'Layer opacity is animating from 1 to 0.5' );
 					strictEqual( fx.prop, 'opacity', 'Hidden properties do not begin with underscore when step callback is running' );
 					testedStep = true;
 				}
@@ -606,12 +605,12 @@ test( 'measureText()', function() {
 		text: 'Hello'
 	} );
 	// Test calculated dimensions of text object
-	strictEqual( $.type( text.width ), 'number', 'Width is calculated for the given object' );
-	strictEqual( $.type( text.height ), 'number', 'Height is calculated for the given object' );
+	strictEqual( typeof text.width, 'number', 'Width is calculated for the given object' );
+	strictEqual( typeof text.height, 'number', 'Height is calculated for the given object' );
 	$canvas.addLayer( props );
 	text = $canvas.measureText( 0 );
-	strictEqual( $.type( text.width ), 'number', 'Width is calculated for the given layer' );
-	strictEqual( $.type( text.height ), 'number', 'Height is calculated for the given layer' );
+	strictEqual( typeof text.width, 'number', 'Width is calculated for the given layer' );
+	strictEqual( typeof text.height, 'number', 'Height is calculated for the given layer' );
 } );
 
 module( 'Image API', {
