@@ -96,8 +96,8 @@ function addRectHandle( $canvas, parent, px, py ) {
 		// Define constant properties for handle
 		layer: true,
 		draggable: true,
-		x : parent.x + (px * parent.width / 2 + ((parent.fromCenter) ? 0 : parent.width / 2) ),
-		y : parent.y + (py * parent.height / 2 + ((parent.fromCenter) ? 0 : parent.height / 2)),
+		x: parent.x + ( px * parent.width / 2 + ( ( parent.fromCenter ) ? 0 : parent.width / 2 ) ),
+		y: parent.y + ( py * parent.height / 2 + ( ( parent.fromCenter ) ? 0 : parent.height / 2 ) ),
 		_parent: parent,
 		_px: px,
 		_py: py,
@@ -109,29 +109,29 @@ function addRectHandle( $canvas, parent, px, py ) {
 		drag: function ( layer ) {
 			var parent = layer._parent;
 			
-			if (parent.width + layer.dx * layer._px < parent.minWidth) {
+			if ( parent.width + ( layer.dx * layer._px ) < parent.minWidth ) {
 				parent.width = parent.minWidth;
 				layer.dx = 0;
 			}
-			if (parent.height + layer.dy * layer._py < parent.minHeight) {
+			if ( parent.height + ( layer.dy * layer._py ) < parent.minHeight ) {
 				parent.height = parent.minHeight;
 				layer.dy = 0;
 			}
 			
 			if ( !parent.resizeFromCenter ) {
 				// Optionally resize rectangle from corner
-				if (parent.fromCenter) {
+				if ( parent.fromCenter ) {
 					parent.width += layer.dx * layer._px;
 					parent.height += layer.dy * layer._py;
 				} else {
 					//This is simplified version based on math. Also you can write this using an if statement for each handle
 					parent.width += layer.dx * layer._px;
-					if (layer._px !== 0) {
-						parent.x += layer.dx * ((1 - layer._px) && (1 - layer._px) / Math.abs((1 - layer._px)));
+					if ( layer._px !== 0 ) {
+						parent.x += layer.dx * ( ( 1 - layer._px ) && ( 1 - layer._px ) / Math.abs ( ( 1 - layer._px ) ) );
 					}
 					parent.height += layer.dy * layer._py;
-					if (layer._py !== 0) {
-						parent.y += layer.dy * ((1 - layer._py) && (1 - layer._py) / Math.abs((1 - layer._py)));
+					if ( layer._py !== 0 ) {
+						parent.y += layer.dy * ( ( 1 - layer._py ) && ( 1 - layer._py ) / Math.abs ( ( 1 - layer._py ) ) );
 					}
 				}
 				// Optionally constrain proportions
@@ -146,11 +146,11 @@ function addRectHandle( $canvas, parent, px, py ) {
 					}
 				}
 				// Ensure diagonal handle does not move
-				if (parent.fromCenter) {
-					if (layer._px !== 0) {
+				if ( parent.fromCenter ) {
+					if ( layer._px !== 0 ) {
 						parent.x += layer.dx / 2;
 					}
-					if (layer._py !== 0) {
+					if ( layer._py !== 0 ) {
 						parent.y += layer.dy / 2;
 					}
 				}
@@ -350,8 +350,8 @@ function updateRectHandles( parent ) {
 		// Move handles when dragging
 		for ( h = 0; h < parent._handles.length; h += 1 ) {
 			handle = parent._handles[h];
-			handle.x = parent.x + (parent.width / 2 * handle._px + ((parent.fromCenter) ? 0 : parent.width / 2));
-			handle.y = parent.y + (parent.height / 2 * handle._py + ((parent.fromCenter) ? 0 : parent.height / 2));
+			handle.x = parent.x + ( parent.width / 2 * handle._px + ( ( parent.fromCenter ) ? 0 : parent.width / 2 ) );
+			handle.y = parent.y + ( parent.height / 2 * handle._py + ( ( parent.fromCenter ) ? 0 : parent.height / 2 ) );
 		}
 	}
 	updateRectGuides( parent );
