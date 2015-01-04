@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v14.10.03
+ * @license jCanvas Handles v15.01.04
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
@@ -32,7 +32,7 @@ function isPathLayer( layer ) {
 
 // Add a single handle to line path
 function addPathHandle( $canvas, parent, xProp, yProp ) {
-		
+
 	var handle = $.extend( {
 		cursors: {
 			mouseover: 'grab',
@@ -75,7 +75,7 @@ function addPathHandle( $canvas, parent, xProp, yProp ) {
 // Add a single handle to rectangle
 function addRectHandle( $canvas, parent, px, py ) {
 	var handle, cursor;
-	
+
 	// Determine cursor to use depending on handle's placement
 	if ( ( px === -1 && py === -1 ) || ( px === 1 && py === 1 ) ) {
 		cursor = 'nwse-resize';
@@ -86,7 +86,7 @@ function addRectHandle( $canvas, parent, px, py ) {
 	} else if ( ( px === 1 && py === -1 ) || ( px === -1 && py === 1 ) ) {
 		cursor = 'nesw-resize';
 	}
-		
+
 	handle = $.extend( {
 		// Set cursors for handle
 		cursors: {
@@ -108,7 +108,7 @@ function addRectHandle( $canvas, parent, px, py ) {
 		// Resize rectangle when dragging a handle
 		drag: function ( layer ) {
 			var parent = layer._parent;
-			
+
 			if ( !parent.resizeFromCenter ) {
 				// Optionally resize rectangle from corner
 				parent.width += layer.dx * layer._px;
@@ -354,13 +354,13 @@ function updatePathHandles( parent ) {
 // Add drag handles to all four corners of rectangle layer
 function addHandles( parent ) {
 	var $canvas = $( parent.canvas );
-	
+
 	// If parent's list of handles doesn't exist
 	if ( parent._handles === undefined ) {
 		// Create list to store handles
 		parent._handles = [];
 	}
-	
+
 	if ( isRectLayer( parent ) ) {
 		// Add four handles to corners of a rectangle/ellipse/image
 		addRectHandles( $canvas, parent );
@@ -418,7 +418,7 @@ $.extend( $.jCanvas.eventHooks, {
 		} else if ( isPathLayer( layer ) ) {
 			updatePathHandles( layer );
 		}
-		
+
 	},
 	// Update handle positions when animating parent layer
 	animate: function ( layer, fx ) {
