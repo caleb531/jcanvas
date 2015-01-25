@@ -1,6 +1,6 @@
 /**
- * @license jCanvas v14.12.11
- * Copyright 2014 Caleb Evans
+ * @license jCanvas v15.01.25
+ * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
 ( function ( $, document, Image, Array, Math, parseFloat, TRUE, FALSE, NULL, UNDEFINED ) {
@@ -2243,7 +2243,8 @@ _createEvents( [
 	'mouseout',
 	'touchstart',
 	'touchmove',
-	'touchend'
+	'touchend',
+	'contextmenu'
 ] );
 
 // Check if event fires when a drawing is drawn
