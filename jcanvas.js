@@ -1,11 +1,11 @@
 /**
- * @license jCanvas v15.01.25
+ * @license jCanvas v15.02.07
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
 (function( jQuery, global, factory ) {
 
-	if ( typeof module === "object" && typeof module.exports === "object" ) {
+	if ( typeof module === 'object' && typeof module.exports === 'object' ) {
 		module.exports = global.document ?
 			factory( global, true ) :
 			function( jQuery, w ) {
@@ -16,17 +16,18 @@
 	}
 
 // Pass this if window is not defined yet
-}( typeof window !== "undefined" ? window.$ : {}, typeof window !== "undefined" ? window : this, function( $, window, noGlobal ) {
+}( typeof window !== 'undefined' ? window.$ : {}, typeof window !== 'undefined' ? window : this, function( $, window ) {
 
-var document = window.document, 
-    Image = window.Image, 
-    Array = window.Array, 
-    getComputedStyle = window.getComputedStyle, 
-    Math = window.Math, 
-    parseFloat = window.parseFloat, 
-    TRUE = true, 
-    FALSE = false, 
-    NULL = null, 
+var document = window.document,
+    Image = window.Image,
+    Array = window.Array,
+    getComputedStyle = window.getComputedStyle,
+    Math = window.Math,
+    parseFloat = window.parseFloat,
+    TRUE = true,
+    FALSE = false,
+    NULL = null,
+	// jshint -W080
     UNDEFINED = undefined;
 
 // Define local aliases to frequently used properties

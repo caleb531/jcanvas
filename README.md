@@ -8,6 +8,15 @@ jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.
 
 jCanvas requires jQuery 1.4 or newer, and supports both desktop and mobile browsers.
 
+### Running on Node
+
+See this example for usage with Node:
+https://github.com/robertjustjones/jcanvas-in-node
+
+To run this example, you'll need to follow the Cairo [installation instructions for node-canvas](https://github.com/Automattic/node-canvas/wiki).
+
+After cloning the repository, run `npm install` and then `node index.js`.
+
 ## [Documentation](http://calebevans.me/projects/jcanvas/docs/)
 
 Please search the online documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:calebevans.me@gmail.com) for clarification.
