@@ -18,8 +18,16 @@
 // Pass this if window is not defined yet
 }( typeof window !== "undefined" ? window.$ : {}, typeof window !== "undefined" ? window : this, function( $, window, noGlobal ) {
 
-var document = window.document, Image = window.Image, Array = window.Array, getComputedStyle = window.getComputedStyle, 
-    Math = window.Math, parseFloat = window.parseFloat, TRUE = true, FALSE = false, NULL = null, UNDEFINED = undefined;
+var document = window.document, 
+    Image = window.Image, 
+    Array = window.Array, 
+    getComputedStyle = window.getComputedStyle, 
+    Math = window.Math, 
+    parseFloat = window.parseFloat, 
+    TRUE = true, 
+    FALSE = false, 
+    NULL = null, 
+    UNDEFINED = undefined;
 
 // Define local aliases to frequently used properties
 var defaults,
