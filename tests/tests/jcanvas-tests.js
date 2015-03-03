@@ -583,10 +583,19 @@ test( 'drawText()', function() {
 		layer: true,
 		name: 'text5',
 		fontFamily: 'sans-serif',
+		fontSize: '48pt',
+		text: 'hello'
+	} );
+	text = $canvas.getLayer( 'text5' );
+	strictEqual( text.fontSize, '48pt', 'Font sizes with units are not coerced to number literals' );
+	$canvas.drawText( {
+		layer: true,
+		name: 'text6',
+		fontFamily: 'sans-serif',
 		fontSize: 36,
 		text: ' '
 	} );
-	text = $canvas.getLayer( 'text5' );
+	text = $canvas.getLayer( 'text6' );
 	strictEqual( text.text, ' ', 'Whitespace string value for text remains string' );
 } );
 

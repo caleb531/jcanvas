@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.02.07
+ * @license jCanvas v15.03.02
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -23,6 +23,7 @@ var document = window.document,
     Array = window.Array,
     getComputedStyle = window.getComputedStyle,
     Math = window.Math,
+	Number = window.Number,
     parseFloat = window.parseFloat,
     TRUE = true,
     FALSE = false,
@@ -206,7 +207,7 @@ function isString( operand ) {
 
 // Determines if the given operand is numeric
 function isNumeric( operand ) {
-	return !isNaN( parseFloat( operand ) );
+	return !isNaN( Number( operand ) ) && !isNaN( parseFloat( operand ) );
 }
 
 // Get 2D context for the given canvas
