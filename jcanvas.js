@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.03.02
+ * @license jCanvas v15.03.28
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -1017,7 +1017,9 @@ $.fn.removeLayer = function removeLayer( layerId ) {
 
 			// Ensure layer index is accurate
 			layer.index = inArray( layer, layers );
+			// Remove layer and allow it to be re-added later
 			layers.splice( layer.index, 1 );
+			delete layer._layer;
 
 			// Update layer name map
 			_updateLayerName( $canvas, data, layer, {

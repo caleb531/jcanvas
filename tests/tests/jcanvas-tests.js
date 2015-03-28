@@ -335,10 +335,12 @@ test( 'removeLayer()', function() {
 		type: 'arc',
 		name: 'circle'
 	} );
+	var square = $canvas.getLayer( 'square' );
 	// Test how layers are removed
 	$canvas.removeLayer( 'square' );
 	strictEqual( $canvas.getLayers().length, 1, undefined, 'Removes layer from layers array' );
 	strictEqual( $canvas.getLayer( 'square' ), undefined, 'Layer is no longer retrievable' );
+	strictEqual( square._layer, undefined );
 	testEventCallbacks( 1 );
 } );
 
