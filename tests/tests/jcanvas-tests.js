@@ -341,6 +341,7 @@ test( 'removeLayer()', function() {
 	strictEqual( $canvas.getLayers().length, 1, undefined, 'Removes layer from layers array' );
 	strictEqual( $canvas.getLayer( 'square' ), undefined, 'Layer is no longer retrievable' );
 	strictEqual( square._layer, undefined );
+	notStrictEqual( square._method, undefined );
 	testEventCallbacks( 1 );
 } );
 

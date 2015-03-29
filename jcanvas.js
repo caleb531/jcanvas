@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.03.28
+ * @license jCanvas v15.03.29
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -312,7 +312,7 @@ function _setGlobalProps( canvas, ctx, params ) {
 	ctx.globalCompositeOperation = params.compositing;
 	// Support cross-browser toggling of image smoothing
 	if ( params.imageSmoothing ) {
-		ctx.webkitImageSmoothingEnabled = ctx.mozImageSmoothingEnabled = params.imageSmoothingEnabled;
+		ctx.imageSmoothingEnabled = ctx.mozImageSmoothingEnabled = params.imageSmoothingEnabled;
 	}
 }
 
@@ -1600,14 +1600,16 @@ function _addLayer( canvas, params, args, method ) {
 	}
 
 	// Determine the layer's type using the available information
-	if ( method ) {
-		params._method = method;
-	} else if ( params.method ) {
-		params._method = $.fn[ params.method ];
-	} else if ( params.type ) {
-		params._method = $.fn[ maps.drawings[ params.type ] ];
-	} else {
-		params._method = function () {};
+	if ( !params._method ) {
+		if ( method ) {
+			params._method = method;
+		} else if ( params.method ) {
+			params._method = $.fn[ params.method ];
+		} else if ( params.type ) {
+			params._method = $.fn[ maps.drawings[ params.type ] ];
+		} else {
+			params._method = function () {};
+		}
 	}
 
 	// If layer hasn't been added yet
