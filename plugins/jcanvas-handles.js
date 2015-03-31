@@ -1,6 +1,6 @@
 /**
- * @license jCanvas Handles v15.01.04
- * Copyright 2013 Caleb Evans
+ * @license jCanvas Handles v15.03.31
+ * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
 ( function ( $ ) {
@@ -393,6 +393,29 @@ function addHandles( parent ) {
 	}
 }
 
+// Remove handles if handle property was removed
+function removeHandles( layer ) {
+	var $canvas = $( layer.canvas ), handle, h;
+	if ( layer._handles ) {
+		// Remove handles from layer
+		for ( h = 0; h < layer._handles.length; h += 1 ) {
+			handle = layer._handles[h];
+			$canvas.removeLayer( handle );
+		}
+		layer._handles.length = 0;
+	}
+}
+
+function objectContainsPathCoords( obj ) {
+	var prop;
+	for ( prop in obj ) {
+		if ( obj.hasOwnProperty( prop ) && prop.match(/^(x|y)\d+$/) ) {
+			return true;
+		}
+	}
+	return false;
+}
+
 $.extend( $.jCanvas.eventHooks, {
 	// If necessary, add handles when layer is added
 	add: function ( layer ) {
@@ -415,22 +438,12 @@ $.extend( $.jCanvas.eventHooks, {
 	},
 	// Update handle positions when changing parent layer's dimensions
 	change: function ( layer, props ) {
-		var $canvas,
-			handle, h;
-		if ( props.handle ) {
+		if ( props.handle || objectContainsPathCoords( props ) ) {
 			// Add handles if handle property was added
+			removeHandles( layer );
 			addHandles( layer );
 		} else if ( props.handle === null ) {
-			// Remove handles if handle property was removed
-			$canvas = $( this );
-			if ( layer._handles ) {
-				// Remove handles from layer
-				for ( h = 0; h < layer._handles.length; h += 1 ) {
-					handle = layer._handles[h];
-					$canvas.removeLayer( handle );
-				}
-				layer._handles.length = 0;
-			}
+			removeHandles( layer );
 		}
 		if ( isRectLayer( layer ) ) {
 			// If width/height was changed
