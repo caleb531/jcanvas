@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.03.29
+ * @license jCanvas v15.06.05
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -2670,8 +2670,8 @@ $.fn.drawRect = function drawRect( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawRect );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				ctx.beginPath();
 				if ( params.width && params.height ) {
@@ -2830,8 +2830,8 @@ $.fn.drawArc = function drawArc( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawArc );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.radius * 2 );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				ctx.beginPath();
 				_drawArc( $canvases[ e ], ctx, params, params );
@@ -2862,8 +2862,8 @@ $.fn.drawEllipse = function drawEllipse( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawEllipse );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Calculate control width and height
 				controlW = params.width * ( 4 / 3 );
@@ -2904,8 +2904,8 @@ $.fn.drawPolygon = function drawPolygon( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawPolygon );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.radius * 2 );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Polygon's central angle
 				dtheta = ( 2 * PI ) / params.sides;
@@ -2966,8 +2966,8 @@ $.fn.drawSlice = function drawSlice( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawSlice );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params, params.radius * 2 );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Perform extra calculations
 
@@ -3134,8 +3134,8 @@ $.fn.drawLine = function drawLine( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawLine );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Draw each point
 				ctx.beginPath();
@@ -3216,8 +3216,8 @@ $.fn.drawQuadratic = function drawQuadratic( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawQuadratic );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Draw each point
 				ctx.beginPath();
@@ -3303,8 +3303,8 @@ $.fn.drawBezier = function drawBezier( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawBezier );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Draw each point
 				ctx.beginPath();
@@ -3415,8 +3415,8 @@ $.fn.drawVector = function drawVector( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawVector );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Draw each point
 				ctx.beginPath();
@@ -3446,8 +3446,8 @@ $.fn.drawPath = function drawPath( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawPath );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
 				_transformShape( $canvases[ e ], ctx, params );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				ctx.beginPath();
 				l = 1;
@@ -3621,8 +3621,6 @@ $.fn.drawText = function drawText( args ) {
 			layer = _addLayer( $canvases[ e ], params, args, drawText );
 			if ( params.visible ) {
 
-				_setGlobalProps( $canvases[ e ], ctx, params );
-
 				// Set text-specific properties
 				ctx.textBaseline = params.baseline;
 				ctx.textAlign = params.align;
@@ -3651,6 +3649,7 @@ $.fn.drawText = function drawText( args ) {
 				}
 
 				_transformShape( $canvases[ e ], ctx, params, params.width, params.height );
+				_setGlobalProps( $canvases[ e ], ctx, params );
 
 				// Adjust text position to accomodate different horizontal alignments
 				x = params.x;
@@ -3801,9 +3800,6 @@ $.fn.drawImage = function drawImage( args ) {
 	// Draw image function
 	function draw( canvas, ctx, data, params, layer ) {
 
-		// Set global canvas properties
-		_setGlobalProps( canvas, ctx, params );
-
 		// If width and sWidth are not defined, use image width
 		if ( params.width === NULL && params.sWidth === NULL ) {
 			params.width = params.sWidth = img.width;
@@ -3856,8 +3852,8 @@ $.fn.drawImage = function drawImage( args ) {
 				params.sx = img.width - ( params.sWidth / 2 );
 			}
 
-			// Position/transform image if necessary
 			_transformShape( canvas, ctx, params, params.width, params.height );
+			_setGlobalProps( canvas, ctx, params );
 
 			// Draw image
 			ctx.drawImage(
