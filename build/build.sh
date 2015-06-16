@@ -35,6 +35,8 @@ then
 	if [[ $(git diff --name-only $SOURCE 2> /dev/null) ]]
 	then
 
+		CONFIRM_BUILD=1
+
 		echo "Building jCanvas v$VERSION..."
 
 		# Function to replace within file using pattern
@@ -86,7 +88,7 @@ then
 			git commit
 			echo
 			# If jCanvas was built
-			if [[ $CONFIRM_BUILD =~ ^y ]]
+			if [[ $CONFIRM_BUILD == 1 ]]
 			then
 				# If tag already exists
 				if [[ $(git show-ref --tags --quiet --verify -- "refs/tags/$TAG") ]]
