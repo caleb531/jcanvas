@@ -19,7 +19,7 @@ After cloning the repository, run `npm install` and then `node index.js`.
 
 ## [Documentation](http://calebevans.me/projects/jcanvas/docs/)
 
-Please search the online documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:calebevans.me@gmail.com) for clarification.
+Please search the online documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:caleb@calebevans.me) for clarification.
 
 ## [Support](http://calebevans.me/projects/jcanvas/support/)
 
