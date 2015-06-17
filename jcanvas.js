@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.06.05
+ * @license jCanvas v15.06.16
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -161,6 +161,7 @@ jCanvasDefaults.baseDefaults = {
 	radius: 0,
 	repeat: 'repeat',
 	respectAlign: FALSE,
+	restrictDragToAxis: null,
 	rotate: 0,
 	rounded: FALSE,
 	scale: 1,
@@ -1267,8 +1268,12 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 			newY = layer._eventY - ( layer._endY - layer._startY );
 			layer.dx = newX - layer.x;
 			layer.dy = newY - layer.y;
-			layer.x = newX;
-			layer.y = newY;
+			if ( layer.restrictDragToAxis !== 'y' ) {
+				layer.x = newX;
+			}
+			if ( layer.restrictDragToAxis !== 'x' ) {
+				layer.y = newY;
+			}
 
 			// Trigger drag event
 			_triggerLayerEvent( $canvas, data, layer, 'drag' );
@@ -1282,8 +1287,12 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 
 					for ( l = 0; l < group.length; l += 1 ) {
 						if ( group[ l ] !== layer ) {
-							group[ l ].x += layer.dx;
-							group[ l ].y += layer.dy;
+							if ( layer.restrictDragToAxis !== 'y' && group[ l ].restrictDragToAxis !== 'y' ) {
+								group[ l ].x += layer.dx;
+							}
+							if ( layer.restrictDragToAxis !== 'x' && group[ l ].restrictDragToAxis !== 'x' ) {
+								group[ l ].y += layer.dy;
+							}
 						}
 					}
 
