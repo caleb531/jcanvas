@@ -6,7 +6,7 @@
 (function( jQuery, global, factory ) {
 
 	if ( typeof module === 'object' && typeof module.exports === 'object' ) {
-		module.exports = global.document ?
+		module.exports = global.document && typeof jQuery !== 'undefined' ?
 			factory( global, true ) :
 			function( jQuery, w ) {
 				return factory( jQuery, w );
