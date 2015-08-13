@@ -4,7 +4,7 @@
 	"version": "15.06.17",
 	"author": {
 		"name": "Caleb Evans",
-		"email": "calebevans.me@gmail.com",
+		"email": "caleb@calebevans.me",
 		"url": "http://calebevans.me/"
 	},
 	"licenses": [
@@ -27,14 +27,14 @@
 		"animation",
 		"touch"
 	],
-	"homepage": "http://calebevans.me/projects/jcanvas/",
-	"docs": "http://calebevans.me/projects/jcanvas/docs/",
-	"download": "http://calebevans.me/projects/jcanvas/downloads/",
+	"homepage": "http://projects.calebevans.me/jcanvas/",
+	"docs": "http://projects.calebevans.me/jcanvas/docs/",
+	"download": "http://projects.calebevans.me/jcanvas/downloads/",
 	"bugs": "https://github.com/caleb531/jcanvas/issues",
 	"maintainers": [
 		{
 			"name": "Caleb Evans",
-			"email": "calebevans.me@gmail.com",
+			"email": "caleb@calebevans.me",
 			"url": "http://calebevans.me/"
 		},
 		{
