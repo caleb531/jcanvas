@@ -109,6 +109,7 @@ then
 				# Push all tags to GitHub
 				git push --tags origin
 				echo
+				npm publish
 			else
 				echo "Commit not pushed to GitHub."
 			fi
