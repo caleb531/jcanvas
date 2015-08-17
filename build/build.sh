@@ -32,10 +32,10 @@ then
 	YEAR="$(date +"%Y")"
 
 	# Ask before building jCanvas
-	if [[ $(git diff --name-only $SOURCE 2> /dev/null) ]]
+	echo -n "Build jCanvas? "
+	read CONFIRM_BUILD
+	if [[ $CONFIRM_BUILD =~ ^y ]]
 	then
-
-		CONFIRM_BUILD=1
 
 		echo "Building jCanvas v$VERSION..."
 
@@ -88,7 +88,7 @@ then
 			git commit
 			echo
 			# If jCanvas was built
-			if [[ $CONFIRM_BUILD == 1 ]]
+			if [[ $CONFIRM_BUILD =~ ^y ]]
 			then
 				# If tag already exists
 				if [[ $(git show-ref --tags --quiet --verify -- "refs/tags/$TAG") ]]
@@ -100,7 +100,7 @@ then
 				git tag $VERSION
 			fi
 			# Ask before pushing to GitHub
-			echo -n "Push changes to GitHub? ";
+			echo -n "Push changes to GitHub? "
 			read PUSH_CONFIRM
 			if [[ $PUSH_CONFIRM =~ ^y ]]
 			then
