@@ -2,7 +2,7 @@
 	"name": "jcanvas",
 	"title": "jCanvas",
 	"description": "jCanvas brings jQuery's powerful syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and much more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
-	"version": "15.08.17",
+	"version": "15.09.03",
 	"main": "jcanvas.js",
 	"homepage": "http://projects.calebevans.me/jcanvas/",
 	"author": {
