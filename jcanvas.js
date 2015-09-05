@@ -14,7 +14,7 @@
 	}
 
 // Pass this if window is not defined yet
-}( typeof window !== 'undefined' ? window.$ : {}, typeof window !== 'undefined' ? window : this, function( $, window ) {
+}( typeof window !== 'undefined' ? window.jQuery : {}, typeof window !== 'undefined' ? window : this, function( $, window ) {
 
 var document = window.document,
     Image = window.Image,
