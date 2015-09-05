@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.09.03
+ * @license jCanvas v15.09.04
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
