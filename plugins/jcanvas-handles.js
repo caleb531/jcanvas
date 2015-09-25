@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v15.03.31
+ * @license jCanvas Handles v15.09.25
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -447,7 +447,7 @@ $.extend( $.jCanvas.eventHooks, {
 		}
 		if ( isRectLayer( layer ) ) {
 			// If width/height was changed
-			if ( props.width !== undefined || props.height !== undefined ) {
+			if ( props.width !== undefined || props.height !== undefined || props.x !== undefined || props.y !== undefined ) {
 				// Update handle positions
 				updateRectHandles( layer );
 			}
