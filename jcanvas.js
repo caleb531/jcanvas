@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.09.04
+ * @license jCanvas v15.09.29
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -3878,8 +3878,8 @@ $.fn.drawImage = function drawImage( args ) {
 		} else {
 			// Show entire image if no crop region is defined
 
-			// Position/transform image if necessary
 			_transformShape( canvas, ctx, params, params.width, params.height );
+			_setGlobalProps( canvas, ctx, params );
 
 			// Draw image on canvas
 			ctx.drawImage(
