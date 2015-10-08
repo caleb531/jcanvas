@@ -227,7 +227,7 @@ test( 'setLayer()', function() {
 		height: '-=10',
 		rotate: '30',
 		translate: 0,
-		text: ''
+		text: '4'
 	} );
 	strictEqual( square.fillStyle, 'green', 'Sets fillStyle of layer' );
 	strictEqual( square.opacity, 0.5, 'Sets opacity of layer' );
@@ -238,8 +238,12 @@ test( 'setLayer()', function() {
 	strictEqual( square.height, 90, 'Decrements width by 10' );
 	strictEqual( square.rotate, 30, 'Coerces numeric strings to numbers' );
 	strictEqual( square.translate, 0, 'Handles zero values correctly' );
-	strictEqual( square.text, '', 'Does not coerce text property' );
-	testEventCallbacks( 1 );
+	strictEqual( square.text, '4', 'Does not coerce text property' );
+	$canvas.setLayer( square, {
+		text: ''
+	} )
+	strictEqual( square.text, '', 'Does not coerce empty text property' );
+	testEventCallbacks( 2 );
 } );
 
 test( 'setLayers()', function() {
