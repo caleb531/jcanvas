@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v15.10.08
+ * @license jCanvas v15.12.12
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -4046,7 +4046,7 @@ $.fn.createPattern = function createPattern( args ) {
 			if ( img.complete || imgCtx ) {
 				onload();
 			} else {
-				img.onload = onload();
+				img.onload = onload;
 				// Fix onload() bug in IE9
 				img.src = img.src;
 			}
