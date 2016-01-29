@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v15.09.25
+ * @license jCanvas Handles v15.10.03b
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
@@ -96,8 +96,13 @@ function addRectHandle( $canvas, parent, px, py ) {
 		// Define constant properties for handle
 		layer: true,
 		draggable: true,
-		x: parent.x + ( px * parent.width / 2 + ( ( parent.fromCenter ) ? 0 : parent.width / 2 ) ),
-		y: parent.y + ( py * parent.height / 2 + ( ( parent.fromCenter ) ? 0 : parent.height / 2 ) ),
+		dragByTranslate: true,
+		x: parent.x,
+		y: parent.y,
+		rotate: parent.rotate,
+		scale: parent.scale,
+		translateX: ( px * parent.width / 2 + ( ( parent.fromCenter ) ? 0 : parent.width / 2 ) ),
+		translateY: ( py * parent.height / 2 + ( ( parent.fromCenter ) ? 0 : parent.height / 2 ) ),
 		_parent: parent,
 		_px: px,
 		_py: py,
@@ -127,11 +132,11 @@ function addRectHandle( $canvas, parent, px, py ) {
 					//This is simplified version based on math. Also you can write this using an if statement for each handle
 					parent.width += layer.dx * layer._px;
 					if ( layer._px !== 0 ) {
-						parent.x += layer.dx * ( ( 1 - layer._px ) && ( 1 - layer._px ) / Math.abs ( ( 1 - layer._px ) ) );
+						parent.translateX += layer.dx * ( ( 1 - layer._px ) && ( 1 - layer._px ) / Math.abs ( ( 1 - layer._px ) ) );
 					}
 					parent.height += layer.dy * layer._py;
 					if ( layer._py !== 0 ) {
-						parent.y += layer.dy * ( ( 1 - layer._py ) && ( 1 - layer._py ) / Math.abs ( ( 1 - layer._py ) ) );
+						parent.translateY += layer.dy * ( ( 1 - layer._py ) && ( 1 - layer._py ) / Math.abs ( ( 1 - layer._py ) ) );
 					}
 				}
 				// Optionally constrain proportions
@@ -350,8 +355,17 @@ function updateRectHandles( parent ) {
 		// Move handles when dragging
 		for ( h = 0; h < parent._handles.length; h += 1 ) {
 			handle = parent._handles[h];
-			handle.x = parent.x + ( parent.width / 2 * handle._px + ( ( parent.fromCenter ) ? 0 : parent.width / 2 ) );
-			handle.y = parent.y + ( parent.height / 2 * handle._py + ( ( parent.fromCenter ) ? 0 : parent.height / 2 ) );
+			if ( parent.dragByTranslate ) {
+				handle.x = parent.x + parent.translateX;
+				handle.y = parent.y + parent.translateY;
+			} else {
+				handle.x = parent.x;
+				handle.y = parent.y;
+			}
+			handle.rotate = parent.rotate;
+			handle.scale = parent.scale;
+			handle.translateX = ( parent.width / 2 * handle._px + ( ( parent.fromCenter ) ? 0 : parent.width / 2 ) );
+			handle.translateY = ( parent.height / 2 * handle._py + ( ( parent.fromCenter ) ? 0 : parent.height / 2 ) );
 		}
 	}
 	updateRectGuides( parent );
@@ -447,7 +461,7 @@ $.extend( $.jCanvas.eventHooks, {
 		}
 		if ( isRectLayer( layer ) ) {
 			// If width/height was changed
-			if ( props.width !== undefined || props.height !== undefined || props.x !== undefined || props.y !== undefined ) {
+			if ( props.width !== undefined || props.height !== undefined || props.x !== undefined || props.y !== undefined || props.rotate !== undefined || props.scale !== undefined ) {
 				// Update handle positions
 				updateRectHandles( layer );
 			}
@@ -461,7 +475,7 @@ $.extend( $.jCanvas.eventHooks, {
 		// If layer is a rectangle or ellipse layer
 		if ( isRectLayer( layer ) ) {
 			// If width or height are animated
-			if ( fx.prop === 'width' || fx.prop === 'height' || fx.prop === 'x' || fx.prop === 'y' ) {
+			if ( fx.prop === 'width' || fx.prop === 'height' || fx.prop === 'x' || fx.prop === 'y' || fx.prop === 'rotate' || fx.prop === 'scale' ) {
 				// Update rectangular handles
 				updateRectHandles( layer );
 			}

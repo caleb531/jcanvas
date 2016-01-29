@@ -128,6 +128,7 @@ jCanvasDefaults.baseDefaults = {
 	cursors: NULL,
 	disableEvents: FALSE,
 	draggable: FALSE,
+	dragByTranslate: FALSE,
 	dragGroups: NULL,
 	groups: NULL,
 	data: NULL,
@@ -1222,7 +1223,7 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 	var layers, layer, l,
 		drag, dragGroups,
 		group, groupName, g,
-		newX, newY;
+		newX, newY, angle;
 
 	drag = data.drag;
 	layer = drag.layer;
@@ -1249,8 +1250,13 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 			}
 
 			// Set drag properties for this layer
-			layer._startX = layer.x;
-			layer._startY = layer.y;
+			if ( layer.dragByTranslate ) {
+				layer._startX = layer.translateX;
+				layer._startY = layer.translateY;
+			} else {
+				layer._startX = layer.x;
+				layer._startY = layer.y;
+			}
 			layer._endX = layer._eventX;
 			layer._endY = layer._eventY;
 
@@ -1264,13 +1270,27 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 			// Calculate position after drag
 			newX = layer._eventX - ( layer._endX - layer._startX );
 			newY = layer._eventY - ( layer._endY - layer._startY );
-			layer.dx = newX - layer.x;
-			layer.dy = newY - layer.y;
-			if ( layer.restrictDragToAxis !== 'y' ) {
-				layer.x = newX;
-			}
-			if ( layer.restrictDragToAxis !== 'x' ) {
-				layer.y = newY;
+			if ( layer.dragByTranslate ) {
+				layer.dx = newX - layer.translateX;
+				layer.dy = newY - layer.translateY;
+				angle = layer.rotate * Math.PI / 180;
+				newX = ( newX * cos( -angle ) ) - ( newY * sin( -angle ) );
+				newY = ( newY * cos( -angle ) ) + ( newX * sin( -angle ) );
+				if ( layer.restrictDragToAxis !== 'y' ) {
+					layer.translateX = newX;
+				}
+				if ( layer.restrictDragToAxis !== 'x' ) {
+					layer.translateY = newY;
+				}
+			} else {
+				layer.dx = newX - layer.x;
+				layer.dy = newY - layer.y;
+				if ( layer.restrictDragToAxis !== 'y' ) {
+					layer.x = newX;
+				}
+				if ( layer.restrictDragToAxis !== 'x' ) {
+					layer.y = newY;
+				}
 			}
 
 			// Trigger drag event
