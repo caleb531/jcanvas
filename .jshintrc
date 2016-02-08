@@ -10,7 +10,7 @@
 	"forin" : true,
 	"freeze": true,
 	"immed": true,
-	"latedef": true,
+	"latedef": "nofunc",
 	"newcap": false,
 	"noarg": true,
 	"noempty": true,

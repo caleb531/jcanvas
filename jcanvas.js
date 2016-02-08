@@ -1,6 +1,6 @@
 /**
- * @license jCanvas v15.12.12
- * Copyright 2015 Caleb Evans
+ * @license jCanvas v16.02.08
+ * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
 (function( jQuery, global, factory ) {
@@ -3545,7 +3545,7 @@ function _measureText( canvas, ctx, params, lines ) {
 
 // Wraps a string of text within a defined width
 function _wrapText( ctx, params ) {
-	var allText = params.text,
+	var allText = String(params.text),
 		// Maximum line width ( optional )
 		maxWidth = params.maxWidth,
 		// Lines created by manual line breaks ( \n )
