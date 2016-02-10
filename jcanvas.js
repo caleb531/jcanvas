@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v16.02.08
+ * @license jCanvas v16.02.09
  * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
@@ -3616,7 +3616,7 @@ $.fn.drawText = function drawText( args ) {
 		params, layer,
 		lines, line, l,
 		fontSize, constantCloseness = 500,
-		nchars, ch, c,
+		nchars, chars, ch, c,
 		x, y;
 
 	for ( e = 0; e < $canvases.length; e += 1 ) {
@@ -3692,6 +3692,11 @@ $.fn.drawText = function drawText( args ) {
 						ctx.save();
 						ctx.translate( params.x, params.y );
 						line = lines[ l ];
+						if ( params.flipArcText ) {
+							chars = line.split( '' );
+							chars.reverse();
+							line = chars.join( '' );
+						}
 						nchars = line.length;
 						ctx.rotate( -( PI * params.letterSpacing * ( nchars - 1 ) ) / 2 );
 						// Loop through characters on each line
@@ -3704,6 +3709,9 @@ $.fn.drawText = function drawText( args ) {
 							}
 							ctx.save();
 							ctx.translate( 0, -params.radius );
+							if ( params.flipArcText ) {
+								ctx.scale( -1, -1 );
+							}
 							ctx.fillText( ch, 0, 0 );
 							ctx.restore();
 						}
