@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v16.02.09
+ * @license jCanvas v16.04.01
  * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
@@ -299,7 +299,7 @@ function _setGlobalProps( canvas, ctx, params ) {
 	if ( ctx.setLineDash ) {
 		ctx.setLineDash( params.strokeDash );
 	}
-	ctx.webkitLineDash = ctx.mozDash = params.strokeDash;
+	ctx.webkitLineDash = params.strokeDash;
 	ctx.lineDashOffset = ctx.webkitLineDashOffset = ctx.mozDashOffset = params.strokeDashOffset;
 	// Drop shadow
 	ctx.shadowOffsetX = params.shadowX;
