@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v16.04.01
+ * @license jCanvas v16.05.23
  * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
@@ -3713,6 +3713,14 @@ $.fn.drawText = function drawText( args ) {
 								ctx.scale( -1, -1 );
 							}
 							ctx.fillText( ch, 0, 0 );
+							// Prevent extra shadow created by stroke ( but only when fill is present )
+							if ( params.fillStyle !== 'transparent' ) {
+								ctx.shadowColor = 'transparent';
+							}
+							if ( params.strokeWidth !== 0 ) {
+								// Only stroke if the stroke is not 0
+								ctx.strokeText( ch, 0, 0 );
+							}
 							ctx.restore();
 						}
 						params.radius -= fontSize;
