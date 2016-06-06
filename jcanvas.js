@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v16.05.23
+ * @license jCanvas v16.06.06
  * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
@@ -1804,12 +1804,11 @@ function _colorToRgbArray( color ) {
 		rgb = [],
 		multiple = 1;
 
-	// Deal with hexadecimal colors and color names
-	if ( color.match( /^([a-z]+|#[0-9a-f]+)$/gi ) ) {
-		// Deal with complete transparency
-		if ( color === 'transparent' ) {
-			color = 'rgba(0, 0, 0, 0)';
-		}
+	// Deal with complete transparency
+	if ( color === 'transparent' ) {
+		color = 'rgba(0, 0, 0, 0)';
+	} else if ( color.match( /^([a-z]+|#[0-9a-f]+)$/gi ) ) {
+		// Deal with hexadecimal colors and color names
 		elem = document.head;
 		originalColor = elem.style.color;
 		elem.style.color = color;
@@ -1842,7 +1841,9 @@ function _animateColor( fx ) {
 		i;
 	// Only parse start and end colors once
 	if ( typeOf( fx.start ) !== 'array' ) {
+		var orig = fx.start.slice(0);
 		fx.start = _colorToRgbArray( fx.start );
+		console.log(orig, '=>', fx.start);
 		fx.end = _colorToRgbArray( fx.end );
 	}
 	fx.now = [];
