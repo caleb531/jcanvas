@@ -1841,9 +1841,7 @@ function _animateColor( fx ) {
 		i;
 	// Only parse start and end colors once
 	if ( typeOf( fx.start ) !== 'array' ) {
-		var orig = fx.start.slice(0);
 		fx.start = _colorToRgbArray( fx.start );
-		console.log(orig, '=>', fx.start);
 		fx.end = _colorToRgbArray( fx.end );
 	}
 	fx.now = [];
