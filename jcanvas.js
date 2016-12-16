@@ -17,17 +17,17 @@
 }( typeof window !== 'undefined' ? window.jQuery : {}, typeof window !== 'undefined' ? window : this, function( $, window ) {
 
 var document = window.document,
-    Image = window.Image,
-    Array = window.Array,
-    getComputedStyle = window.getComputedStyle,
-    Math = window.Math,
+	Image = window.Image,
+	Array = window.Array,
+	getComputedStyle = window.getComputedStyle,
+	Math = window.Math,
 	Number = window.Number,
-    parseFloat = window.parseFloat,
-    TRUE = true,
-    FALSE = false,
-    NULL = null,
+	parseFloat = window.parseFloat,
+	TRUE = true,
+	FALSE = false,
+	NULL = null,
 	// jshint -W080
-    UNDEFINED = undefined;
+	UNDEFINED = undefined;
 
 // Define local aliases to frequently used properties
 var defaults,
