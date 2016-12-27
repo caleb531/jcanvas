@@ -1322,7 +1322,7 @@ css.cursors = [ 'grab', 'grabbing', 'zoom-in', 'zoom-out' ];
 
 // Function to detect vendor prefix
 // Modified version of David Walsh's implementation
-// http://davidwalsh.name/vendor-prefix
+// https://davidwalsh.name/vendor-prefix
 css.prefix = ( function () {
 	var styles = getComputedStyle( document.documentElement, '' ),
 		pre = ( arraySlice
