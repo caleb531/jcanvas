@@ -1,11 +1,11 @@
 {
 	"name": "jcanvas",
 	"title": "jCanvas",
-	"version": "16.06.06",
+	"version": "16.07.03",
 	"author": {
 		"name": "Caleb Evans",
 		"email": "caleb@calebevans.me",
-		"url": "http://calebevans.me/"
+		"url": "https://calebevans.me/"
 	},
 	"licenses": [
 		{
@@ -27,15 +27,15 @@
 		"animation",
 		"touch"
 	],
-	"homepage": "http://projects.calebevans.me/jcanvas/",
-	"docs": "http://projects.calebevans.me/jcanvas/docs/",
-	"download": "http://projects.calebevans.me/jcanvas/downloads/",
+	"homepage": "https://projects.calebevans.me/jcanvas/",
+	"docs": "https://projects.calebevans.me/jcanvas/docs/",
+	"download": "https://projects.calebevans.me/jcanvas/downloads/",
 	"bugs": "https://github.com/caleb531/jcanvas/issues",
 	"maintainers": [
 		{
 			"name": "Caleb Evans",
 			"email": "caleb@calebevans.me",
-			"url": "http://calebevans.me/"
+			"url": "https://calebevans.me/"
 		},
 		{
 			"name": "Dave Smith",

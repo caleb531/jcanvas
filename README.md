@@ -1,10 +1,10 @@
-# [jCanvas](http://projects.calebevans.me/jcanvas/)
+# [jCanvas](https://projects.calebevans.me/jcanvas/)
 *Copyright 2016, Caleb Evans*  
 *Released under the MIT license*
 
 jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.
 
-## [Download](http://projects.calebevans.me/jcanvas/downloads/)
+## [Download](https://projects.calebevans.me/jcanvas/downloads/)
 
 jCanvas requires jQuery 1.4 or newer, and supports both desktop and mobile browsers.
 
@@ -17,11 +17,11 @@ To run this example, you'll need to follow the Cairo [installation instructions 
 
 After cloning the repository, run `npm install` and then `node index.js`.
 
-## [Documentation](http://projects.calebevans.me/jcanvas/docs/)
+## [Documentation](https://projects.calebevans.me/jcanvas/docs/)
 
 Please search the online documentation before emailing me any questions you may have. If something in the documentation isn't clear, feel free to [email me](mailto:caleb@calebevans.me) for clarification.
 
-## [Support](http://projects.calebevans.me/jcanvas/support/)
+## [Support](https://projects.calebevans.me/jcanvas/support/)
 
 If you are reporting a jCanvas bug, please include the following information in your report:
 

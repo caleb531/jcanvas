@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v16.06.06
+ * @license jCanvas v16.07.03
  * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
@@ -17,17 +17,17 @@
 }( typeof window !== 'undefined' ? window.jQuery : {}, typeof window !== 'undefined' ? window : this, function( $, window ) {
 
 var document = window.document,
-    Image = window.Image,
-    Array = window.Array,
-    getComputedStyle = window.getComputedStyle,
-    Math = window.Math,
+	Image = window.Image,
+	Array = window.Array,
+	getComputedStyle = window.getComputedStyle,
+	Math = window.Math,
 	Number = window.Number,
-    parseFloat = window.parseFloat,
-    TRUE = true,
-    FALSE = false,
-    NULL = null,
+	parseFloat = window.parseFloat,
+	TRUE = true,
+	FALSE = false,
+	NULL = null,
 	// jshint -W080
-    UNDEFINED = undefined;
+	UNDEFINED = undefined;
 
 // Define local aliases to frequently used properties
 var defaults,
@@ -1322,7 +1322,7 @@ css.cursors = [ 'grab', 'grabbing', 'zoom-in', 'zoom-out' ];
 
 // Function to detect vendor prefix
 // Modified version of David Walsh's implementation
-// http://davidwalsh.name/vendor-prefix
+// https://davidwalsh.name/vendor-prefix
 css.prefix = ( function () {
 	var styles = getComputedStyle( document.documentElement, '' ),
 		pre = ( arraySlice
@@ -1841,9 +1841,7 @@ function _animateColor( fx ) {
 		i;
 	// Only parse start and end colors once
 	if ( typeOf( fx.start ) !== 'array' ) {
-		var orig = fx.start.slice(0);
 		fx.start = _colorToRgbArray( fx.start );
-		console.log(orig, '=>', fx.start);
 		fx.end = _colorToRgbArray( fx.end );
 	}
 	fx.now = [];
