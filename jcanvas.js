@@ -4319,6 +4319,13 @@ jCanvas.clearCache = function clearCache() {
 	}
 };
 
+// Bring passed layer to top, regardless of draggable
+$.fn.bringToTop = function(layer) {
+  var layers = $(this).getLayers();
+  layers.splice(layer.index, 1);
+  layer.index = layers.push(layer);
+};
+
 // Enable canvas feature detection with $.support
 $.support.canvas = ( $( '<canvas />' )[ 0 ].getContext !== UNDEFINED );
 
