@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v16.07.03
+ * @license jCanvas v17.04.01b
  * Copyright 2016 Caleb Evans
  * Released under the MIT license
  */
@@ -2354,16 +2354,24 @@ $.event.fix = function ( event ) {
 		// If offsetX and offsetY are not supported, define them
 		if ( event.pageX !== UNDEFINED && event.offsetX === UNDEFINED ) {
 			offset = $( event.currentTarget ).offset();
-			if ( offset ) {
-				event.offsetX = event.pageX - offset.left;
-				event.offsetY = event.pageY - offset.top;
+			try {
+				if ( offset ) {
+					event.offsetX = event.pageX - offset.left;
+					event.offsetY = event.pageY - offset.top;
+				}
+			} catch (error) {
+
 			}
 		} else if ( touches ) {
-			// Enable offsetX and offsetY for mobile devices
-			offset = $( event.currentTarget ).offset();
-			if ( offset ) {
-				event.offsetX = touches[ 0 ].pageX - offset.left;
-				event.offsetY = touches[ 0 ].pageY - offset.top;
+			try {
+				// Enable offsetX and offsetY for mobile devices
+				offset = $( event.currentTarget ).offset();
+				if ( offset ) {
+					event.offsetX = touches[ 0 ].pageX - offset.left;
+					event.offsetY = touches[ 0 ].pageY - offset.top;
+				}
+			} catch (error) {
+
 			}
 		}
 
