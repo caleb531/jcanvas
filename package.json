@@ -35,6 +35,7 @@
     "jquery": "^2.2.4"
   },
   "devDependencies": {
+    "eslint": "^3.19.0",
     "grunt": "^1.0.1",
     "grunt-contrib-uglify": "^2.3.0",
     "grunt-contrib-watch": "^1.0.0",
