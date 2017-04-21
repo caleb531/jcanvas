@@ -19,7 +19,8 @@
 		"html5",
 		"jquery",
 		"events",
-		"animation"
+		"animation",
+		"jquery-plugin"
 	],
 	"bugs": {
 		"url": "https://github.com/caleb531/jcanvas/issues"
