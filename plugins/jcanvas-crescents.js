@@ -23,7 +23,7 @@ function getIntersection(x0, y0, r0, x1, y1, r1) {
 		ry = dx * (h / d),
 		xi = x2 + rx,
 		yi = y2 + ry;
-	
+
 	// Check if circles do not intersect or overlap completely
 	if (d > (r0 + r1) || d < Math.abs(r0 - r1)) {
 		return false;
@@ -51,7 +51,7 @@ $.jCanvas.extend({
 			y = intersection[1] - params.y,
 			t = Math.atan2(y, x),
 			r = Math.sqrt((x * x) + (y * y));
-		
+
 		if (params.eclipse <= 0) {
 			// Show full circle if circle is not eclipsed
 			start = 0;
@@ -61,14 +61,14 @@ $.jCanvas.extend({
 			start = t;
 			end = -t;
 		}
-		
+
 		// If circle is not fully eclipsed
 		if (params.eclipse < 1) {
 			// Draw crescent shape
-			
+
 			// Enable shape transformation
 			$.jCanvas.transformShape(this, ctx, params);
-			
+
 			ctx.beginPath();
 			// Draw full circle
 			ctx.arc(params.x, params.y, params.radius, start, end, false);
@@ -82,10 +82,10 @@ $.jCanvas.extend({
 			// Always close path
 			params.closed = true;
 			$.jCanvas.closePath(this, ctx, params);
-		
+
 		}
-		
-	}	
+
+	}
 });
 
 }(jQuery, Math));
