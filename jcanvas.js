@@ -1264,6 +1264,12 @@ function _handleLayerDrag( $canvas, data, eventType ) {
 			// Calculate position after drag
 			newX = layer._eventX - ( layer._endX - layer._startX );
 			newY = layer._eventY - ( layer._endY - layer._startY );
+			if ( layer.constrainDragX ) {
+				newX = layer.constrainDragX.call( $canvas[0], layer, newX );
+			}
+			if ( layer.constrainDragY ) {
+				newY = layer.constrainDragY.call( $canvas[0], layer, newY );
+			}
 			layer.dx = newX - layer.x;
 			layer.dy = newY - layer.y;
 			if ( layer.restrictDragToAxis !== 'y' ) {
