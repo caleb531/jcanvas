@@ -1,6 +1,6 @@
 /**
  * @license jCanvas v17.04.01b
- * Copyright 2016 Caleb Evans
+ * Copyright 2017 Caleb Evans
  * Released under the MIT license
  */
 (function( jQuery, global, factory ) {
