@@ -32,9 +32,9 @@
     }
   ],
   "dependencies": {
-    "jquery": ">=1.4.0"
+    "jquery": "^2.2.4"
   },
   "devDependencies": {
-    "qunit": ">=1.2.0"
+    "qunitjs": "^1.23.0"
   }
 }
