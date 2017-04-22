@@ -8,13 +8,9 @@ module.exports = function (grunt) {
 				preserveComments: 'some'
 			},
 			scripts: {
-				cwd: '.',
-				src: [
-					'jcanvas.js',
-					'plugins/jcanvas-*.js',
-					'!plugins/jcanvas-*.min.js'
-				],
-				dest: '.',
+				cwd: 'dist',
+				src: '*.js',
+				dest: 'dist/min',
 				expand: true,
 				rename: function (dst, src) {
 					return dst + '/' + src.replace('.js', '.min.js');
@@ -24,9 +20,9 @@ module.exports = function (grunt) {
 		watch: {
 			scripts: {
 				files: [
-					'*.js',
-					'plugins/jcanvas-*.js',
-					'!plugins/jcanvas-*.min.js'
+					// Automatically reload Gruntfile if it changes
+					'Gruntfile.js',
+					'dist/*.js'
 				],
 				tasks: [
 					'uglify'
