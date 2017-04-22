@@ -5,14 +5,10 @@
   "version": "16.07.03",
   "main": "jcanvas.js",
   "homepage": "https://projects.calebevans.me/jcanvas/",
-  "author": {
-    "name": "Caleb Evans",
-    "email": "caleb@calebevans.me",
-    "url": "https://calebevans.me/"
-  },
+  "author": "Caleb Evans",
   "repository": {
     "type": "git",
-    "url": "https://github.com/caleb531/jcanvas.git"
+    "url": "git+https://github.com/caleb531/jcanvas.git"
   },
   "keywords": [
     "canvas",
@@ -25,12 +21,7 @@
   "bugs": {
     "url": "https://github.com/caleb531/jcanvas/issues"
   },
-  "licenses": [
-    {
-      "type": "MIT",
-      "url": "https://github.com/caleb531/jcanvas/blob/master/LICENSE.txt"
-    }
-  ],
+  "licenses": "MIT",
   "dependencies": {
     "jquery": "^2.2.4"
   },
