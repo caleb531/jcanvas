@@ -1,5 +1,5 @@
-( function( $ ) {
-/* global module, test, asyncTest, expect, start, ok, strictEqual, notStrictEqual, deepEqual */
+( function ( $ ) {
+'use strict';
 
 var $fixture = $( '#qunit-fixture' );
 var $canvas;
@@ -65,18 +65,18 @@ module( 'Core API', {
 	teardown: teardown
 } );
 
-test( '$.support.canvas', function() {
+test( '$.support.canvas', function () {
 	strictEqual( $.support.canvas, true, 'Detects canvas support' );
 } );
 
-test( 'saveCanvas()', function() {
+test( 'saveCanvas()', function () {
 	var data;
 	$canvas.saveCanvas();
 	data = $.data( $canvas[ 0 ], 'jCanvas' );
 	strictEqual( data.savedTransforms.length, 1, 'Pushes transformation state to stack' );
 } );
 
-test( 'restoreCanvas()', function() {
+test( 'restoreCanvas()', function () {
 	var data;
 	$canvas.saveCanvas();
 	data = $.data( $canvas[ 0 ], 'jCanvas' );
@@ -84,7 +84,7 @@ test( 'restoreCanvas()', function() {
 	strictEqual( data.savedTransforms.length, 0, 'Pops transformation state from stack' );
 } );
 
-test( 'rotateCanvas()', function() {
+test( 'rotateCanvas()', function () {
 	var data;
 	$canvas.rotateCanvas( {
 		rotate: 180
@@ -94,7 +94,7 @@ test( 'rotateCanvas()', function() {
 	strictEqual( data.transforms.rotate, Math.PI, 'Updates rotate property' );
 } );
 
-test( 'scaleCanvas()', function() {
+test( 'scaleCanvas()', function () {
 	var data;
 	$canvas.scaleCanvas( {
 		scale: 2
@@ -105,7 +105,7 @@ test( 'scaleCanvas()', function() {
 	strictEqual( data.transforms.scaleY, 2, 'Updates scaleY property' );
 } );
 
-test( 'translateCanvas()', function() {
+test( 'translateCanvas()', function () {
 	var data;
 	$canvas.translateCanvas( {
 		translate: 2
@@ -121,7 +121,7 @@ module( 'Layer API', {
 	teardown: teardown
 } );
 
-test( 'getLayers()', function() {
+test( 'getLayers()', function () {
 	var layers;
 	deepEqual( $().getLayers(), [], 'Returns array for empty collection' );
 	deepEqual( $fixture.getLayers(), [], 'Returns array for non-canvas' );
@@ -130,7 +130,7 @@ test( 'getLayers()', function() {
 	strictEqual( $canvas.getLayers(), layers, 'Returns a reference to the layers array' );
 } );
 
-test( 'getLayer()', function() {
+test( 'getLayer()', function () {
 	var square, obj;
 	// Test values returned for non-existant layers
 	obj = {layer: true};
@@ -155,7 +155,7 @@ test( 'getLayer()', function() {
 	strictEqual( $canvas.getLayer( square ), square, 'Layer can be retrieved by object' );
 } );
 
-test( 'getLayerGroup()', function() {
+test( 'getLayerGroup()', function () {
 	var squares;
 	// Test values returned for non-existant layer groups
 	strictEqual( $().getLayerGroup( 'squares' ), undefined, 'Returns undefined for empty collection' );
@@ -180,7 +180,7 @@ test( 'getLayerGroup()', function() {
 	strictEqual( squares[ 0 ], $canvas.getLayer( 'square' ), 'Group contains the proper layer' );
 } );
 
-test( 'getLayerIndex()', function() {
+test( 'getLayerIndex()', function () {
 	// Test values returned for non-existant layers
 	strictEqual( $().getLayerIndex( 'foo' ), -1, 'Returns -1 for empty collection' );
 	strictEqual( $fixture.getLayerIndex( 'foo' ), -1, 'Returns -1 for non-canvases' );
@@ -198,7 +198,7 @@ test( 'getLayerIndex()', function() {
 	strictEqual( $canvas.getLayerIndex( 'circle' ), 1, 'Returns index of second layer' );
 } );
 
-test( 'setLayer()', function() {
+test( 'setLayer()', function () {
 	var square, groups, data;
 	bindEventCallbacks( 'change' );
 	$canvas.addLayer( {
@@ -241,12 +241,12 @@ test( 'setLayer()', function() {
 	strictEqual( square.text, '4', 'Does not coerce text property' );
 	$canvas.setLayer( square, {
 		text: ''
-	} )
+	} );
 	strictEqual( square.text, '', 'Does not coerce empty text property' );
 	testEventCallbacks( 2 );
 } );
 
-test( 'setLayers()', function() {
+test( 'setLayers()', function () {
 	var square, circle;
 	bindEventCallbacks( 'change' );
 	$canvas.addLayer( {
@@ -272,7 +272,7 @@ test( 'setLayers()', function() {
 	testEventCallbacks( 2 );
 } );
 
-test( 'setLayerGroup()', function() {
+test( 'setLayerGroup()', function () {
 	var square, circle, oval;
 	bindEventCallbacks( 'change' );
 	$canvas.addLayer( {
@@ -305,7 +305,7 @@ test( 'setLayerGroup()', function() {
 	testEventCallbacks( 2 );
 } );
 
-test( 'moveLayer()', function() {
+test( 'moveLayer()', function () {
 	bindEventCallbacks( 'move' );
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -328,7 +328,7 @@ test( 'moveLayer()', function() {
 	testEventCallbacks( 2 );
 } );
 
-test( 'removeLayer()', function() {
+test( 'removeLayer()', function () {
 	bindEventCallbacks( 'remove' );
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -349,7 +349,7 @@ test( 'removeLayer()', function() {
 	testEventCallbacks( 1 );
 } );
 
-test( 'removeLayers()', function() {
+test( 'removeLayers()', function () {
 	bindEventCallbacks( 'remove' );
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -369,7 +369,7 @@ test( 'removeLayers()', function() {
 	testEventCallbacks( 2 );
 } );
 
-test( 'removeLayerGroup()', function() {
+test( 'removeLayerGroup()', function () {
 	bindEventCallbacks( 'remove' );
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -394,7 +394,7 @@ test( 'removeLayerGroup()', function() {
 	testEventCallbacks( 2 );
 } );
 
-test( 'addLayerToGroup()', function() {
+test( 'addLayerToGroup()', function () {
 	var groups, squares, ovals;
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -434,7 +434,7 @@ test( 'addLayerToGroup()', function() {
 	strictEqual( $canvas.getLayerGroup( 'ellipses' ).length, 1, 'Groups array is cloned upon layer creation' );
 } );
 
-test( 'removeLayerFromGroup()', function() {
+test( 'removeLayerFromGroup()', function () {
 	var shapes, squares;
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -454,14 +454,14 @@ module( 'Event API', {
 	teardown: teardown
 } );
 
-test( 'getEventHooks()', function() {
+test( 'getEventHooks()', function () {
 	// Test how event hooks are retrieved
 	deepEqual( $().getEventHooks(), {}, 'Returns object for empty collecion' );
 	deepEqual( $fixture.getEventHooks(), {}, 'Returns object for non-canvas' );
 	deepEqual( $canvas.getEventHooks(), {}, 'Returns object for canvas' );
 } );
 
-test( 'setEventHooks()', function() {
+test( 'setEventHooks()', function () {
 	// Test how event hooks are set
 	$canvas.setEventHooks( {
 		add: $.noop
@@ -469,7 +469,7 @@ test( 'setEventHooks()', function() {
 	strictEqual( $canvas.getEventHooks().add, $.noop, 'Sets event hooks for canvas' );
 } );
 
-test( 'triggerLayerEvent()', function() {
+test( 'triggerLayerEvent()', function () {
 	bindEventCallbacks( 'mousedown' );
 	$canvas.addLayer( {
 		type: 'rectangle',
@@ -485,7 +485,7 @@ module( 'Animation API', {
 	teardown: teardown
 } );
 
-asyncTest( 'animateLayer()', function() {
+asyncTest( 'animateLayer()', function () {
 	expect( 8 );
 	$canvas.addLayer( {
 		type: 'path',
@@ -508,7 +508,7 @@ asyncTest( 'animateLayer()', function() {
 		p1: {
 			x1: 50
 		}
-	}, 10, function( layer ) {
+	}, 10, function ( layer ) {
 		var testedStep;
 		// Test general animation
 		strictEqual( removeWhitespace( layer.fillStyle ), 'rgb(255,0,0)', 'Animates hexadecimal color' );
@@ -524,14 +524,14 @@ asyncTest( 'animateLayer()', function() {
 			opacity: 0.5
 		}, {
 			duration: 10,
-			step: function( now, fx ) {
+			step: function ( now, fx ) {
 				// Run assertion once during animation
 				if ( !testedStep ) {
 					strictEqual( fx.prop, 'opacity', 'Hidden properties do not begin with underscore when step callback is running' );
 					testedStep = true;
 				}
 			},
-			complete: function( layer ) {
+			complete: function ( layer ) {
 				// Continue other tests upon completion of animation
 				strictEqual( layer, $canvas.getLayer( 0 ), 'Layer object is passed to complete callback' );
 				start();
@@ -545,7 +545,7 @@ module( 'Text API', {
 	teardown: teardown
 } );
 
-test( 'drawText()', function() {
+test( 'drawText()', function () {
 	var text;
 	$canvas.drawText( {
 		layer: true,
@@ -606,7 +606,7 @@ test( 'drawText()', function() {
 	strictEqual( text.text, ' ', 'Whitespace string value for text remains string' );
 } );
 
-test( 'measureText()', function() {
+test( 'measureText()', function () {
 	var props, text;
 	props = {
 		layer: true,
@@ -634,14 +634,14 @@ module( 'Image API', {
 	teardown: teardown
 } );
 
-asyncTest( 'drawImage()', function() {
+asyncTest( 'drawImage()', function () {
 	expect( 4 );
 	var timesLoaded = 0;
 	$canvas.drawImage( {
 		layer: true,
 		name: 'fish',
 		source: 'images/fish.jpg',
-		load: function( layer ) {
+		load: function ( layer ) {
 			timesLoaded += 1;
 			if ( timesLoaded === 1 ) {
 				// Run tests when image loads for first time
@@ -659,7 +659,7 @@ asyncTest( 'drawImage()', function() {
 	$canvas.drawLayers();
 } );
 
-test( 'getCanvasImage()', function() {
+test( 'getCanvasImage()', function () {
 	var url1, url2;
 	// Test non-canvas elements
 	url1 = $fixture.getCanvasImage();
