@@ -2280,6 +2280,9 @@ _createEvents( [
 	'touchstart',
 	'touchmove',
 	'touchend',
+	'pointerdown',
+	'pointermove',
+	'pointerup',
 	'contextmenu'
 ] );
 
