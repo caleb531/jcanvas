@@ -221,7 +221,7 @@ module.exports = {
     // enforce consistent spacing before function definition opening parenthesis
     'space-before-function-paren': ['error', {'anonymous': 'always', 'named': 'never'}],
     // enforce consistent spacing inside parentheses
-    'space-in-parens': ['error', 'always'],
+    'space-in-parens': ['error', 'never'],
     // require spacing around infix operators
     'space-infix-ops': ['error'],
     // enforce consistent spacing before or after unary operators

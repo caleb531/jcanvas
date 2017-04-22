@@ -3,7 +3,8 @@
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
- (function($, Math) {
+(function ($, Math) {
+'use strict';
 
 // Cache some functions and constants
 var pow = Math.pow,
@@ -37,7 +38,7 @@ $.jCanvas.extend({
 	props: {
 		eclipse: 0.5
 	},
-	fn: function(ctx, params) {
+	fn: function (ctx, params) {
 		var dist = (2 * params.radius) * (1 - params.eclipse),
 			intersection = getIntersection(
 				params.x,
@@ -50,7 +51,7 @@ $.jCanvas.extend({
 			x = intersection[0] - params.x,
 			y = intersection[1] - params.y,
 			t = Math.atan2(y, x),
-			r = Math.sqrt((x * x) + (y * y));
+			start, end;
 
 		if (params.eclipse <= 0) {
 			// Show full circle if circle is not eclipsed
