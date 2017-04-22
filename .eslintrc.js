@@ -12,6 +12,8 @@ module.exports = {
 
     // browser global variables
     'browser': true,
+    // jQuery global variables
+    'jquery': true,
     // Node.js global variables and Node.js scoping
     'node': true
 
