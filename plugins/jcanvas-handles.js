@@ -52,6 +52,9 @@ function addPathHandle( $canvas, parent, xProp, yProp ) {
 		// Adjust line path when dragging a handle
 		dragstart: function ( layer ) {
 			$( this ).triggerLayerEvent( layer._parent, 'handlestart' );
+			if ( parent.handle.dragstart ) {
+				parent.handle.dragstart.call( this, layer );
+			}
 		},
 		drag: function ( layer ) {
 			var parent = layer._parent;
@@ -59,12 +62,21 @@ function addPathHandle( $canvas, parent, xProp, yProp ) {
 			parent[layer._yProp] = layer.y - parent.y;
 			updatePathGuides( parent );
 			$( this ).triggerLayerEvent( parent, 'handlemove' );
+			if ( parent.handle.drag ) {
+				parent.handle.drag.call( this, layer );
+			}
 		},
 		dragstop: function ( layer ) {
 			$( this ).triggerLayerEvent( layer._parent, 'handlestop' );
+			if ( parent.handle.dragstop ) {
+				parent.handle.dragstop.call( this, layer );
+			}
 		},
 		dragcancel: function ( layer ) {
 			$( this ).triggerLayerEvent( layer._parent, 'handlecancel' );
+			if ( parent.handle.dragcancel ) {
+				parent.handle.dragcancel.call( this, layer );
+			}
 		}
 	} );
 	$canvas.draw( handle );
@@ -104,6 +116,9 @@ function addRectHandle( $canvas, parent, px, py ) {
 		fromCenter: true,
 		dragstart: function ( layer ) {
 			$( this ).triggerLayerEvent( layer._parent, 'handlestart' );
+			if ( parent.handle.dragstart ) {
+				parent.handle.dragstart.call( this, layer );
+			}
 		},
 		// Resize rectangle when dragging a handle
 		drag: function ( layer ) {
@@ -171,14 +186,23 @@ function addRectHandle( $canvas, parent, px, py ) {
 			}
 			updateRectHandles( parent );
 			$( this ).triggerLayerEvent( parent, 'handlemove' );
+			if ( parent.handle.drag ) {
+				parent.handle.drag.call( this, layer );
+			}
 		},
 		dragstop: function ( layer ) {
 			var parent = layer._parent;
 			$( this ).triggerLayerEvent( parent, 'handlestop' );
+			if ( parent.handle.dragstop ) {
+				parent.handle.dragstop.call( this, layer );
+			}
 		},
 		dragcancel: function ( layer ) {
 			var parent = layer._parent;
 			$( this ).triggerLayerEvent( parent, 'handlecancel' );
+			if ( parent.handle.dragcancel ) {
+				parent.handle.dragcancel.call( this, layer );
+			}
 		}
 	} );
 	$canvas.draw( handle );
