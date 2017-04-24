@@ -2309,11 +2309,7 @@ function _detectEvents( canvas, ctx, params ) {
 			x = eventCache.x * data.pixelRatio;
 			y = eventCache.y * data.pixelRatio;
 			// Determine if the given coordinates are in the current path
-			if ( ctx.isPointInStroke && layer.closed === false && layer.fillStyle === 'transparent' ) {
-				intersects = ctx.isPointInStroke( x, y );
-			} else {
-				intersects = ctx.isPointInPath( x, y ) || ( ctx.isPointInStroke && ctx.isPointInStroke( x, y ) );
-			}
+			intersects = ctx.isPointInPath( x, y ) || ( ctx.isPointInStroke && ctx.isPointInStroke( x, y ) );
 		}
 		transforms = data.transforms;
 
