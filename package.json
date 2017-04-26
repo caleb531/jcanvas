@@ -1,39 +1,38 @@
 {
-	"name": "jcanvas",
-	"title": "jCanvas",
-	"description": "jCanvas brings jQuery's powerful syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and much more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
-	"version": "16.07.03",
-	"main": "jcanvas.js",
-	"homepage": "https://projects.calebevans.me/jcanvas/",
-	"author": {
-		"name": "Caleb Evans",
-		"email": "calebevans.me@gmail.com",
-		"url": "https://calebevans.me/"
-	},
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/caleb531/jcanvas.git"
-	},
-	"keywords": [
-		"canvas",
-		"html5",
-		"jquery",
-		"events",
-		"animation"
-	],
-	"bugs": {
-		"url": "https://github.com/caleb531/jcanvas/issues"
-	},
-	"licenses": [
-		{
-			"type": "MIT",
-			"url": "https://github.com/caleb531/jcanvas/blob/master/LICENSE.txt"
-		}
-	],
-	"dependencies": {
-		"jquery": ">=1.4.0"
-	},
-	"devDependencies": {
-		"qunit": ">=1.2.0"
-	}
+  "name": "jcanvas",
+  "title": "jCanvas",
+  "description": "jCanvas brings jQuery's powerful syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and much more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
+  "version": "20.0.0",
+  "main": "dist/jcanvas.js",
+  "scripts": {
+    "lint": "eslint dist/*.js"
+  },
+  "homepage": "https://projects.calebevans.me/jcanvas/",
+  "author": "Caleb Evans",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caleb531/jcanvas.git"
+  },
+  "keywords": [
+    "canvas",
+    "html5",
+    "jquery",
+    "events",
+    "animation",
+    "jquery-plugin"
+  ],
+  "bugs": {
+    "url": "https://github.com/caleb531/jcanvas/issues"
+  },
+  "licenses": "MIT",
+  "dependencies": {
+    "jquery": "^2.2.4"
+  },
+  "devDependencies": {
+    "eslint": "^3.19.0",
+    "grunt": "^1.0.1",
+    "grunt-contrib-uglify": "^2.3.0",
+    "grunt-contrib-watch": "^1.0.0",
+    "qunitjs": "^1.23.0"
+  }
 }

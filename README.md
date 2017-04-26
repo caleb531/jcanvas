@@ -1,5 +1,5 @@
 # [jCanvas](https://projects.calebevans.me/jcanvas/)
-*Copyright 2016, Caleb Evans*  
+*Copyright 2017, Caleb Evans*  
 *Released under the MIT license*
 
 jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.
