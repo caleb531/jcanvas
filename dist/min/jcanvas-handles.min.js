@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Handles v15.09.25
+ * @license jCanvas Handles v20.0.0
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
