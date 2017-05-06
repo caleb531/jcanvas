@@ -178,6 +178,8 @@ module.exports = {
      * Stylistic Issues
      */
 
+    // enforce consistent spacing inside array brackets
+    'array-bracket-spacing': ['error', 'never'],
     //  enforce consistent spacing inside single-line blocks
     'block-spacing': ['error', 'never'],
     // enforce consistent brace style for blocks
