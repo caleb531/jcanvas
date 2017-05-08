@@ -308,7 +308,7 @@ function _setGlobalProps(canvas, ctx, params) {
 	ctx.globalCompositeOperation = params.compositing;
 	// Support cross-browser toggling of image smoothing
 	if (params.imageSmoothing) {
-		ctx.imageSmoothingEnabled = ctx.mozImageSmoothingEnabled = params.imageSmoothingEnabled;
+		ctx.imageSmoothingEnabled = params.imageSmoothingEnabled;
 	}
 }
 
