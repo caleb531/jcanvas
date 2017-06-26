@@ -1442,7 +1442,7 @@ $.fn.drawLayers = function drawLayers(args) {
 		params = args || {},
 		// Other variables
 		layers, layer, lastLayer, l, index, lastIndex,
-		data, eventCache, eventType, isImageLayer, event;
+		data, eventCache, eventType, isImageLayer;
 
 	// The layer index from which to start redrawing the canvas
 	index = params.index;
@@ -1581,8 +1581,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// stacked canvas setup; also ensure that dragging on a lower canvas
 			// is not interrupted by intersections on a canvas above
 			if (data.$nextCanvas && (layer === null || data.nextCanvasData.drag.dragging)) {
-				event = new $.Event(eventCache.event.type, eventCache.event);
-				data.$nextCanvas.trigger(event);
+				data.$nextCanvas.trigger($.Event(eventCache.event.type, eventCache.event));
 				lastLayer = data.nextCanvasData.lastIntersected;
 			}
 
