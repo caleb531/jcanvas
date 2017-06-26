@@ -56,6 +56,8 @@ var defaults,
 		propCache: {},
 		imageCache: {}
 	},
+	// Global jCanvas data (i.e. across all canvases)
+	globalData = {},
 	// Base transformations
 	baseTransforms = {
 		rotate: 0,
@@ -1248,6 +1250,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 			layer._startY = layer.y;
 			layer._endX = layer._eventX;
 			layer._endY = layer._eventY;
+			globalData.draggedLayer = layer;
 
 			// Trigger dragstart event
 			_triggerLayerEvent($canvas, data, layer, 'dragstart');
@@ -1307,6 +1310,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 		if (drag.dragging) {
 			layer.dragging = false;
 			drag.dragging = false;
+			globalData.draggedLayer = null;
 			// Trigger dragstop event
 			_triggerLayerEvent($canvas, data, layer, 'dragstop');
 		}
@@ -1580,7 +1584,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// Propagate layer event to the next lower canvas as needed in a
 			// stacked canvas setup; also ensure that dragging on a lower canvas
 			// is not interrupted by intersections on a canvas above
-			if (data.$nextCanvas && $.Event && (layer === null || data.nextCanvasData.drag.dragging)) {
+			if (data.$nextCanvas && $.Event && (layer === null || globalData.draggedLayer)) {
 				data.$nextCanvas.trigger($.Event(eventCache.event.type, eventCache.event));
 				lastLayer = data.nextCanvasData.lastIntersected;
 			}
