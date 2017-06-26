@@ -1586,7 +1586,6 @@ $.fn.drawLayers = function drawLayers(args) {
 			// is not interrupted by intersections on a canvas above
 			if (data.$nextCanvas && $.Event && (layer === null || globalData.draggedLayer)) {
 				data.$nextCanvas.trigger($.Event(eventCache.event.type, eventCache.event));
-				lastLayer = data.nextCanvasData.lastIntersected;
 			}
 
 			// If the last layer has been drawn
