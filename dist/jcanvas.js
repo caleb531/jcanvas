@@ -1,5 +1,5 @@
 /**
- * @license jCanvas v20.0.0
+ * @license jCanvas v20.1.0-beta.1
  * Copyright 2017 Caleb Evans
  * Released under the MIT license
  */
@@ -1442,7 +1442,7 @@ $.fn.drawLayers = function drawLayers(args) {
 		params = args || {},
 		// Other variables
 		layers, layer, lastLayer, l, index, lastIndex,
-		data, eventCache, eventType, isImageLayer;
+		data, eventCache, eventType, isImageLayer, event;
 
 	// The layer index from which to start redrawing the canvas
 	index = params.index;
@@ -1575,6 +1575,15 @@ $.fn.drawLayers = function drawLayers(args) {
 			if (layer === null && !data.drag.dragging) {
 				// Reset cursor to previous state
 				_resetCursor($canvas, data);
+			}
+
+			// Propagate layer event to the next lower canvas as needed in a
+			// stacked canvas setup; also ensure that dragging on a lower canvas
+			// is not interrupted by intersections on a canvas above
+			if (data.$nextCanvas && (layer === null || data.nextCanvasData.drag.dragging)) {
+				event = new $.Event(eventCache.event.type, eventCache.event);
+				data.$nextCanvas.trigger(event);
+				lastLayer = data.nextCanvasData.lastIntersected;
 			}
 
 			// If the last layer has been drawn
@@ -4300,6 +4309,23 @@ $.fn.detectPixelRatio = function detectPixelRatio(callback) {
 
 	}
 	return $canvases;
+};
+
+// Enables the given set of canvases to be stacked on top of one another
+$.fn.stackCanvases = function () {
+	var $canvases = this,
+		canvas, e, data, nextCanvas;
+
+	for (e = 0; e < $canvases.length; e += 1) {
+		canvas = $canvases[e];
+		data = _getCanvasData(canvas);
+		nextCanvas = $canvases[e - 1];
+		if ($canvases[e - 1]) {
+			data.$nextCanvas = $(nextCanvas);
+			data.nextCanvasData = _getCanvasData(nextCanvas);
+		}
+	}
+
 };
 
 // Clears the jCanvas cache
