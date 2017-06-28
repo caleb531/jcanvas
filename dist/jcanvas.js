@@ -520,7 +520,10 @@ function _getCanvasData(canvas) {
 				// The device pixel ratio
 				pixelRatio: 1,
 				// Whether pixel ratio transformations have been applied
-				scaled: false
+				scaled: false,
+				// Whether the canvas should be redrawn when a layer mousemove
+				// event triggers (either directly, or indirectly via dragging)
+				redrawOnMousemove: false
 			};
 			// Use jQuery to store canvas data
 			$.data(canvas, 'jCanvas', data);
@@ -543,7 +546,7 @@ function _addLayerEvents($canvas, data, layer) {
 			// If layer has callback function to complement it
 			if (layer[eventName] || (layer.cursors && layer.cursors[eventName])) {
 				// Bind event to layer
-				_addLayerEvent($canvas, data, layer, eventName);
+				_addExplicitLayerEvent($canvas, data, layer, eventName);
 			}
 		}
 	}
@@ -581,6 +584,16 @@ function _addLayerEvent($canvas, data, layer, eventName) {
 	// Bind event to layer
 	jCanvas.events[eventName]($canvas, data);
 	layer._event = true;
+}
+
+// Add a layer event that was explicitly declared in the layer's parameter map,
+// excluding events added implicitly (e.g. mousemove event required by draggable
+// layers)
+function _addExplicitLayerEvent($canvas, data, layer, eventName) {
+	_addLayerEvent($canvas, data, layer, eventName);
+	if (eventName === 'mouseover' || eventName === 'mouseout' || eventName === 'mousemove') {
+		data.redrawOnMousemove = true;
+	}
 }
 
 // Enable drag support for this layer
@@ -1311,6 +1324,7 @@ function _handleLayerDrag($canvas, data, eventType) {
 			layer.dragging = false;
 			drag.dragging = false;
 			globalData.draggedLayer = null;
+			data.redrawOnMousemove = data.originalRedrawOnMousemove;
 			// Trigger dragstop event
 			_triggerLayerEvent($canvas, data, layer, 'dragstop');
 		}
@@ -1568,6 +1582,8 @@ $.fn.drawLayers = function drawLayers(args) {
 
 						// Keep track of drag state
 						data.drag.layer = layer;
+						data.originalRedrawOnMousemove = data.redrawOnMousemove;
+						data.redrawOnMousemove = true;
 
 					}
 
@@ -2251,10 +2267,14 @@ function _createEvent(eventName) {
 			eventCache.y = event.offsetY;
 			eventCache.type = helperEventName;
 			eventCache.event = event;
-			// Redraw layers on every trigger of the event
-			$canvas.drawLayers({
-				resetFire: true
-			});
+			// Redraw layers on every trigger of the event; don't redraw if at
+			// least one layer is draggable and there are no layers with
+			// explicit mouseover/mouseout/mousemove events
+			if (event.type !== 'mousemove' || data.redrawOnMousemove || data.drag.dragging) {
+				$canvas.drawLayers({
+					resetFire: true
+				});
+			}
 			// Prevent default event behavior
 			event.preventDefault();
 		}
