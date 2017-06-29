@@ -1606,7 +1606,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// Propagate layer event to the next lower canvas as needed in a
 			// stacked canvas setup; also ensure that dragging on a lower canvas
 			// is not interrupted by intersections on a canvas above
-			if (data.$nextCanvas && $.Event && (layer === null || globalData.draggedLayer)) {
+			if (data.$nextCanvas && $.Event && (layer === null || (globalData.draggedLayer && globalData.draggedLayer !== layer))) {
 				data.$nextCanvas.trigger($.Event(eventCache.event.type, eventCache.event));
 			}
 
