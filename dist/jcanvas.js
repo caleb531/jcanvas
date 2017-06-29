@@ -484,6 +484,7 @@ function _getCanvasData(canvas) {
 			data = {
 				// The associated canvas element
 				canvas: canvas,
+				$canvas: $(canvas),
 				// Layers array
 				layers: [],
 				// Layer maps
@@ -1529,10 +1530,10 @@ $.fn.drawLayers = function drawLayers(args) {
 			}
 
 			// Manage mouseout event
-			lastLayer = data.lastIntersected;
-			if (lastLayer !== null && layer !== lastLayer && lastLayer._hovered && !lastLayer._fired && !data.drag.dragging) {
+			lastLayer = globalData.lastIntersected;
+			if (lastLayer && layer !== lastLayer && lastLayer._hovered && !lastLayer._fired && !data.drag.dragging) {
 
-				data.lastIntersected = null;
+				globalData.lastIntersected = null;
 				lastLayer._fired = true;
 				lastLayer._hovered = false;
 				_triggerLayerEvent($canvas, data, lastLayer, 'mouseout');
@@ -1550,7 +1551,12 @@ $.fn.drawLayers = function drawLayers(args) {
 				// Check events for intersecting layer
 				if (layer._event && layer.intersects) {
 
-					data.lastIntersected = layer;
+					if (globalData.lastIntersected && globalData.lastIntersected !== layer && globalData.draggedLayer !== globalData.lastIntersected) {
+						globalData.lastIntersected._fired = true;
+						globalData.lastIntersected._hovered = false;
+						_triggerLayerEvent(globalData.lastIntersected.$canvas, _getCanvasData(globalData.lastIntersected.canvas), globalData.lastIntersected, 'mouseout');
+					}
+					globalData.lastIntersected = layer;
 
 					// Detect mouseover events
 					if ((layer.mouseover || layer.mouseout || layer.cursors) && !data.drag.dragging) {
@@ -1649,9 +1655,8 @@ function _addLayer(canvas, params, args, method) {
 	if (params.layer && !params._layer) {
 		// Add layer to canvas
 
-		$canvas = $(canvas);
-
 		data = _getCanvasData(canvas);
+		$canvas = data.$canvas;
 		layers = data.layers;
 
 		// Do not add duplicate layers of same name
@@ -1663,6 +1668,7 @@ function _addLayer(canvas, params, args, method) {
 			// Ensure layers are unique across canvases by cloning them
 			layer = new jCanvasObject(params);
 			layer.canvas = canvas;
+			layer.$canvas = $canvas;
 			// Indicate that this is a layer for future checks
 			layer.layer = true;
 			layer._layer = true;
