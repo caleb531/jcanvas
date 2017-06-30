@@ -3747,7 +3747,7 @@ $.fn.drawText = function drawText(args) {
 					for (l = 0; l < lines.length; l += 1) {
 						line = lines[l];
 						// Add line offset to center point, but subtract some to center everything
-						y = params.y + (l * params.height / lines.length) - ((lines.length - 1) * params.height / lines.length) / 2;
+						y = params.y + (l * params.height / lines.length) - (((lines.length - 1) * params.height / lines.length) / 2);
 
 						ctx.shadowColor = params.shadowColor;
 
