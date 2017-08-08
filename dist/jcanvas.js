@@ -4184,14 +4184,15 @@ $.fn.createGradient = function createGradient(args) {
 // Manipulates pixels on the canvas
 $.fn.setPixels = function setPixels(args) {
 	var $canvases = this,
-		canvas, e, ctx,
+		canvas, e, ctx, canvasData,
 		params,
 		px,
-		imgData, data, i, len;
+		imgData, pixelData, i, len;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		canvas = $canvases[e];
 		ctx = _getContext(canvas);
+		canvasData = _getCanvasData($canvases[e]);
 		if (ctx) {
 
 			params = new jCanvasObject(args);
@@ -4209,28 +4210,37 @@ $.fn.setPixels = function setPixels(args) {
 			if (params.width !== 0 && params.height !== 0) {
 				// Only set pixels if width and height are not zero
 
-				imgData = ctx.getImageData(params.x - (params.width / 2), params.y - (params.height / 2), params.width, params.height);
-				data = imgData.data;
-				len = data.length;
+				imgData = ctx.getImageData(
+					(params.x - (params.width / 2)) * canvasData.pixelRatio,
+					(params.y - (params.height / 2)) * canvasData.pixelRatio,
+					params.width * canvasData.pixelRatio,
+					params.height * canvasData.pixelRatio
+				);
+				pixelData = imgData.data;
+				len = pixelData.length;
 
 				// Loop through pixels with the "each" callback function
 				if (params.each) {
 					for (i = 0; i < len; i += 4) {
 						px = {
-							r: data[i],
-							g: data[i + 1],
-							b: data[i + 2],
-							a: data[i + 3]
+							r: pixelData[i],
+							g: pixelData[i + 1],
+							b: pixelData[i + 2],
+							a: pixelData[i + 3]
 						};
 						params.each.call(canvas, px, params);
-						data[i] = px.r;
-						data[i + 1] = px.g;
-						data[i + 2] = px.b;
-						data[i + 3] = px.a;
+						pixelData[i] = px.r;
+						pixelData[i + 1] = px.g;
+						pixelData[i + 2] = px.b;
+						pixelData[i + 3] = px.a;
 					}
 				}
 				// Put pixels on canvas
-				ctx.putImageData(imgData, params.x - (params.width / 2), params.y - (params.height / 2));
+				ctx.putImageData(
+					imgData,
+					(params.x - (params.width / 2)) * canvasData.pixelRatio,
+					(params.y - (params.height / 2)) * canvasData.pixelRatio
+				);
 				// Restore transformation
 				ctx.restore();
 
