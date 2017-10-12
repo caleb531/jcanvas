@@ -120,6 +120,17 @@ function addRectHandle($canvas, parent, px, py) {
 			}
 
 			if (!parent.resizeFromCenter) {
+				// Optionally constrain proportions
+				if (parent.constrainProportions) {
+					if (layer._py === 0) {
+						// Manage handles whose y is at layer's center
+						parent.height = parent.width / parent.aspectRatio;
+					} else {
+						// Manage every other handle
+						parent.width = parent.height * parent.aspectRatio;
+						layer.dx = layer.dy * parent.aspectRatio * layer._py * layer._px;
+					}
+				}
 				// Optionally resize rectangle from corner
 				if (parent.fromCenter) {
 					parent.width += layer.dx * layer._px;
@@ -133,17 +144,6 @@ function addRectHandle($canvas, parent, px, py) {
 					parent.height += layer.dy * layer._py;
 					if (layer._py !== 0) {
 						parent.y += layer.dy * ((1 - layer._py) && (1 - layer._py) / Math.abs((1 - layer._py)));
-					}
-				}
-				// Optionally constrain proportions
-				if (parent.constrainProportions) {
-					if (layer._py === 0) {
-						// Manage handles whose y is at layer's center
-						parent.height = parent.width / parent.aspectRatio;
-					} else {
-						// Manage every other handle
-						parent.width = parent.height * parent.aspectRatio;
-						layer.dx = layer.dy * parent.aspectRatio * layer._py * layer._px;
 					}
 				}
 				// Ensure diagonal handle does not move
