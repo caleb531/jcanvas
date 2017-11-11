@@ -3815,7 +3815,11 @@ $.fn.measureText = function measureText(args) {
 		// Set canvas font using given properties
 		_setCanvasFont($canvases[0], ctx, params);
 		// Calculate width and height of text
-		lines = _wrapText(ctx, params);
+		if (params.maxWidth !== null) {
+			lines = _wrapText(ctx, params);
+		} else {
+			lines = params.text.split('\n');
+		}
 		_measureText($canvases[0], ctx, params, lines);
 
 
