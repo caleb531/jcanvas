@@ -1513,7 +1513,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// If layer is an image layer
 			if (isImageLayer) {
 				// Stop and wait for drawImage() to resume drawLayers()
-				break;
+				continue;
 			}
 
 			// Store the latest
