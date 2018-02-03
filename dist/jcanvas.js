@@ -1522,6 +1522,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			// Run completion callback (if provided) once all layers have drawn
 			if (params.complete) {
 				params.complete.call($canvases[e]);
+				delete data.drawLayersComplete;
 			}
 
 			// Get first layer that intersects with event coordinates
