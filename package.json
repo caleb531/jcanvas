@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/caleb531/jcanvas/issues"
   },
-  "licenses": "MIT",
+  "license": "MIT",
   "dependencies": {
     "jquery": "^2.2.4"
   },
