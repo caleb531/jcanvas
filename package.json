@@ -25,14 +25,15 @@
     "url": "https://github.com/caleb531/jcanvas/issues"
   },
   "license": "MIT",
-  "dependencies": {
-    "jquery": "^2.2.4"
-  },
   "devDependencies": {
     "eslint": "^3.19.0",
     "grunt": "^1.0.1",
     "grunt-contrib-uglify": "^2.3.0",
     "grunt-contrib-watch": "^1.0.0",
+    "jquery": "^3.3.1",
     "qunitjs": "^1.23.0"
+  },
+  "peerDependencies": {
+    "jquery": ">=1.4.0"
   }
 }

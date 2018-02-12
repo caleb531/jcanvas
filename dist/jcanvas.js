@@ -35,7 +35,6 @@ var defaults,
 		return Object.prototype.toString.call(operand)
 			.slice(8, -1).toLowerCase();
 	},
-	isFunction = $.isFunction,
 	isPlainObject = $.isPlainObject,
 	// Math constants and functions
 	PI = Math.PI,
@@ -199,6 +198,11 @@ jCanvasObject.prototype = defaults;
 // Determines if the given operand is a string
 function isString(operand) {
 	return (typeOf(operand) === 'string');
+}
+
+// Determines if the given operand is a function
+function isFunction(operand) {
+	return (typeOf(operand) === 'function');
 }
 
 // Determines if the given operand is numeric
