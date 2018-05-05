@@ -1058,13 +1058,11 @@ $.fn.removeLayers = function removeLayers(callback) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
 		data = _getCanvasData($canvases[e]);
-		layers = $canvas.getLayers(callback);
+		layers = $canvas.getLayers(callback).slice(0);
 		// Remove all layers individually
 		for (l = 0; l < layers.length; l += 1) {
 			layer = layers[l];
 			$canvas.removeLayer(layer);
-			// Ensure no layer is skipped over
-			l -= 1;
 		}
 		// Update layer maps
 		data.layer.names = {};
