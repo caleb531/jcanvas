@@ -21,8 +21,8 @@ devDependencies:
     specifier: ^10.3.10
     version: 10.3.10
   jquery:
-    specifier: ^3.6.1
-    version: 3.6.1
+    specifier: ^3.7.1
+    version: 3.7.1
   qunitjs:
     specifier: ^1.23.1
     version: 1.23.1
@@ -775,8 +775,8 @@ packages:
       '@pkgjs/parseargs': 0.11.0
     dev: true
 
-  /jquery@3.6.1:
-    resolution: {integrity: sha512-opJeO4nCucVnsjiXOE+/PcCgYw9Gwpvs/a6B1LL/lQhwWwpbVEVYDZ1FokFr8PRc7ghYlrFPuyHuiiDNTQxmcw==}
+  /jquery@3.7.1:
+    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
     dev: true
 
   /js-yaml@4.1.0:
