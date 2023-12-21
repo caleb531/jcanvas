@@ -3,8 +3,7 @@
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
-(function ($) {
-'use strict';
+import $ from 'jquery';
 
 var PI = Math.PI;
 
@@ -37,5 +36,3 @@ $.jCanvas.extend({
 		$.jCanvas.closePath(canvas, ctx, params);
 	}
 });
-
-}(jQuery));

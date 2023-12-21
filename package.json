@@ -3,8 +3,10 @@
   "title": "jCanvas",
   "description": "jCanvas brings jQuery's powerful syntax and capability to the HTML5 canvas. Quickly create canvas-based apps that can utilize layers, animations, events, and much more. jCanvas works on all modern browsers and platforms, including iOS and Android.",
   "version": "21.0.1",
-  "main": "dist/jcanvas.js",
+  "main": "dist/umd/jcanvas.js",
+  "module": "dist/esm/jcanvas.js",
   "scripts": {
+    "build": "rollup -c",
     "lint": "eslint dist/*.js"
   },
   "homepage": "https://projects.calebevans.me/jcanvas/",
@@ -26,12 +28,13 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-terser": "^0.4.4",
     "eslint": "^8.56.0",
-    "grunt": "^1.5.3",
-    "grunt-contrib-uglify": "^2.3.0",
-    "grunt-contrib-watch": "^1.1.0",
+    "glob": "^10.3.10",
     "jquery": "^3.6.1",
-    "qunitjs": "^1.23.1"
+    "qunitjs": "^1.23.1",
+    "rollup": "^4.9.1"
   },
   "peerDependencies": {
     "jquery": ">=1.4.0"

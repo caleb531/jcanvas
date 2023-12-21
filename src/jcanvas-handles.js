@@ -3,8 +3,7 @@
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
-(function ($) {
-'use strict';
+import $ from 'jquery';
 
 // Add a 'resizeFromCenter' property for rectangles
 $.extend($.jCanvas.defaults, {
@@ -481,5 +480,3 @@ $.extend($.jCanvas.eventHooks, {
 		}
 	}
 });
-
-}(jQuery));

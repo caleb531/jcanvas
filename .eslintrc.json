@@ -12,9 +12,6 @@
     "es2017": true,
     "node": true
   },
-  "globals": {
-    "jQuery": true
-  },
   "rules": {
     "no-constant-condition": "off"
   }

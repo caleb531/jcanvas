@@ -3,8 +3,7 @@
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
-(function ($, Math) {
-'use strict';
+import $ from 'jquery';
 
 // Cache some functions and constants
 var pow = Math.pow,
@@ -88,5 +87,3 @@ $.jCanvas.extend({
 
 	}
 });
-
-}(jQuery, Math));

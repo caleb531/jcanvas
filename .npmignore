@@ -3,4 +3,3 @@
 *.map
 *.log
 node_modules
-dist

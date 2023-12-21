@@ -3,20 +3,7 @@
  * Copyright 2017 Caleb Evans
  * Released under the MIT license
  */
-(function (jQuery, global, factory) {
-	'use strict';
-
-	if (typeof module === 'object' && typeof module.exports === 'object') {
-		module.exports = function (jQuery, w) {
-			return factory(jQuery, w);
-		};
-	} else {
-		factory(jQuery, global);
-	}
-
-// Pass this if window is not defined yet
-}(typeof window !== 'undefined' ? window.jQuery : {}, typeof window !== 'undefined' ? window : this, function ($, window) {
-'use strict';
+import $ from 'jquery';
 
 var document = window.document,
 	Image = window.Image,
@@ -4375,5 +4362,3 @@ extendObject(jCanvas, {
 });
 $.jCanvas = jCanvas;
 $.jCanvasObject = jCanvasObject;
-
-}));
