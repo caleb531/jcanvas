@@ -5,14 +5,6 @@
  */
 import $ from 'jquery';
 
-var document = window.document,
-	Image = window.Image,
-	Array = window.Array,
-	getComputedStyle = window.getComputedStyle,
-	Math = window.Math,
-	Number = window.Number,
-	parseFloat = window.parseFloat;
-
 // Define local aliases to frequently used properties
 var defaults,
 	// Aliases to jQuery methods
