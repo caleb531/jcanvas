@@ -7,7 +7,7 @@
   "module": "dist/esm/jcanvas.js",
   "scripts": {
     "build": "rollup -c",
-    "lint": "eslint dist/*.js"
+    "lint": "eslint src/*.js"
   },
   "homepage": "https://projects.calebevans.me/jcanvas/",
   "author": "Caleb Evans",
