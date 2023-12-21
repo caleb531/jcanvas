@@ -1,0 +1,6 @@
+{
+  "env": {
+    "jquery": true,
+    "qunit": true
+  }
+}

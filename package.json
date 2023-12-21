@@ -33,7 +33,7 @@
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
     "jquery": "^3.7.1",
-    "qunitjs": "^1.23.1",
+    "qunit": "^2.20.0",
     "rollup": "^4.9.1"
   },
   "peerDependencies": {
