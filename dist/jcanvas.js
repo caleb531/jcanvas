@@ -4027,8 +4027,6 @@ $.fn.drawImage = function drawImage(args) {
 					} else {
 						// Otherwise, draw image when it loads
 						img.onload = onload(canvas, ctx, data, params, layer);
-						// Fix onload() bug in IE9
-						img.src = img.src;
 					}
 				}
 
@@ -4098,8 +4096,6 @@ $.fn.createPattern = function createPattern(args) {
 				onload();
 			} else {
 				img.onload = onload;
-				// Fix onload() bug in IE9
-				img.src = img.src;
 			}
 
 		}
