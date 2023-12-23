@@ -5,30 +5,61 @@ import terser from '@rollup/plugin-terser';
 
 const inputPaths = globSync('src/*.js');
 
-export default inputPaths.map((inputPath) => {
-	const inputFilenameWithoutExtension = path.basename(inputPath, '.js');
-	return {
-    input: [inputPath],
-    external: ['jquery'],
-    output: [
-      {
-        file: `dist/umd/${inputFilenameWithoutExtension}.min.js`,
-        format: 'umd',
-				name: 'jCanvas',
-        sourcemap: true,
-				globals: {
-					jquery: '$'
+export default [
+	// Unminified
+	...inputPaths.map((inputPath) => {
+		const inputFilenameWithoutExtension = path.basename(inputPath, '.js');
+		return {
+			input: [inputPath],
+			external: ['jquery'],
+			output: [
+				{
+					file: `dist/umd/${inputFilenameWithoutExtension}.js`,
+					format: 'umd',
+					name: 'jCanvas',
+					sourcemap: true,
+					globals: {
+						jquery: '$'
+					}
+				},
+				{
+					file: `dist/esm/${inputFilenameWithoutExtension}.js`,
+					format: 'esm',
+					sourcemap: true,
+					globals: {
+						jquery: '$'
+					}
 				}
-      },
-      {
-        file: `dist/esm/${inputFilenameWithoutExtension}.min.js`,
-        format: 'esm',
-        sourcemap: true,
-				globals: {
-					jquery: '$'
+			],
+			plugins: [commonjs()]
+		};
+	}),
+	// Minified/obfuscated
+	...inputPaths.map((inputPath) => {
+		const inputFilenameWithoutExtension = path.basename(inputPath, '.js');
+		return {
+			input: [inputPath],
+			external: ['jquery'],
+			output: [
+				{
+					file: `dist/umd/${inputFilenameWithoutExtension}.min.js`,
+					format: 'umd',
+					name: 'jCanvas',
+					sourcemap: true,
+					globals: {
+						jquery: '$'
+					}
+				},
+				{
+					file: `dist/esm/${inputFilenameWithoutExtension}.min.js`,
+					format: 'esm',
+					sourcemap: true,
+					globals: {
+						jquery: '$'
+					}
 				}
-      }
-    ],
-    plugins: [commonjs(), terser()]
-  };
-});
+			],
+			plugins: [commonjs(), terser()]
+		};
+	})
+];
