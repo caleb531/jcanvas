@@ -43,5 +43,17 @@
     "overrides": {
       "trim-newlines@<3.0.1": ">=3.0.1"
     }
+  },
+  "autoupdate": {
+    "source": "npm",
+    "target": "jcanvas",
+    "fileMap": [
+      {
+        "basePath": "dist",
+        "files": [
+          "**/*"
+        ]
+      }
+    ]
   }
 }
