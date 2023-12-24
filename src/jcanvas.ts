@@ -114,7 +114,7 @@ class jCanvasDefaults {
 	end: number = 360;
 	eventX: number | null = null;
 	eventY: number | null = null;
-	fillStyle: string = "transparent";
+	fillStyle: string | Function = "transparent";
 	fontStyle: string = "normal";
 	fontSize: string = "12pt";
 	fontFamily: string = "sans-serif";
@@ -157,7 +157,7 @@ class jCanvasDefaults {
 	strokeDash: number[]| null = null;
 	strokeDashOffset: CanvasRenderingContext2D['lineDashOffset'] = 0;
 	strokeJoin: CanvasRenderingContext2D['lineJoin'] = "miter";
-	strokeStyle: string = "transparent";
+	strokeStyle: string | Function = "transparent";
 	strokeWidth: number = 1;
 	sWidth: number | null = null;
 	sx: number | null = null;
@@ -187,17 +187,17 @@ jCanvasObject.prototype = defaults;
 /* Internal helper methods */
 
 // Determines if the given operand is a string
-function isString(operand: any) {
+function isString(operand: any): operand is string {
 	return typeOf(operand) === "string";
 }
 
 // Determines if the given operand is a function
-function isFunction(operand: any) {
+function isFunction(operand: any): operand is Function {
 	return typeOf(operand) === "function";
 }
 
 // Determines if the given operand is numeric
-function isNumeric(operand: any) {
+function isNumeric(operand: any): operand is number {
 	return !isNaN(Number(operand)) && !isNaN(parseFloat(operand));
 }
 
@@ -211,7 +211,7 @@ function _coerceNumericProps(props: jCanvasObject) {
 	var propName, propType, propValue;
 	// Loop through all properties in given property map
 	for (propName in props) {
-		propName = propName as keyof jCanvasDefaults;
+		propName = propName as any;
 		if (Object.prototype.hasOwnProperty.call(props, propName)) {
 			propValue = props[propName];
 			propType = typeOf(propValue);
@@ -222,7 +222,7 @@ function _coerceNumericProps(props: jCanvasObject) {
 				propName !== "text"
 			) {
 				// Convert value to number
-				props[propName] = parseFloat(propValue);
+				props[propName] = parseFloat(String(propValue));
 			}
 		}
 	}
@@ -242,7 +242,7 @@ function _cloneTransforms(transforms: typeof baseTransforms) {
 }
 
 // Save canvas context and update transformation stack
-function _saveCanvas(ctx: CanvasRenderingContext2D, data) {
+function _saveCanvas(ctx: CanvasRenderingContext2D, data: jCanvasInternalData) {
 	var transforms;
 	ctx.save();
 	transforms = _cloneTransforms(data.transforms);
@@ -250,7 +250,7 @@ function _saveCanvas(ctx: CanvasRenderingContext2D, data) {
 }
 
 // Restore canvas context update transformation stack
-function _restoreCanvas(ctx: CanvasRenderingContext2D, data) {
+function _restoreCanvas(ctx: CanvasRenderingContext2D, data: jCanvasInternalData) {
 	if (data.savedTransforms.length === 0) {
 		// Reset transformation state if it can't be restored any more
 		data.transforms = _cloneTransforms(baseTransforms);
@@ -343,7 +343,7 @@ function _restoreTransform(ctx, params) {
 }
 
 // Close current canvas path
-function _closePath(canvas, ctx, params) {
+function _closePath(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, params: jCanvasObject) {
 	var data;
 
 	// Optionally close path
@@ -519,13 +519,13 @@ class jCanvasInternalData {
 function _getCanvasData(canvas) {
 	var dataCache = caches.dataCache,
 		data;
-	if (dataCache._canvas === canvas && dataCache._data) {
+	if (dataCache._canvas === canvas && dataCache._data: jCanvasInternalData) {
 		// Retrieve canvas data from cache if possible
 		data = dataCache._data;
 	} else {
 		// Retrieve canvas data from jQuery's internal data storage
 		data = $.data(canvas, "jCanvas");
-		if (!data) {
+		if (!data: jCanvasInternalData) {
 			// Create canvas data object if it does not already exist
 			data = new jCanvasInternalData();
 			// Use jQuery to store canvas data
@@ -1175,7 +1175,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 };
 
 // Get topmost layer that intersects with event coordinates
-function _getIntersectingLayer(data) {
+function _getIntersectingLayer(data: jCanvasInternalData) {
 	var layer, i, mask, m;
 
 	// Store the topmost layer
@@ -1370,7 +1370,7 @@ function _setCursor($canvas, layer, eventType) {
 }
 
 // Reset cursor on canvas
-function _resetCursor($canvas, data) {
+function _resetCursor($canvas, data: jCanvasInternalData) {
 	$canvas.css({
 		cursor: data.cursor,
 	});
@@ -2261,7 +2261,7 @@ function _getMouseEventName(eventName) {
 
 // Bind event to jCanvas layer using standard jQuery events
 function _createEvent(eventName) {
-	jCanvas.events[eventName] = function ($canvas, data) {
+	jCanvas.events[eventName] = function ($canvas, data: jCanvasInternalData) {
 		var helperEventName, touchEventName, eventCache;
 
 		// Retrieve canvas's event cache
