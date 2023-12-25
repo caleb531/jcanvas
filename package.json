@@ -7,6 +7,7 @@
   "module": "dist/esm/jcanvas.min.js",
   "scripts": {
     "build": "rollup -c",
+    "watch": "rollup -c -w",
     "lint": "eslint src/*.js"
   },
   "homepage": "https://projects.calebevans.me/jcanvas/",
