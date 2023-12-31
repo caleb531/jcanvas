@@ -1,5 +1,4 @@
 .DS_Store
 *.swp
-*.map
 *.log
 node_modules
