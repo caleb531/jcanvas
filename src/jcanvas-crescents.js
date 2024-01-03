@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Crescents v20.0.0
+ * @license jCanvas Crescents v21.0.0
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */

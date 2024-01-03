@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Donuts v20.0.0
+ * @license jCanvas Donuts v21.0.0
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
