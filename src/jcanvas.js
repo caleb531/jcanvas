@@ -2837,9 +2837,7 @@ $.fn.drawArc = function drawArc(args) {
 // Draws ellipse
 $.fn.drawEllipse = function drawEllipse(args) {
 	var $canvases = this, e, ctx,
-		params,
-		controlW,
-		controlH;
+		params;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2852,18 +2850,17 @@ $.fn.drawEllipse = function drawEllipse(args) {
 				_transformShape($canvases[e], ctx, params, params.width, params.height);
 				_setGlobalProps($canvases[e], ctx, params);
 
-				// Calculate control width and height
-				controlW = params.width * (4 / 3);
-				controlH = params.height;
-
 				// Create ellipse using curves
 				ctx.beginPath();
-				ctx.moveTo(params.x, params.y - (controlH / 2));
-				// Left side
-				ctx.bezierCurveTo(params.x - (controlW / 2), params.y - (controlH / 2), params.x - (controlW / 2), params.y + (controlH / 2), params.x, params.y + (controlH / 2));
-				// Right side
-				ctx.bezierCurveTo(params.x + (controlW / 2), params.y + (controlH / 2), params.x + (controlW / 2), params.y - (controlH / 2), params.x, params.y - (controlH / 2));
-				// Check for jCanvas events
+				ctx.ellipse(
+					params.x,
+					params.y,
+					params.width / 2,
+					params.height / 2,
+					0,
+					0,
+					2 * Math.PI,
+				);
 				_detectEvents($canvases[e], ctx, params);
 				// Always close path
 				params.closed = true;
