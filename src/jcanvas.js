@@ -2681,8 +2681,7 @@ $.fn.drawRect = function drawRect(args) {
 	var $canvases = this, e, ctx,
 		params,
 		x1, y1,
-		x2, y2,
-		r, temp;
+		r;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2704,42 +2703,8 @@ $.fn.drawRect = function drawRect(args) {
 					if (r) {
 						// Draw rectangle with rounded corners if cornerRadius is defined
 
-						x2 = params.x + (params.width / 2);
-						y2 = params.y + (params.height / 2);
-
-						// Handle negative width
-						if (params.width < 0) {
-							temp = x1;
-							x1 = x2;
-							x2 = temp;
-						}
-						// Handle negative height
-						if (params.height < 0) {
-							temp = y1;
-							y1 = y2;
-							y2 = temp;
-						}
-
-						// Prevent over-rounded corners
-						if ((x2 - x1) - (2 * r) < 0) {
-							r = (x2 - x1) / 2;
-						}
-						if ((y2 - y1) - (2 * r) < 0) {
-							r = (y2 - y1) / 2;
-						}
-
-						// Draw rectangle
-						ctx.moveTo(x1 + r, y1);
-						ctx.lineTo(x2 - r, y1);
-						ctx.arc(x2 - r, y1 + r, r, 3 * PI / 2, PI * 2, false);
-						ctx.lineTo(x2, y2 - r);
-						ctx.arc(x2 - r, y2 - r, r, 0, PI / 2, false);
-						ctx.lineTo(x1 + r, y2);
-						ctx.arc(x1 + r, y2 - r, r, PI / 2, PI, false);
-						ctx.lineTo(x1, y1 + r);
-						ctx.arc(x1 + r, y1 + r, r, PI, 3 * PI / 2, false);
-						// Always close path
-						params.closed = true;
+						// Otherwise, draw rectangle with square corners
+						ctx.roundRect(x1, y1, params.width, params.height, r);
 
 					} else {
 
