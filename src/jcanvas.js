@@ -32,7 +32,8 @@ var defaults,
 	caches = {
 		dataCache: {},
 		propCache: {},
-		imageCache: {}
+		imageCache: {},
+		pathCache: {}
 	},
 	// Base transformations
 	baseTransforms = {
@@ -105,6 +106,7 @@ jCanvasDefaults.baseDefaults = {
 	draggable: false,
 	dragGroups: null,
 	groups: null,
+	d: null,
 	data: null,
 	dx: null,
 	dy: null,
@@ -112,6 +114,7 @@ jCanvasDefaults.baseDefaults = {
 	eventX: null,
 	eventY: null,
 	fillStyle: 'transparent',
+	fillRule: 'nonzero',
 	fontStyle: 'normal',
 	fontSize: '12pt',
 	fontFamily: 'sans-serif',
@@ -296,7 +299,7 @@ function _setGlobalProps(canvas, ctx, params) {
 }
 
 // Optionally enable masking support for this path
-function _enableMasking(ctx, data, params) {
+function _enableMasking(ctx, data, params, path) {
 	if (params.mask) {
 		// If jCanvas autosave is enabled
 		if (params.autosave) {
@@ -304,7 +307,11 @@ function _enableMasking(ctx, data, params) {
 			_saveCanvas(ctx, data);
 		}
 		// Clip the current path
-		ctx.clip();
+		if (path) {
+			ctx.clip(path, params.fillRule);
+		} else {
+			ctx.clip(params.fillRule);
+		}
 		// Keep track of current masks
 		data.transforms.masks.push(params._args);
 	}
@@ -320,7 +327,7 @@ function _restoreTransform(ctx, params) {
 }
 
 // Close current canvas path
-function _closePath(canvas, ctx, params) {
+function _closePath(canvas, ctx, params, path) {
 	var data;
 
 	// Optionally close path
@@ -332,25 +339,42 @@ function _closePath(canvas, ctx, params) {
 		// Extend the shadow to include the stroke of a drawing
 
 		// Add a stroke shadow by stroking before filling
-		ctx.stroke();
-		ctx.fill();
+		if (path) {
+			ctx.stroke(path);
+			ctx.fill(path, params.fillRule);
+		} else {
+			ctx.stroke();
+			ctx.fill(params.fillRule);
+		}
 		// Ensure the below stroking does not inherit a shadow
 		ctx.shadowColor = 'transparent';
 		ctx.shadowBlur = 0;
 		// Stroke over fill as usual
-		ctx.stroke();
+		if (path) {
+			ctx.stroke(path);
+		} else {
+			ctx.stroke();
+		}
 
 	} else {
 		// If shadowStroke is not enabled, stroke & fill as usual
 
-		ctx.fill();
+		if (path) {
+			ctx.fill(path, params.fillRule);
+		} else {
+			ctx.fill(params.fillRule);
+		}
 		// Prevent extra shadow created by stroke (but only when fill is present)
 		if (params.fillStyle !== 'transparent') {
 			ctx.shadowColor = 'transparent';
 		}
 		if (params.strokeWidth !== 0) {
 			// Only stroke if the stroke is not 0
-			ctx.stroke();
+			if (path) {
+				ctx.stroke(path);
+			} else {
+				ctx.stroke();
+			}
 		}
 
 	}
@@ -3413,7 +3437,7 @@ $.fn.drawVector = function drawVector(args) {
 $.fn.drawPath = function drawPath(args) {
 	var $canvases = this, e, ctx,
 		params,
-		l, lp;
+		l, lp, path;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -3426,33 +3450,38 @@ $.fn.drawPath = function drawPath(args) {
 				_transformShape($canvases[e], ctx, params);
 				_setGlobalProps($canvases[e], ctx, params);
 
-				ctx.beginPath();
-				l = 1;
-				while (true) {
-					lp = params['p' + l];
-					if (lp !== undefined) {
-						lp = new jCanvasObject(lp);
-						if (lp.type === 'line') {
-							_drawLine($canvases[e], ctx, params, lp);
-						} else if (lp.type === 'quadratic') {
-							_drawQuadratic($canvases[e], ctx, params, lp);
-						} else if (lp.type === 'bezier') {
-							_drawBezier($canvases[e], ctx, params, lp);
-						} else if (lp.type === 'vector') {
-							_drawVector($canvases[e], ctx, params, lp);
-						} else if (lp.type === 'arc') {
-							_drawArc($canvases[e], ctx, params, lp);
+				if (params.d) {
+					path = caches.pathCache[params.d] || new Path2D(params.d);
+					caches.pathCache[params.d] = path;
+				} else {
+					ctx.beginPath();
+					l = 1;
+					while (true) {
+						lp = params['p' + l];
+						if (lp !== undefined) {
+							lp = new jCanvasObject(lp);
+							if (lp.type === 'line') {
+								_drawLine($canvases[e], ctx, params, lp);
+							} else if (lp.type === 'quadratic') {
+								_drawQuadratic($canvases[e], ctx, params, lp);
+							} else if (lp.type === 'bezier') {
+								_drawBezier($canvases[e], ctx, params, lp);
+							} else if (lp.type === 'vector') {
+								_drawVector($canvases[e], ctx, params, lp);
+							} else if (lp.type === 'arc') {
+								_drawArc($canvases[e], ctx, params, lp);
+							}
+							l += 1;
+						} else {
+							break;
 						}
-						l += 1;
-					} else {
-						break;
 					}
 				}
 
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
-				_closePath($canvases[e], ctx, params);
+				_closePath($canvases[e], ctx, params, path);
 
 			}
 
