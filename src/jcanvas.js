@@ -391,7 +391,7 @@ function _closePath(canvas, ctx, params, path) {
 	if (params.mask) {
 		// Retrieve canvas data
 		data = _getCanvasData(canvas);
-		_enableMasking(ctx, data, params);
+		_enableMasking(ctx, data, params, path);
 	}
 
 }
