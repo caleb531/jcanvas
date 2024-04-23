@@ -299,7 +299,7 @@ function _setGlobalProps(canvas, ctx, params) {
 }
 
 // Optionally enable masking support for this path
-function _enableMasking(ctx, data, params, path) {
+function _enableMasking(ctx, data, params) {
 	if (params.mask) {
 		// If jCanvas autosave is enabled
 		if (params.autosave) {
@@ -307,8 +307,8 @@ function _enableMasking(ctx, data, params, path) {
 			_saveCanvas(ctx, data);
 		}
 		// Clip the current path
-		if (path) {
-			ctx.clip(path, params.fillRule);
+		if (params._path) {
+			ctx.clip(params._path, params.fillRule);
 		} else {
 			ctx.clip(params.fillRule);
 		}
@@ -327,7 +327,7 @@ function _restoreTransform(ctx, params) {
 }
 
 // Close current canvas path
-function _closePath(canvas, ctx, params, path) {
+function _closePath(canvas, ctx, params) {
 	var data;
 
 	// Optionally close path
@@ -339,9 +339,9 @@ function _closePath(canvas, ctx, params, path) {
 		// Extend the shadow to include the stroke of a drawing
 
 		// Add a stroke shadow by stroking before filling
-		if (path) {
-			ctx.stroke(path);
-			ctx.fill(path, params.fillRule);
+		if (params._path) {
+			ctx.stroke(params._path);
+			ctx.fill(params._path, params.fillRule);
 		} else {
 			ctx.stroke();
 			ctx.fill(params.fillRule);
@@ -350,8 +350,8 @@ function _closePath(canvas, ctx, params, path) {
 		ctx.shadowColor = 'transparent';
 		ctx.shadowBlur = 0;
 		// Stroke over fill as usual
-		if (path) {
-			ctx.stroke(path);
+		if (params._path) {
+			ctx.stroke(params._path);
 		} else {
 			ctx.stroke();
 		}
@@ -359,8 +359,8 @@ function _closePath(canvas, ctx, params, path) {
 	} else {
 		// If shadowStroke is not enabled, stroke & fill as usual
 
-		if (path) {
-			ctx.fill(path, params.fillRule);
+		if (params._path) {
+			ctx.fill(params._path, params.fillRule);
 		} else {
 			ctx.fill(params.fillRule);
 		}
@@ -370,8 +370,8 @@ function _closePath(canvas, ctx, params, path) {
 		}
 		if (params.strokeWidth !== 0) {
 			// Only stroke if the stroke is not 0
-			if (path) {
-				ctx.stroke(path);
+			if (params._path) {
+				ctx.stroke(params._path);
 			} else {
 				ctx.stroke();
 			}
@@ -391,7 +391,7 @@ function _closePath(canvas, ctx, params, path) {
 	if (params.mask) {
 		// Retrieve canvas data
 		data = _getCanvasData(canvas);
-		_enableMasking(ctx, data, params, path);
+		_enableMasking(ctx, data, params);
 	}
 
 }
@@ -2340,7 +2340,11 @@ function _detectEvents(canvas, ctx, params) {
 			x = eventCache.x * data.pixelRatio;
 			y = eventCache.y * data.pixelRatio;
 			// Determine if the given coordinates are in the current path
-			intersects = ctx.isPointInPath(x, y) || (ctx.isPointInStroke && ctx.isPointInStroke(x, y));
+			if (layer._path) {
+				intersects = ctx.isPointInPath(layer._path, x, y) || (ctx.isPointInStroke && ctx.isPointInStroke(layer._path, x, y));
+			} else {
+				intersects = ctx.isPointInPath(x, y) || (ctx.isPointInStroke && ctx.isPointInStroke(x, y));
+			}
 		}
 		transforms = data.transforms;
 
@@ -3437,23 +3441,29 @@ $.fn.drawVector = function drawVector(args) {
 $.fn.drawPath = function drawPath(args) {
 	var $canvases = this, e, ctx,
 		params,
-		l, lp, path;
+		l, lp;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
 
 			params = new jCanvasObject(args);
+			if (params.d) {
+				// The only way to offset an SVG path drawn with Path2D() is to
+				// translate it (making sure we restore it at the end of the
+				// method)
+				ctx.save();
+				ctx.translate(params.x, params.y);
+				params._path = caches.pathCache[params.d] || new Path2D(params.d);
+				caches.pathCache[params.d] = params._path;
+			}
 			_addLayer($canvases[e], params, args, drawPath);
 			if (params.visible) {
 
 				_transformShape($canvases[e], ctx, params);
 				_setGlobalProps($canvases[e], ctx, params);
 
-				if (params.d) {
-					path = caches.pathCache[params.d] || new Path2D(params.d);
-					caches.pathCache[params.d] = path;
-				} else {
+				if (!params.d) {
 					ctx.beginPath();
 					l = 1;
 					while (true) {
@@ -3481,7 +3491,12 @@ $.fn.drawPath = function drawPath(args) {
 				// Check for jCanvas events
 				_detectEvents($canvases[e], ctx, params);
 				// Optionally close path
-				_closePath($canvases[e], ctx, params, path);
+				_closePath($canvases[e], ctx, params);
+
+				// Remember to restore the earlier translation
+				if (params.d) {
+					ctx.restore();
+				}
 
 			}
 
