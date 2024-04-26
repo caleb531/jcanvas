@@ -3450,9 +3450,10 @@ $.fn.drawPath = function drawPath(args) {
 			params = new jCanvasObject(args);
 			if (params.d) {
 				// The only way to offset an SVG path drawn with Path2D() is to
-				// translate it (making sure we restore it at the end of the
-				// method)
-				ctx.save();
+				// translate it (making sure we undo the translation it at the
+				// end of the method); note that we cannot use ctx.save() and
+				// ctx.restore() because it would cause any masking to be undone
+				// at the end of the drawPath() code
 				ctx.translate(params.x, params.y);
 				params._path = caches.pathCache[params.d] || new Path2D(params.d);
 				caches.pathCache[params.d] = params._path;
@@ -3495,7 +3496,7 @@ $.fn.drawPath = function drawPath(args) {
 
 				// Remember to restore the earlier translation
 				if (params.d) {
-					ctx.restore();
+					ctx.translate(-params.x, -params.y);
 				}
 
 			}
