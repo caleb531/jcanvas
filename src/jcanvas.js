@@ -1110,7 +1110,7 @@ $.fn.addLayerToGroup = function addLayerToGroup(layerId, groupName) {
 		layer = $canvas.getLayer(layerId);
 
 		// If layer is not already in group
-		if (layer.groups) {
+		if (layer && layer.groups) {
 			// Clone groups list
 			groups = layer.groups.slice(0);
 			// If layer is not already in group
@@ -1138,7 +1138,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 		$canvas = $($canvases[e]);
 		layer = $canvas.getLayer(layerId);
 
-		if (layer.groups) {
+		if (layer && layer.groups) {
 
 			// Find index of layer in group
 			index = inArray(groupName, layer.groups);
