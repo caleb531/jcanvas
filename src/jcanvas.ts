@@ -49,7 +49,7 @@ var defaults: jCanvasDefaults,
 		}
 	},
 	// jQuery internal caches
-	caches = {
+	caches: JCanvasCache = {
 		dataCache: {},
 		propCache: {},
 		imageCache: {},
@@ -78,13 +78,14 @@ var defaults: jCanvasDefaults,
 	];
 
 // jCanvas object in which global settings are other data are stored
-var jCanvas = {
+var jCanvas: JCanvas = {
 	// Events object for storing jCanvas event initiation functions
 	events: {},
 	// Object containing all jCanvas event hooks
 	eventHooks: {},
 	// Settings for enabling future jCanvas features
 	future: {},
+	extend: null
 };
 
 // jCanvas default property values
@@ -242,7 +243,7 @@ function _cloneTransforms(transforms: typeof baseTransforms) {
 }
 
 // Save canvas context and update transformation stack
-function _saveCanvas(ctx: CanvasRenderingContext2D, data: jCanvasInternalData) {
+function _saveCanvas(ctx: CanvasRenderingContext2D, data) {
 	var transforms;
 	ctx.save();
 	transforms = _cloneTransforms(data.transforms);
@@ -250,7 +251,7 @@ function _saveCanvas(ctx: CanvasRenderingContext2D, data: jCanvasInternalData) {
 }
 
 // Restore canvas context update transformation stack
-function _restoreCanvas(ctx: CanvasRenderingContext2D, data: jCanvasInternalData) {
+function _restoreCanvas(ctx: CanvasRenderingContext2D, data) {
 	if (data.savedTransforms.length === 0) {
 		// Reset transformation state if it can't be restored any more
 		data.transforms = _cloneTransforms(baseTransforms);
@@ -258,19 +259,23 @@ function _restoreCanvas(ctx: CanvasRenderingContext2D, data: jCanvasInternalData
 		// Restore canvas context
 		ctx.restore();
 		// Restore current transform state to the last saved state
-		data.transforms = data.savedTransforms.pop();
+		const lastTransform = data.savedTransforms.pop();
+		if (lastTransform) {
+			data.transforms = lastTransform;
+		}
 	}
 }
 
 // Set the style with the given name
 function _setStyle(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, params: jCanvasObject, styleName: 'fillStyle' | 'strokeStyle') {
-	if (params[styleName]) {
-		if (isFunction(params[styleName])) {
+	const styleValue = params[styleName];
+	if (styleValue) {
+		if (isFunction(styleValue)) {
 			// Handle functions
-			ctx[styleName] = params[styleName].call(canvas, params);
+			ctx[styleName] = styleValue.call(canvas, params);
 		} else {
 			// Handle string values
-			ctx[styleName] = params[styleName];
+			ctx[styleName] = styleValue;
 		}
 	}
 }
@@ -319,7 +324,7 @@ function _setGlobalProps(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2
 }
 
 // Optionally enable masking support for this path
-function _enableMasking(ctx: CanvasRenderingContext2D, data, params) {
+function _enableMasking(ctx: CanvasRenderingContext2D, data, params: jCanvasObject) {
 	if (params.mask) {
 		// If jCanvas autosave is enabled
 		if (params.autosave) {
@@ -334,7 +339,7 @@ function _enableMasking(ctx: CanvasRenderingContext2D, data, params) {
 }
 
 // Restore individual shape transformation
-function _restoreTransform(ctx, params) {
+function _restoreTransform(ctx: CanvasRenderingContext2D, params) {
 	// If shape has been transformed by jCanvas
 	if (params._transformed) {
 		// Restore canvas context
@@ -465,7 +470,7 @@ jCanvas.extend = function extend(plugin) {
 
 /* Layer API */
 
-class jCanvasInternalData {
+class JCanvasInternalData {
 	// The associated canvas element
 	canvas: HTMLCanvasElement;
 	// Layers array
@@ -519,15 +524,15 @@ class jCanvasInternalData {
 function _getCanvasData(canvas) {
 	var dataCache = caches.dataCache,
 		data;
-	if (dataCache._canvas === canvas && dataCache._data: jCanvasInternalData) {
+	if (dataCache._canvas === canvas && dataCache._data) {
 		// Retrieve canvas data from cache if possible
 		data = dataCache._data;
 	} else {
 		// Retrieve canvas data from jQuery's internal data storage
 		data = $.data(canvas, "jCanvas");
-		if (!data: jCanvasInternalData) {
+		if (!data) {
 			// Create canvas data object if it does not already exist
-			data = new jCanvasInternalData();
+			data = new JCanvasInternalData();
 			// Use jQuery to store canvas data
 			$.data(canvas, "jCanvas", data);
 		}
@@ -1175,7 +1180,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 };
 
 // Get topmost layer that intersects with event coordinates
-function _getIntersectingLayer(data: jCanvasInternalData) {
+function _getIntersectingLayer(data) {
 	var layer, i, mask, m;
 
 	// Store the topmost layer
@@ -1370,7 +1375,7 @@ function _setCursor($canvas, layer, eventType) {
 }
 
 // Reset cursor on canvas
-function _resetCursor($canvas, data: jCanvasInternalData) {
+function _resetCursor($canvas, data) {
 	$canvas.css({
 		cursor: data.cursor,
 	});
@@ -1400,7 +1405,7 @@ function _layerCanFireEvent(layer, eventType) {
 }
 
 // Trigger the given event on the given layer
-function _triggerLayerEvent($canvas, data, layer, eventType, arg) {
+function _triggerLayerEvent($canvas: JQuery<HTMLCanvasElement>, data: JCanvasInternalData, layer: jCanvasObject, eventType: string, arg?: any) {
 	// If layer can legally fire this event type
 	if (_layerCanFireEvent(layer, eventType)) {
 		// Do not set a custom cursor on layer mouseout
@@ -2261,7 +2266,7 @@ function _getMouseEventName(eventName) {
 
 // Bind event to jCanvas layer using standard jQuery events
 function _createEvent(eventName) {
-	jCanvas.events[eventName] = function ($canvas, data: jCanvasInternalData) {
+	jCanvas.events[eventName] = function ($canvas, data) {
 		var helperEventName, touchEventName, eventCache;
 
 		// Retrieve canvas's event cache
