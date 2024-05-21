@@ -532,7 +532,7 @@ function _getCanvasData(canvas) {
 		data = $.data(canvas, "jCanvas");
 		if (!data) {
 			// Create canvas data object if it does not already exist
-			data = new JCanvasInternalData();
+			data = new JCanvasInternalData(canvas);
 			// Use jQuery to store canvas data
 			$.data(canvas, "jCanvas", data);
 		}
