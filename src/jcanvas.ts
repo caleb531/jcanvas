@@ -9,6 +9,7 @@ interface JCanvasPluginParams {
 	name: string;
 	props?: Record<string, any>;
 	type?: string;
+	fn: (ctx: CanvasRenderingContext2D, params: JCanvasObject) => void;
 }
 
 interface JCanvasCache {
@@ -23,7 +24,7 @@ interface JCanvas {
 	events: Record<string, ($canvas: JQuery, data: JCanvasInternalData) => void>;
 	eventHooks: JCanvasEventHooks;
 	future: Record<string, any>;
-	extend: null | ((JCanvasPluginParams) => void);
+	extend: null | ((params: JCanvasPluginParams) => void);
 	clearCache: null | (() => void);
 }
 
@@ -585,7 +586,6 @@ jCanvas.extend = function extend(plugin) {
 			extendObject(defaults, plugin.props);
 		}
 		// Define plugin method
-		// @ts-expect-error
 		$.fn[plugin.name] = function self(args) {
 			var $canvases = this,
 				canvas,
