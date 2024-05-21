@@ -1,9 +1,106 @@
+/// <reference types="jquery" />
 /**
  * @license jCanvas v21.0.1
  * Copyright 2017 Caleb Evans
  * Released under the MIT license
  */
 import $ from "jquery";
+
+interface JCanvasPluginParams {
+	name: string;
+	props?: Record<string, any>;
+	type?: string;
+}
+
+interface JCanvasCache {
+	dataCache: Record<string, any>;
+	propCache: Partial<JCanvasObject>;
+	imageCache: Record<string, HTMLImageElement>;
+}
+
+type JCanvasEventHooks = Record<string, (layer: JCanvasObject) => void>;
+
+interface JCanvas {
+	events: Record<string, ($canvas: JQuery, data: JCanvasInternalData) => void>;
+	eventHooks: JCanvasEventHooks;
+	future: Record<string, any>;
+	extend: null | ((JCanvasPluginParams) => void);
+	clearCache: null | (() => void);
+}
+
+interface JQueryEventWithFix extends JQuery.EventExtensions {
+	fix: (event: Event) => Event;
+}
+
+type JCanvasLayerId = JCanvasObject | string | number | RegExp;
+type jCanvasLayerGroupId = JCanvasObject[] | RegExp;
+type JCanvasLayerCallback = (layer: JCanvasObject) => any;
+
+declare global {
+	interface JQuery {
+		getEventHooks(): JCanvasEventHooks;
+		setEventHooks(eventHooks: JCanvasEventHooks): JQuery;
+		getLayers(callback?: JCanvasLayerCallback): JCanvasObject[];
+		getLayer(layerId: JCanvasLayerId): JCanvasObject;
+		getLayerGroup(groupId?: jCanvasLayerGroupId): JCanvasObject[];
+		getLayerIndex(layerId: JCanvasLayerId): number;
+		setLayer(layerId: JCanvasLayerId, props: Partial<JCanvasObject>): JQuery;
+		setLayers(
+			props: Partial<JCanvasObject>,
+			callback: JCanvasLayerCallback
+		): JQuery;
+		setLayerGroup(
+			groupId: jCanvasLayerGroupId,
+			props: Partial<JCanvasObject>
+		): JQuery;
+		moveLayer(layerId: JCanvasLayerId, index: number): JQuery;
+		removeLayer(layerId: JCanvasLayerId): JQuery;
+		removeLayers(callback?: JCanvasLayerCallback): JQuery;
+		removeLayerGroup(groupId: jCanvasLayerGroupId): JQuery;
+		addLayerToGroup(layerId: JCanvasLayerId, groupName: string): JQuery;
+		removeLayerFromGroup(layerId: JCanvasLayerId, groupName: string): JQuery;
+		triggerLayerEvent(layerId: JCanvasLayerId, eventType: string): JQuery;
+		drawLayer(layerId: JCanvasLayerId, groupName: string): void;
+		drawLayers(args?: {
+			clear?: boolean;
+			resetFire?: boolean;
+			index?: number;
+			complete?: () => void;
+		}): void;
+		addLayer(args: JCanvasObject): void;
+		animateLayer(): void;
+		animateLayerGroup(groupId: jCanvasLayerGroupId): void;
+		delayLayer(layerId: JCanvasLayerId, duration: number): void;
+		delayLayerGroup(groupId: jCanvasLayerGroupId, duration: number): void;
+		stopLayer(layerId: JCanvasLayerId, clearQueue?: boolean): void;
+		stopLayerGroup(groupId: jCanvasLayerGroupId, clearQueue?: boolean): void;
+		draw(args: JCanvasObject): JQuery;
+		clearCanvas(args?: JCanvasObject): void;
+		saveCanvas(args?: JCanvasObject): void;
+		restoreCanvas(args?: JCanvasObject): void;
+		rotateCanvas(args?: JCanvasObject): void;
+		scaleCanvas(args?: JCanvasObject): void;
+		translateCanvas(args?: JCanvasObject): void;
+		drawRect(args?: JCanvasObject): void;
+		drawArc(args?: JCanvasObject): void;
+		drawEllipse(args?: JCanvasObject): void;
+		drawPolygon(args?: JCanvasObject): void;
+		drawSlice(args?: JCanvasObject): void;
+		drawLine(args?: JCanvasObject): void;
+		drawQuadratic(args?: JCanvasObject): void;
+		drawBezier(args?: JCanvasObject): void;
+		drawVector(args?: JCanvasObject): void;
+		drawPath(args?: JCanvasObject): void;
+		drawText(args?: JCanvasObject): void;
+		measureText(args?: JCanvasObject): void;
+		drawImage(args?: JCanvasObject): void;
+		createPattern(args?: JCanvasObject): void;
+		createGradient(args?: JCanvasObject): void;
+		setPixels(args?: JCanvasObject): void;
+		getCanvasImage(type: string, quality?: number): void;
+		detectPixelRatio(callback: (ratio: number) => void): void;
+	}
+}
 
 // Define local aliases to frequently used properties
 var defaults: jCanvasDefaults,
@@ -27,6 +124,7 @@ var defaults: jCanvasDefaults,
 	jQueryEventFix = ($.event as JQueryEventWithFix).fix,
 	// Object for storing a number of internal property maps
 	maps = {
+		// Map drawing names with their respective method names
 		drawings: {
 			arc: "drawArc",
 			bezier: "drawBezier",
@@ -46,7 +144,18 @@ var defaults: jCanvasDefaults,
 			rotate: "rotateCanvas",
 			scale: "scaleCanvas",
 			translate: "translateCanvas",
-		}
+		},
+		touchEvents: {
+			mousedown: "touchstart",
+			mouseup: "touchend",
+			mousemove: "touchmove",
+		},
+		// Map standard touch events to mouse events
+		mouseEvents: {
+			touchstart: "mousedown",
+			touchend: "mouseup",
+			touchmove: "mousemove",
+		},
 	},
 	// jQuery internal caches
 	caches: JCanvasCache = {
@@ -64,8 +173,13 @@ var defaults: jCanvasDefaults,
 		// Store all previous masks
 		masks: [],
 	},
-	// Object for storing CSS-related properties
-	css = {},
+	css = {
+		// Define properties used in both CSS and jCanvas
+		props: ["width", "height", "opacity", "lineHeight"],
+		// List of CSS3 cursors that need to be prefixed
+		cursors: ["grab", "grabbing", "zoom-in", "zoom-out"],
+		propsObj: {} as Record<string, boolean>,
+	},
 	tangibleEvents = [
 		"mousedown",
 		"mousemove",
@@ -85,25 +199,27 @@ var jCanvas: JCanvas = {
 	eventHooks: {},
 	// Settings for enabling future jCanvas features
 	future: {},
-	extend: null
+	extend: null,
+	clearCache: null,
 };
 
 // jCanvas default property values
 class jCanvasDefaults {
-	align: CanvasRenderingContext2D['textAlign'] = "center";
+	align: CanvasRenderingContext2D["textAlign"] = "center";
 	arrowAngle: number = 90;
 	arrowRadius: number = 0;
 	autosave: boolean = true;
-	baseline: CanvasRenderingContext2D['textBaseline'] = "middle";
+	baseline: CanvasRenderingContext2D["textBaseline"] = "middle";
 	bringToFront: boolean = false;
 	ccw: boolean = false;
 	closed: boolean = false;
-	compositing: CanvasRenderingContext2D['globalCompositeOperation'] = "source-over";
+	compositing: CanvasRenderingContext2D["globalCompositeOperation"] =
+		"source-over";
 	concavity: number = 0;
 	cornerRadius: number = 0;
 	count: number = 1;
 	cropFromCenter: boolean = true;
-	crossOrigin: HTMLImageElement['crossOrigin'] = null;
+	crossOrigin: HTMLImageElement["crossOrigin"] = null;
 	cursors: string | null = null;
 	disableEvents: boolean = false;
 	draggable: boolean = false;
@@ -136,9 +252,9 @@ class jCanvasDefaults {
 	r1: number | null = null;
 	r2: number | null = null;
 	radius: number = 0;
-	repeat: Parameters<CanvasRenderingContext2D['createPattern']>[1] = "repeat";
+	repeat: Parameters<CanvasRenderingContext2D["createPattern"]>[1] = "repeat";
 	respectAlign: boolean = false;
-	restrictDragToAxis: 'x' | 'y' | null = null;
+	restrictDragToAxis: "x" | "y" | null = null;
 	rotate: number = 0;
 	rounded: boolean = false;
 	scale: number = 1;
@@ -154,10 +270,10 @@ class jCanvasDefaults {
 	source: string = "";
 	spread: number = 0;
 	start: number = 0;
-	strokeCap: CanvasRenderingContext2D['lineCap'] = "butt";
-	strokeDash: number[]| null = null;
-	strokeDashOffset: CanvasRenderingContext2D['lineDashOffset'] = 0;
-	strokeJoin: CanvasRenderingContext2D['lineJoin'] = "miter";
+	strokeCap: CanvasRenderingContext2D["lineCap"] = "butt";
+	strokeDash: number[] | null = null;
+	strokeDashOffset: CanvasRenderingContext2D["lineDashOffset"] = 0;
+	strokeJoin: CanvasRenderingContext2D["lineJoin"] = "miter";
 	strokeStyle: string | Function = "transparent";
 	strokeWidth: number = 1;
 	sWidth: number | null = null;
@@ -167,7 +283,7 @@ class jCanvasDefaults {
 	translate: number = 0;
 	translateX: number = 0;
 	translateY: number = 0;
-	type: keyof (typeof maps)['drawings'] | null = null;
+	type: keyof (typeof maps)["drawings"] | null = null;
 	visible: boolean = true;
 	width: number | null = null;
 	x: number = 0;
@@ -177,13 +293,13 @@ class jCanvasDefaults {
 defaults = new jCanvasDefaults();
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
-class jCanvasObject extends jCanvasDefaults {
-	constructor(args: (typeof jCanvasDefaults)) {
+class JCanvasObject extends jCanvasDefaults {
+	constructor(args?: JCanvasObject) {
 		super();
 		extendObject(this, args);
 	}
 }
-jCanvasObject.prototype = defaults;
+JCanvasObject.prototype = defaults;
 
 /* Internal helper methods */
 
@@ -198,17 +314,20 @@ function isFunction(operand: any): operand is Function {
 }
 
 // Determines if the given operand is numeric
-function isNumeric(operand: any): operand is number {
+function isNumeric(operand: any): operand is number | string {
 	return !isNaN(Number(operand)) && !isNaN(parseFloat(operand));
 }
 
 // Get 2D context for the given canvas
-function _getContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D | null {
+function _getContext(canvas: HTMLElement): CanvasRenderingContext2D | null {
+	if (!(canvas instanceof HTMLCanvasElement)) {
+		return null;
+	}
 	return canvas && canvas.getContext ? canvas.getContext("2d") : null;
 }
 
 // Coerce designated number properties from strings to numbers
-function _coerceNumericProps(props: jCanvasObject) {
+function _coerceNumericProps(props: Partial<JCanvasObject>) {
 	var propName, propType, propValue;
 	// Loop through all properties in given property map
 	for (propName in props) {
@@ -267,7 +386,12 @@ function _restoreCanvas(ctx: CanvasRenderingContext2D, data) {
 }
 
 // Set the style with the given name
-function _setStyle(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, params: jCanvasObject, styleName: 'fillStyle' | 'strokeStyle') {
+function _setStyle(
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+	params: JCanvasObject,
+	styleName: "fillStyle" | "strokeStyle"
+) {
 	const styleValue = params[styleName];
 	if (styleValue) {
 		if (isFunction(styleValue)) {
@@ -281,7 +405,11 @@ function _setStyle(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, par
 }
 
 // Set canvas context properties
-function _setGlobalProps(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, params: jCanvasObject) {
+function _setGlobalProps(
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+	params: JCanvasObject
+) {
 	_setStyle(canvas, ctx, params, "fillStyle");
 	_setStyle(canvas, ctx, params, "strokeStyle");
 	ctx.lineWidth = params.strokeWidth;
@@ -324,7 +452,11 @@ function _setGlobalProps(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2
 }
 
 // Optionally enable masking support for this path
-function _enableMasking(ctx: CanvasRenderingContext2D, data, params: jCanvasObject) {
+function _enableMasking(
+	ctx: CanvasRenderingContext2D,
+	data,
+	params: JCanvasObject
+) {
 	if (params.mask) {
 		// If jCanvas autosave is enabled
 		if (params.autosave) {
@@ -348,7 +480,11 @@ function _restoreTransform(ctx: CanvasRenderingContext2D, params) {
 }
 
 // Close current canvas path
-function _closePath(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, params: jCanvasObject) {
+function _closePath(
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+	params: JCanvasObject
+) {
 	var data;
 
 	// Optionally close path
@@ -398,7 +534,13 @@ function _closePath(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, pa
 }
 
 // Transform (translate, scale, or rotate) shape
-function _transformShape(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D, params, width, height) {
+function _transformShape(
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+	params: JCanvasObject,
+	width?: number,
+	height?: number
+) {
 	// Get conversion factor for radians
 	params._toRad = params.inDegrees ? PI / 180 : 1;
 
@@ -440,6 +582,7 @@ jCanvas.extend = function extend(plugin) {
 			extendObject(defaults, plugin.props);
 		}
 		// Define plugin method
+		// @ts-expect-error
 		$.fn[plugin.name] = function self(args) {
 			var $canvases = this,
 				canvas,
@@ -451,7 +594,7 @@ jCanvas.extend = function extend(plugin) {
 				canvas = $canvases[e];
 				ctx = _getContext(canvas);
 				if (ctx) {
-					params = new jCanvasObject(args);
+					params = new JCanvasObject(args);
 					_addLayer(canvas, params, args, self);
 
 					_setGlobalProps(canvas, ctx, params);
@@ -628,7 +771,11 @@ function _enableDrag($canvas, data, layer) {
 }
 
 // Update a layer property map if property is changed
-function _updateLayerName($canvas, data, layer, props) {
+function _updateLayerName(
+	data: JCanvasInternalData,
+	layer: JCanvasObject,
+	props?
+) {
 	var nameMap = data.layer.names;
 
 	// If layer name is being added, not changed
@@ -652,7 +799,11 @@ function _updateLayerName($canvas, data, layer, props) {
 }
 
 // Create or update the data map for the given layer and group type
-function _updateLayerGroups($canvas, data, layer, props) {
+function _updateLayerGroups(
+	data: JCanvasInternalData,
+	layer: JCanvasObject,
+	props?
+) {
 	var groupMap = data.layer.groups,
 		group,
 		groupName,
@@ -745,7 +896,7 @@ $.fn.getLayers = function getLayers(callback) {
 		layers,
 		layer,
 		l,
-		matching = [];
+		matching: JCanvasObject[] = [];
 
 	if ($canvases.length !== 0) {
 		canvas = $canvases[0];
@@ -788,30 +939,39 @@ $.fn.getLayer = function getLayer(layerId) {
 		layers = data.layers;
 		idType = typeOf(layerId);
 
-		if (layerId && layerId.layer) {
+		if (
+			layerId &&
+			typeof layerId === "object" &&
+			"layer" in layerId &&
+			layerId.layer
+		) {
 			// Return the actual layer object if given
-			layer = layerId;
+			layer = layerId as JCanvasObject;
 		} else if (idType === "number") {
 			// Retrieve the layer using the given index
 
+			var layerIndex = layerId as number;
+
 			// Allow for negative indices
-			if (layerId < 0) {
-				layerId = layers.length + layerId;
+			if (layerIndex < 0) {
+				layerIndex = layers.length + layerIndex;
 			}
 			// Get layer with the given index
-			layer = layers[layerId];
+			layer = layers[layerIndex];
 		} else if (idType === "regexp") {
+			var layerPattern = layerId as RegExp;
 			// Get layer with the name that matches the given regex
 			for (l = 0; l < layers.length; l += 1) {
 				// Check if layer matches name
-				if (isString(layers[l].name) && layers[l].name.match(layerId)) {
+				if (isString(layers[l].name) && layers[l].name.match(layerPattern)) {
 					layer = layers[l];
 					break;
 				}
 			}
 		} else {
+			var layerName = layerId as string;
 			// Get layer with the given name
-			layer = data.layer.names[layerId];
+			layer = data.layer.names[layerName];
 		}
 	}
 	return layer;
@@ -823,7 +983,6 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 		canvas,
 		data,
 		groups,
-		groupName,
 		group,
 		idType = typeOf(groupId);
 
@@ -834,22 +993,24 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 			// Return layer group if given
 			group = groupId;
 		} else if (idType === "regexp") {
+			let groupPattern = groupId as RegExp;
 			// Get canvas data
 			data = _getCanvasData(canvas);
 			groups = data.layer.groups;
 			// Loop through all layers groups for this canvas
-			for (groupName in groups) {
+			for (let groupName in groups) {
 				// Find a group whose name matches the given regex
-				if (groupName.match(groupId)) {
+				if (groupName.match(groupPattern)) {
 					group = groups[groupName];
 					// Stop after finding the first matching group
 					break;
 				}
 			}
-		} else {
+		} else if (typeof groupId === "string") {
 			// Find layer group with the given group name
+			let groupName = groupId as string;
 			data = _getCanvasData(canvas);
-			group = data.layer.groups[groupId];
+			group = data.layer.groups[groupName];
 		}
 	}
 	return group;
@@ -882,8 +1043,8 @@ $.fn.setLayer = function setLayer(layerId, props) {
 		layer = $($canvases[e]).getLayer(layerId);
 		if (layer) {
 			// Update layer property maps
-			_updateLayerName($canvas, data, layer, props);
-			_updateLayerGroups($canvas, data, layer, props);
+			_updateLayerName(data, layer, props);
+			_updateLayerGroups(data, layer, props);
 
 			_coerceNumericProps(props);
 
@@ -912,7 +1073,7 @@ $.fn.setLayer = function setLayer(layerId, props) {
 							propName !== "text"
 						) {
 							// Convert numeric values as strings to numbers
-							layer[propName] = parseFloat(propValue);
+							layer[propName] = parseFloat(String(propValue));
 						} else {
 							// Otherwise, set given string value
 							layer[propName] = propValue;
@@ -1045,11 +1206,11 @@ $.fn.removeLayer = function removeLayer(layerId) {
 			delete layer._layer;
 
 			// Update layer name map
-			_updateLayerName($canvas, data, layer, {
+			_updateLayerName(data, layer, {
 				name: null,
 			});
 			// Update layer group map
-			_updateLayerGroups($canvas, data, layer, {
+			_updateLayerGroups(data, layer, {
 				groups: null,
 			});
 
@@ -1224,7 +1385,12 @@ function _getIntersectingLayer(data) {
 }
 
 // Draw individual layer (internal)
-function _drawLayer($canvas: JQuery<HTMLCanvasElement>, ctx: CanvasRenderingContext2D, layer, nextLayerIndex) {
+function _drawLayer(
+	$canvas: JQuery,
+	ctx: CanvasRenderingContext2D,
+	layer: JCanvasObject,
+	nextLayerIndex?: number
+) {
 	if (layer && layer.visible && layer._method) {
 		if (nextLayerIndex) {
 			layer._next = nextLayerIndex;
@@ -1338,22 +1504,6 @@ function _handleLayerDrag($canvas, data, eventType) {
 	}
 }
 
-// List of CSS3 cursors that need to be prefixed
-css.cursors = ["grab", "grabbing", "zoom-in", "zoom-out"];
-
-// Function to detect vendor prefix
-// Modified version of David Walsh's implementation
-// https://davidwalsh.name/vendor-prefix
-css.prefix = (function () {
-	var styles = getComputedStyle(document.documentElement, ""),
-		pre = (arraySlice
-			.call(styles)
-			.join("")
-			.match(/-(moz|webkit|ms)-/) ||
-			(styles.OLink === "" && ["", "o"]))[1];
-	return "-" + pre + "-";
-})();
-
 // Set cursor on canvas
 function _setCursor($canvas, layer, eventType) {
 	var cursor;
@@ -1363,7 +1513,7 @@ function _setCursor($canvas, layer, eventType) {
 	}
 	// Prefix any CSS3 cursor
 	if ($.inArray(cursor, css.cursors) !== -1) {
-		cursor = css.prefix + cursor;
+		cursor = cursor;
 	}
 	// If cursor is defined
 	if (cursor) {
@@ -1405,7 +1555,13 @@ function _layerCanFireEvent(layer, eventType) {
 }
 
 // Trigger the given event on the given layer
-function _triggerLayerEvent($canvas: JQuery<HTMLCanvasElement>, data: JCanvasInternalData, layer: jCanvasObject, eventType: string, arg?: any) {
+function _triggerLayerEvent(
+	$canvas: JQuery,
+	data: JCanvasInternalData,
+	layer: JCanvasObject,
+	eventType: string,
+	arg?: any
+) {
 	// If layer can legally fire this event type
 	if (_layerCanFireEvent(layer, eventType)) {
 		// Do not set a custom cursor on layer mouseout
@@ -1424,16 +1580,17 @@ function _triggerLayerEvent($canvas: JQuery<HTMLCanvasElement>, data: JCanvasInt
 }
 
 // Manually trigger a layer event
-$.fn.triggerLayerEvent = function (layer, eventType) {
+$.fn.triggerLayerEvent = function (layerId, eventType) {
 	var $canvases = this,
 		$canvas,
 		e,
-		data;
+		data,
+		layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		$canvas = $($canvases[e]);
 		data = _getCanvasData($canvases[e]);
-		layer = $canvas.getLayer(layer);
+		layer = $canvas.getLayer(layerId);
 		if (layer) {
 			_triggerLayerEvent($canvas, data, layer, eventType);
 		}
@@ -1639,7 +1796,12 @@ $.fn.drawLayers = function drawLayers(args) {
 };
 
 // Add a jCanvas layer (internal)
-function _addLayer(canvas, params, args, method) {
+function _addLayer(
+	canvas: HTMLElement,
+	params: JCanvasObject,
+	args?: JCanvasObject,
+	method?: (args: JCanvasObject) => JQuery
+) {
 	var $canvas,
 		data,
 		layers,
@@ -1666,7 +1828,7 @@ function _addLayer(canvas, params, args, method) {
 	}
 
 	// If layer hasn't been added yet
-	if (params.layer && !params._layer) {
+	if (params.layer && !params._layer && layer) {
 		// Add layer to canvas
 
 		$canvas = $(canvas);
@@ -1683,7 +1845,7 @@ function _addLayer(canvas, params, args, method) {
 			_coerceNumericProps(params);
 
 			// Ensure layers are unique across canvases by cloning them
-			layer = new jCanvasObject(params);
+			layer = new JCanvasObject(params);
 			layer.canvas = canvas;
 			// Indicate that this is a layer for future checks
 			layer.layer = true;
@@ -1707,8 +1869,8 @@ function _addLayer(canvas, params, args, method) {
 			}
 
 			// Update layer group maps
-			_updateLayerName($canvas, data, layer);
-			_updateLayerGroups($canvas, data, layer);
+			_updateLayerName(data, layer);
+			_updateLayerGroups(data, layer);
 
 			// Check for any associated jCanvas events and enable them
 			_addLayerEvents($canvas, data, layer);
@@ -1755,7 +1917,7 @@ $.fn.addLayer = function addLayer(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			params.layer = true;
 			_addLayer($canvases[e], params, args);
 		}
@@ -1765,10 +1927,6 @@ $.fn.addLayer = function addLayer(args) {
 
 /* Animation API */
 
-// Define properties used in both CSS and jCanvas
-css.props = ["width", "height", "opacity", "lineHeight"];
-css.propsObj = {};
-
 // Hide/show jCanvas/CSS properties so they can be animated using jQuery
 function _showProps(obj) {
 	var cssProp, p;
@@ -1777,7 +1935,7 @@ function _showProps(obj) {
 		obj[cssProp] = obj["_" + cssProp];
 	}
 }
-function _hideProps(obj, reset) {
+function _hideProps(obj: Partial<JCanvasObject>, reset?: boolean) {
 	var cssProp, p;
 	for (p = 0; p < css.props.length; p += 1) {
 		cssProp = css.props[p];
@@ -1843,7 +2001,7 @@ function _removeSubPropAliases(layer) {
 function _colorToRgbArray(color) {
 	var originalColor,
 		elem,
-		rgb = [],
+		rgb: number[] = [],
 		multiple = 1;
 
 	// Deal with complete transparency
@@ -1869,7 +2027,7 @@ function _colorToRgbArray(color) {
 		rgb[2] *= multiple;
 		// Ad alpha channel if given
 		if (rgb[3] !== undefined) {
-			rgb[3] = parseFloat(rgb[3]);
+			rgb[3] = parseFloat(String(rgb[3]));
 		} else {
 			rgb[3] = 1;
 		}
@@ -2235,19 +2393,6 @@ _supportColorProps([
 
 /* Event API */
 
-// Map standard mouse events to touch events
-maps.touchEvents = {
-	mousedown: "touchstart",
-	mouseup: "touchend",
-	mousemove: "touchmove",
-};
-// Map standard touch events to mouse events
-maps.mouseEvents = {
-	touchstart: "mousedown",
-	touchend: "mouseup",
-	touchmove: "mousemove",
-};
-
 // Convert mouse event name to a corresponding touch event name (if possible)
 function _getTouchEventName(eventName) {
 	// Detect touch event support
@@ -2398,6 +2543,7 @@ function _detectEvents(canvas, ctx, params) {
 }
 
 // Normalize offsetX and offsetY for all browsers
+// @ts-expect-error TODO: properly type extension for $.event
 $.event.fix = function (event) {
 	var offset, originalEvent, touches;
 
@@ -2437,24 +2583,21 @@ $.event.fix = function (event) {
 
 /* Drawing API */
 
-// Map drawing names with their respective method names
-maps.drawings = ;
-
 // Draws on canvas using a function
 $.fn.draw = function draw(args) {
 	var $canvases = this,
 		e,
 		ctx,
-		params = new jCanvasObject(args);
+		params = new JCanvasObject(args);
 
 	// Draw using any other method
-	if (maps.drawings[params.type] && params.type !== "function") {
+	if (params.type && maps.drawings[params.type] && params.type !== "function") {
 		$canvases[maps.drawings[params.type]](args);
 	} else {
 		for (e = 0; e < $canvases.length; e += 1) {
 			ctx = _getContext($canvases[e]);
 			if (ctx) {
-				params = new jCanvasObject(args);
+				params = new JCanvasObject(args);
 				_addLayer($canvases[e], params, args, draw);
 				if (params.visible) {
 					if (params.fn) {
@@ -2473,7 +2616,7 @@ $.fn.clearCanvas = function clearCanvas(args) {
 	var $canvases = this,
 		e,
 		ctx,
-		params = new jCanvasObject(args);
+		params = new JCanvasObject(args);
 
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
@@ -2522,7 +2665,7 @@ $.fn.saveCanvas = function saveCanvas(args) {
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
 
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, saveCanvas);
 
 			// Restore a number of times using the given count
@@ -2548,7 +2691,7 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
 
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, restoreCanvas);
 
 			// Restore a number of times using the given count
@@ -2628,7 +2771,7 @@ $.fn.rotateCanvas = function rotateCanvas(args) {
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
 
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, rotateCanvas);
 
 			// Autosave transformation state by default
@@ -2655,7 +2798,7 @@ $.fn.scaleCanvas = function scaleCanvas(args) {
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
 
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, scaleCanvas);
 
 			// Autosave transformation state by default
@@ -2682,7 +2825,7 @@ $.fn.translateCanvas = function translateCanvas(args) {
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
 
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, translateCanvas);
 
 			// Autosave transformation state by default
@@ -2714,7 +2857,7 @@ $.fn.drawRect = function drawRect(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawRect);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params, params.width, params.height);
@@ -2865,7 +3008,7 @@ $.fn.drawArc = function drawArc(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawArc);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
@@ -2895,7 +3038,7 @@ $.fn.drawEllipse = function drawEllipse(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawEllipse);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params, params.width, params.height);
@@ -2954,7 +3097,7 @@ $.fn.drawPolygon = function drawPolygon(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawPolygon);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
@@ -3018,7 +3161,7 @@ $.fn.drawSlice = function drawSlice(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawSlice);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params, params.radius * 2);
@@ -3188,7 +3331,7 @@ $.fn.drawLine = function drawLine(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawLine);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params);
@@ -3276,7 +3419,7 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawQuadratic);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params);
@@ -3373,7 +3516,7 @@ $.fn.drawBezier = function drawBezier(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawBezier);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params);
@@ -3469,7 +3612,7 @@ $.fn.drawVector = function drawVector(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawVector);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params);
@@ -3500,7 +3643,7 @@ $.fn.drawPath = function drawPath(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawPath);
 			if (params.visible) {
 				_transformShape($canvases[e], ctx, params);
@@ -3511,7 +3654,7 @@ $.fn.drawPath = function drawPath(args) {
 				while (true) {
 					lp = params["p" + l];
 					if (lp !== undefined) {
-						lp = new jCanvasObject(lp);
+						lp = new JCanvasObject(lp);
 						if (lp.type === "line") {
 							_drawLine($canvases[e], ctx, params, lp);
 						} else if (lp.type === "quadratic") {
@@ -3683,7 +3826,7 @@ $.fn.drawText = function drawText(args) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer($canvases[e], params, args, drawText);
 			if (params.visible) {
 				// Set text-specific properties
@@ -3848,7 +3991,7 @@ $.fn.measureText = function measureText(args) {
 	params = $canvases.getLayer(args);
 	// If layer does not exist or if returned object is not a jCanvas layer
 	if (!params || (params && !params._layer)) {
-		params = new jCanvasObject(args);
+		params = new JCanvasObject(args);
 	}
 
 	ctx = _getContext($canvases[0]);
@@ -4022,7 +4165,7 @@ $.fn.drawImage = function drawImage(args) {
 		ctx = _getContext($canvases[e]);
 		if (ctx) {
 			data = _getCanvasData($canvases[e]);
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			layer = _addLayer($canvases[e], params, args, drawImage);
 			if (params.visible) {
 				// Cache the given source
@@ -4033,9 +4176,10 @@ $.fn.drawImage = function drawImage(args) {
 					// Use image or canvas element if given
 					img = source;
 				} else if (source) {
-					if (imageCache[source] && imageCache[source].complete) {
+					var cachedImg = imageCache[source];
+					if (cachedImg && cachedImg.complete) {
 						// Get the image element from the cache if possible
-						img = imageCache[source];
+						img = cachedImg;
 					} else {
 						// Otherwise, get the image from the given source URL
 						img = new Image();
@@ -4087,7 +4231,7 @@ $.fn.createPattern = function createPattern(args) {
 
 	ctx = _getContext($canvases[0]);
 	if (ctx) {
-		params = new jCanvasObject(args);
+		params = new JCanvasObject(args);
 
 		// Cache the given source
 		source = params.source;
@@ -4140,7 +4284,7 @@ $.fn.createGradient = function createGradient(args) {
 		ctx,
 		params,
 		gradient,
-		stops = [],
+		stops: (number | null)[] = [],
 		nstops,
 		start,
 		end,
@@ -4149,7 +4293,7 @@ $.fn.createGradient = function createGradient(args) {
 		n,
 		p;
 
-	params = new jCanvasObject(args);
+	params = new JCanvasObject(args);
 	ctx = _getContext($canvases[0]);
 	if (ctx) {
 		// Gradient coordinates must be defined
@@ -4259,7 +4403,7 @@ $.fn.setPixels = function setPixels(args) {
 		ctx = _getContext(canvas);
 		canvasData = _getCanvasData($canvases[e]);
 		if (ctx) {
-			params = new jCanvasObject(args);
+			params = new JCanvasObject(args);
 			_addLayer(canvas, params, args, setPixels);
 			_transformShape($canvases[e], ctx, params, params.width, params.height);
 
@@ -4409,7 +4553,7 @@ jCanvas.clearCache = function clearCache() {
 };
 
 // Enable canvas feature detection with $.support
-$.support.canvas = $("<canvas />")[0].getContext !== undefined;
+$.support.canvas = typeof HTMLCanvasElement !== "undefined";
 
 // Export jCanvas functions
 extendObject(jCanvas, {
@@ -4424,4 +4568,4 @@ extendObject(jCanvas, {
 // @ts-expect-error TODO: fix this
 $.jCanvas = jCanvas;
 // @ts-expect-error TODO: fix this
-$.jCanvasObject = jCanvasObject;
+$.JCanvasObject = JCanvasObject;

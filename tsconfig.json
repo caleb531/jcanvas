@@ -3,6 +3,7 @@
     "target": "esnext",
     "lib": ["esnext", "dom", "dom.iterable"],
     "allowJs": true,
+    "checkJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
@@ -14,5 +15,6 @@
     "strict": true,
     "noImplicitAny": false,
     "strictFunctionTypes": false
-  }
+  },
+  "include": ["src/**/*"]
 }
