@@ -1,4 +1,3 @@
-/// <reference types="jquery" />
 /**
  * @license jCanvas v21.0.1
  * Copyright 2017 Caleb Evans
@@ -4399,7 +4398,7 @@ $.fn.createGradient = function createGradient(args) {
 	params = new JCanvasObject(args);
 	var canvas = $canvases[0];
 	if (!_isCanvas(canvas)) {
-		return null;
+		return;
 	}
 	ctx = _getContext(canvas);
 	if (ctx) {
