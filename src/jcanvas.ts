@@ -643,8 +643,8 @@ class JCanvasInternalData {
 	layers = [];
 	// Layer maps
 	layer = {
-		names: {},
-		groups: {},
+		names: {} as Record<string, JCanvasObject>,
+		groups: {} as Record<string, JCanvasObject[]>,
 	};
 	eventHooks = {};
 	// All layers that intersect with the event coordinates (regardless of visibility)
@@ -843,7 +843,7 @@ function _updateLayerName(
 function _updateLayerGroups(
 	data: JCanvasInternalData,
 	layer: JCanvasObject,
-	props?
+	props?: Partial<JCanvasObject>
 ) {
 	var groupMap = data.layer.groups,
 		group,
@@ -890,7 +890,6 @@ function _updateLayerGroups(
 			if (!group) {
 				// Create new group entry if it doesn't exist
 				group = groupMap[groupName] = [];
-				group.name = groupName;
 			}
 			if (index === undefined) {
 				// Add layer to end of group unless otherwise stated
@@ -1096,7 +1095,7 @@ $.fn.setLayer = function setLayer(layerId, props) {
 	for (e = 0; e < $canvases.length; e += 1) {
 		var canvas = $canvases[e];
 		if (!_isCanvas(canvas)) {
-			return null;
+			continue;
 		}
 		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
@@ -1214,7 +1213,11 @@ $.fn.moveLayer = function moveLayer(layerId, index) {
 		layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
+		var canvas = $canvases[e];
+		if (!_isCanvas(canvas)) {
+			continue;
+		}
+		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
 
 		// Retrieve layers array and desired layer
@@ -1252,7 +1255,11 @@ $.fn.removeLayer = function removeLayer(layerId) {
 		layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
+		var canvas = $canvases[e];
+		if (!_isCanvas(canvas)) {
+			continue;
+		}
+		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
 
 		// Retrieve layers array and desired layer
@@ -1293,7 +1300,11 @@ $.fn.removeLayers = function removeLayers(callback) {
 		l;
 
 	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
+		var canvas = $canvases[e];
+		if (!_isCanvas(canvas)) {
+			continue;
+		}
+		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
 		layers = $canvas.getLayers(callback).slice(0);
 		// Remove all layers individually
@@ -1402,7 +1413,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 };
 
 // Get topmost layer that intersects with event coordinates
-function _getIntersectingLayer(data) {
+function _getIntersectingLayer(data: JCanvasInternalData) {
 	var layer, i, mask, m;
 
 	// Store the topmost layer
@@ -1466,7 +1477,11 @@ function _drawLayer(
 }
 
 // Handle dragging of the currently-dragged layer
-function _handleLayerDrag($canvas, data, eventType) {
+function _handleLayerDrag(
+	$canvas: JQuery<HTMLCanvasElement>,
+	data: JCanvasInternalData,
+	eventType: string
+) {
 	var layers, layer, l, drag, dragGroups, group, groupName, g, newX, newY;
 
 	drag = data.drag;
@@ -1649,7 +1664,11 @@ $.fn.triggerLayerEvent = function (layerId, eventType) {
 		layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
+		var canvas = $canvases[e];
+		if (!_isCanvas(canvas)) {
+			continue;
+		}
+		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
 		layer = $canvas.getLayer(layerId);
 		if (layer) {
@@ -2371,7 +2390,11 @@ $.fn.delayLayer = function delayLayer(layerId, duration) {
 	duration = duration || 0;
 
 	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
+		var canvas = $canvases[e];
+		if (!_isCanvas(canvas)) {
+			continue;
+		}
+		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
 		layer = $canvas.getLayer(layerId);
 		// If layer exists
@@ -2419,7 +2442,11 @@ $.fn.stopLayer = function stopLayer(layerId, clearQueue) {
 		layer;
 
 	for (e = 0; e < $canvases.length; e += 1) {
-		$canvas = $($canvases[e]);
+		var canvas = $canvases[e];
+		if (!_isCanvas(canvas)) {
+			continue;
+		}
+		$canvas = $(canvas);
 		data = _getCanvasData(canvas);
 		layer = $canvas.getLayer(layerId);
 		// If layer exists
@@ -2816,7 +2843,7 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 function _rotateCanvas(
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject,
-	transforms: typeof baseTransforms
+	transforms: typeof baseTransforms | null
 ) {
 	// Get conversion factor for radians
 	params._toRad = params.inDegrees ? PI / 180 : 1;
@@ -2837,7 +2864,7 @@ function _rotateCanvas(
 function _scaleCanvas(
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject,
-	transforms: typeof baseTransforms
+	transforms: typeof baseTransforms | null
 ) {
 	// Scale both the x- and y- axis using the 'scale' property
 	if (params.scale !== 1) {
@@ -2861,7 +2888,7 @@ function _scaleCanvas(
 function _translateCanvas(
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject,
-	transforms: typeof baseTransforms
+	transforms: typeof baseTransforms | null
 ) {
 	// Translate both the x- and y-axis using the 'translate' property
 	if (params.translate) {
@@ -4197,14 +4224,16 @@ $.fn.drawText = function drawText(args) {
 		}
 	}
 	// Cache jCanvas parameters object for efficiency
-	caches.propCache = params;
+	if (params) {
+		caches.propCache = params;
+	}
 	return $canvases;
 };
 
 // Measures text width/height using the given parameters
 $.fn.measureText = function measureText(args) {
 	var $canvases = this,
-		ctx,
+		ctx: CanvasRenderingContext2D | null,
 		params,
 		lines;
 
@@ -4222,14 +4251,14 @@ $.fn.measureText = function measureText(args) {
 	ctx = _getContext(canvas);
 	if (ctx) {
 		// Set canvas font using given properties
-		_setCanvasFont($canvases[0], ctx, params);
+		_setCanvasFont(canvas, ctx, params);
 		// Calculate width and height of text
 		if (params.maxWidth !== null) {
 			lines = _wrapText(ctx, params);
 		} else {
 			lines = params.text.split("\n");
 		}
-		_measureText($canvases[0], ctx, params, lines);
+		_measureText(canvas, ctx, params, lines);
 	}
 
 	return params;
@@ -4246,13 +4275,19 @@ $.fn.drawImage = function drawImage(args) {
 		data,
 		params,
 		layer,
-		img,
-		imgCtx,
+		img: HTMLImageElement | HTMLCanvasElement,
+		imgCtx: CanvasRenderingContext2D,
 		source,
 		imageCache = caches.imageCache;
 
 	// Draw image function
-	function draw(canvas, ctx, data, params, layer) {
+	function draw(
+		canvas: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		data: JCanvasInternalData,
+		params: JCanvasObject,
+		layer: JCanvasObject
+	) {
 		// If width and sWidth are not defined, use image width
 		if (params.width === null && params.sWidth === null) {
 			params.width = params.sWidth = img.width;
@@ -4356,7 +4391,13 @@ $.fn.drawImage = function drawImage(args) {
 		_enableMasking(ctx, data, params);
 	}
 	// On load function
-	function onload(canvas, ctx, data, params, layer) {
+	function onload(
+		canvas: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		data: JCanvasInternalData,
+		params: JCanvasObject,
+		layer: JCanvasObject
+	) {
 		return function () {
 			var $canvas = $(canvas);
 			draw(canvas, ctx, data, params, layer);
@@ -4440,11 +4481,11 @@ $.fn.drawImage = function drawImage(args) {
 // Creates a canvas pattern object
 $.fn.createPattern = function createPattern(args) {
 	var $canvases = this,
-		ctx,
-		params,
+		ctx: CanvasRenderingContext2D | null,
+		params: JCanvasObject,
 		img: HTMLCanvasElement | HTMLImageElement,
-		imgCtx,
-		pattern,
+		imgCtx: CanvasRenderingContext2D | null,
+		pattern: CanvasPattern | null,
 		source;
 
 	// Function to be called when pattern loads
@@ -4513,7 +4554,7 @@ $.fn.createPattern = function createPattern(args) {
 // Creates a canvas gradient object
 $.fn.createGradient = function createGradient(args) {
 	var $canvases = this,
-		ctx,
+		ctx: CanvasRenderingContext2D | null,
 		params,
 		gradient,
 		stops: (number | null)[] = [],
