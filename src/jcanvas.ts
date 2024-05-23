@@ -4114,7 +4114,7 @@ $.fn.drawText = function drawText(args) {
 
 				// Adjust text position to accomodate different horizontal alignments
 				x = params.x;
-				if (params.align === "left") {
+				if (params.align === "left" && params.width) {
 					if (params.respectAlign) {
 						// Realign text to the left if chosen
 						params.x += params.width / 2;
@@ -4122,7 +4122,7 @@ $.fn.drawText = function drawText(args) {
 						// Center text block by default
 						x -= params.width / 2;
 					}
-				} else if (params.align === "right") {
+				} else if (params.align === "right" && params.width) {
 					if (params.respectAlign) {
 						// Realign text to the right if chosen
 						params.x -= params.width / 2;
@@ -4207,9 +4207,9 @@ $.fn.drawText = function drawText(args) {
 
 				// Adjust bounding box according to text baseline
 				y = 0;
-				if (params.baseline === "top") {
+				if (params.baseline === "top" && params.height) {
 					y += params.height / 2;
-				} else if (params.baseline === "bottom") {
+				} else if (params.baseline === "bottom" && params.height) {
 					y -= params.height / 2;
 				}
 
