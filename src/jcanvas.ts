@@ -557,8 +557,8 @@ function _transformShape(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject,
-	width?: number | null,
-	height?: number | null
+	width: number | null = null,
+	height: number | null = null
 ) {
 	// Get conversion factor for radians
 	params._toRad = params.inDegrees ? PI / 180 : 1;
@@ -567,7 +567,12 @@ function _transformShape(
 	ctx.save();
 
 	// Optionally measure (x, y) position from top-left corner
-	if (!params.fromCenter && !params._centered && width !== undefined) {
+	if (
+		!params.fromCenter &&
+		!params._centered &&
+		width !== null &&
+		height !== null
+	) {
 		// Always draw from center unless otherwise specified
 		if (height === undefined) {
 			height = width;
@@ -4104,13 +4109,6 @@ $.fn.drawText = function drawText(args) {
 				// Calculate text's width and height
 				_measureText(canvas, ctx, params, lines);
 
-				// If text is a layer
-				if (layer) {
-					// Copy calculated width/height to layer object
-					layer.width = params.width;
-					layer.height = params.height;
-				}
-
 				_transformShape(canvas, ctx, params, params.width, params.height);
 				_setGlobalProps(canvas, ctx, params);
 
@@ -4216,7 +4214,7 @@ $.fn.drawText = function drawText(args) {
 				}
 
 				// Detect jCanvas events
-				if (params._event) {
+				if (params._event && params.width && params.height) {
 					ctx.beginPath();
 					ctx.rect(
 						params.x - params.width / 2,
@@ -4369,7 +4367,7 @@ $.fn.drawImage = function drawImage(args) {
 				params.width,
 				params.height
 			);
-		} else {
+		} else if (params.width && params.height) {
 			// Show entire image if no crop region is defined
 
 			_transformShape(canvas, ctx, params, params.width, params.height);
@@ -4385,20 +4383,22 @@ $.fn.drawImage = function drawImage(args) {
 			);
 		}
 
-		// Draw invisible rectangle to allow for events and masking
-		ctx.beginPath();
-		ctx.rect(
-			params.x - params.width / 2,
-			params.y - params.height / 2,
-			params.width,
-			params.height
-		);
-		// Check for jCanvas events
-		_detectEvents(canvas, ctx, params);
-		// Close path and configure masking
-		ctx.closePath();
-		_restoreTransform(ctx, params);
-		_enableMasking(ctx, data, params);
+		if (params.width && params.height) {
+			// Draw invisible rectangle to allow for events and masking
+			ctx.beginPath();
+			ctx.rect(
+				params.x - params.width / 2,
+				params.y - params.height / 2,
+				params.width,
+				params.height
+			);
+			// Check for jCanvas events
+			_detectEvents(canvas, ctx, params);
+			// Close path and configure masking
+			ctx.closePath();
+			_restoreTransform(ctx, params);
+			_enableMasking(ctx, data, params);
+		}
 	}
 	// On load function
 	function onload(
