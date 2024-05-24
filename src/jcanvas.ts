@@ -195,7 +195,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 const defaults = new jCanvasDefaults();
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
-class jCanvasObject extends jCanvasDefaults {
+class jCanvasObject extends jCanvasDefaults implements JCanvasObject {
 	constructor(args?: jCanvasObject) {
 		super();
 		extendObject(this, args);

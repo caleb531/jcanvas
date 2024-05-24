@@ -70,7 +70,9 @@ type JCanvasLayerCallback = (layer: JCanvasObject) => any;
 
 interface JQueryStatic {
 	jCanvas: JCanvas;
-	jCanvasObject: typeof JCanvasObject;
+	jCanvasObject: {
+		new (args?: JCanvasObject): JCanvasObject;
+	};
 }
 
 interface JQuery<TElement> {
