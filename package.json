@@ -5,6 +5,7 @@
   "version": "21.0.1",
   "main": "dist/umd/jcanvas.min.js",
   "module": "dist/esm/jcanvas.min.js",
+  "types": "src/jcanvas.d.ts",
   "scripts": {
     "build": "rollup -c",
     "lint": "eslint src/*.js"
