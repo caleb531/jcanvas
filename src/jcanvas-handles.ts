@@ -20,7 +20,7 @@ $.extend($.jCanvas.defaults, {
 
 // Determines if the given layer is a rectangular layer
 function isRectLayer(layer: JCanvasObject) {
-	var method = layer._method;
+	const method = layer._method;
 	return (
 		method === $.fn.drawRect ||
 		method === $.fn.drawEllipse ||
@@ -30,7 +30,7 @@ function isRectLayer(layer: JCanvasObject) {
 
 // Determines if the given layer is a rectangular layer
 function isPathLayer(layer: JCanvasObject) {
-	var method = layer._method;
+	const method = layer._method;
 	return (
 		method === $.fn.drawLine ||
 		method === $.fn.drawQuadratic ||
@@ -45,7 +45,7 @@ function addPathHandle(
 	xProp: string,
 	yProp: string
 ) {
-	var handle = $.extend(
+	const handle = $.extend(
 		{
 			cursors: {
 				mouseover: "grab",
@@ -69,7 +69,7 @@ function addPathHandle(
 				$(this).triggerLayerEvent(layer._parent, "handlestart");
 			},
 			drag: function (layer: JCanvasObject) {
-				var parent = layer._parent;
+				const parent = layer._parent;
 				parent[layer._xProp] = layer.x - parent.x;
 				parent[layer._yProp] = layer.y - parent.y;
 				updatePathGuides(parent);
@@ -95,7 +95,7 @@ function addRectHandle(
 	px: number,
 	py: number
 ) {
-	var handle, cursor;
+	let handle, cursor;
 
 	// Determine cursor to use depending on handle's placement
 	if ((px === -1 && py === -1) || (px === 1 && py === 1)) {
@@ -138,7 +138,7 @@ function addRectHandle(
 			},
 			// Resize rectangle when dragging a handle
 			drag: function (layer: JCanvasObject) {
-				var parent = layer._parent;
+				const parent = layer._parent;
 
 				if (parent.width + layer.dx * layer._px < parent.minWidth) {
 					parent.width = parent.minWidth;
@@ -208,11 +208,11 @@ function addRectHandle(
 				$(this).triggerLayerEvent(parent, "handlemove");
 			},
 			dragstop: function (layer: JCanvasObject) {
-				var parent = layer._parent;
+				const parent = layer._parent;
 				$(this).triggerLayerEvent(parent, "handlestop");
 			},
 			dragcancel: function (layer: JCanvasObject) {
-				var parent = layer._parent;
+				const parent = layer._parent;
 				$(this).triggerLayerEvent(parent, "handlecancel");
 			},
 		}
@@ -256,7 +256,7 @@ function addRectHandles(
 
 // Update handle guides for rectangular layer
 function updateRectGuides(parent: JCanvasObject) {
-	var guide = parent._guide;
+	const guide = parent._guide;
 	if (guide) {
 		guide.x = parent.x;
 		guide.y = parent.y;
@@ -271,15 +271,14 @@ function addRectGuides(
 	$canvas: JQuery<HTMLCanvasElement>,
 	parent: JCanvasObject
 ) {
-	var guideProps, guide;
-	guideProps = $.extend({}, parent.guide, {
+	const guideProps = $.extend({}, parent.guide, {
 		layer: true,
 		draggable: false,
 		type: "rectangle",
 		handle: null,
 	});
 	$canvas.addLayer(guideProps);
-	guide = $canvas.getLayer(-1);
+	const guide = $canvas.getLayer(-1);
 	parent._guide = guide;
 	$canvas.moveLayer(guide, -parent._handles.length - 1);
 	updateRectGuides(parent);
@@ -290,14 +289,13 @@ function addPathHandles(
 	$canvas: JQuery<HTMLCanvasElement>,
 	parent: JCanvasObject
 ) {
-	var key, xProp, yProp;
-	for (key in parent) {
+	for (const key in parent) {
 		if (Object.prototype.hasOwnProperty.call(parent, key)) {
 			// If property is a control point
 			if (key.match(/c?x(\d+)/gi) !== null) {
 				// Get the x and y coordinates for that control point
-				xProp = key;
-				yProp = key.replace("x", "y");
+				const xProp = key;
+				const yProp = key.replace("x", "y");
 				// Add handle at control point
 				addPathHandle($canvas, parent, xProp, yProp);
 			}
@@ -311,18 +309,14 @@ function addPathHandles(
 
 // Update handle guides for line path
 function updatePathGuides(parent: JCanvasObject) {
-	var handles = parent._handles,
-		guides = parent._guides,
-		handle,
-		h,
-		guide,
-		g;
+	let handles = parent._handles,
+		guides = parent._guides;
 	if (parent._method === $.fn.drawQuadratic) {
 		if (handles) {
-			guide = parent._guide;
+			const guide = parent._guide;
 			if (guide) {
-				for (h = 0; h < handles.length; h += 1) {
-					handle = parent._handles[h];
+				for (let h = 0; h < handles.length; h += 1) {
+					const handle = parent._handles[h];
 					guide["x" + (h + 1)] = handle.x;
 					guide["y" + (h + 1)] = handle.y;
 				}
@@ -330,12 +324,12 @@ function updatePathGuides(parent: JCanvasObject) {
 		}
 	} else if (parent._method === $.fn.drawBezier) {
 		if (guides) {
-			for (g = 0; g < guides.length; g += 1) {
-				guide = guides[g];
+			for (let g = 0; g < guides.length; g += 1) {
+				const guide = guides[g];
 				handles = guide._handles;
 				if (guide && handles) {
-					for (h = 0; h < handles.length; h += 1) {
-						handle = handles[h];
+					for (let h = 0; h < handles.length; h += 1) {
+						const handle = handles[h];
 						guide["x" + (h + 1)] = handle.x;
 						guide["y" + (h + 1)] = handle.y;
 					}
@@ -350,15 +344,8 @@ function addPathGuides(
 	$canvas: JQuery<HTMLCanvasElement>,
 	parent: JCanvasObject
 ) {
-	var handles = parent._handles,
-		prevHandle,
-		nextHandle,
-		otherHandle,
-		handle,
-		h,
-		guide,
-		guideProps;
-	guideProps = $.extend({}, parent.guide, {
+	const handles = parent._handles;
+	const guideProps = $.extend({}, parent.guide, {
 		layer: true,
 		draggable: false,
 		type: "line",
@@ -369,11 +356,11 @@ function addPathGuides(
 		$canvas.moveLayer(parent._guide, -handles.length - 1);
 	} else if (parent._method === $.fn.drawBezier) {
 		parent._guides = [];
-		for (h = 0; h < handles.length; h += 1) {
-			handle = handles[h];
-			nextHandle = handles[h + 1];
-			prevHandle = handles[h - 1];
-			otherHandle = null;
+		for (let h = 0; h < handles.length; h += 1) {
+			const handle = handles[h];
+			const nextHandle = handles[h + 1];
+			const prevHandle = handles[h - 1];
+			let otherHandle = null;
 			if (nextHandle !== undefined) {
 				// If handle is a start/end point and next handle is a control point
 				if (
@@ -392,7 +379,7 @@ function addPathGuides(
 			}
 			if (otherHandle !== null) {
 				$canvas.addLayer(guideProps);
-				guide = $canvas.getLayer(-1);
+				const guide = $canvas.getLayer(-1);
 				guide._handles = [handle, otherHandle];
 				parent._guides.push(guide);
 				$canvas.moveLayer(guide, -handles.length - 1);
@@ -427,13 +414,11 @@ function updateRectHandles(parent: JCanvasObject) {
 // Update position of handles according to
 // coordinates and dimensions of path layer
 function updatePathHandles(parent: JCanvasObject) {
-	var handles = parent._handles,
-		handle,
-		h;
+	const handles = parent._handles;
 	if (handles) {
 		// Move handles when dragging
-		for (h = 0; h < handles.length; h += 1) {
-			handle = handles[h];
+		for (let h = 0; h < handles.length; h += 1) {
+			const handle = handles[h];
 			handle.x = parent[handle._xProp] + parent.x;
 			handle.y = parent[handle._yProp] + parent.y;
 		}
@@ -443,7 +428,7 @@ function updatePathHandles(parent: JCanvasObject) {
 
 // Add drag handles to all four corners of rectangle layer
 function addHandles(parent: JCanvasObject) {
-	var $canvas = $(parent.canvas);
+	const $canvas = $(parent.canvas);
 
 	// If parent's list of handles doesn't exist
 	if (parent._handles === undefined) {
@@ -462,13 +447,11 @@ function addHandles(parent: JCanvasObject) {
 
 // Remove handles if handle property was removed
 function removeHandles(layer: JCanvasObject) {
-	var $canvas = $(layer.canvas),
-		handle,
-		h;
+	const $canvas = $(layer.canvas);
 	if (layer._handles) {
 		// Remove handles from layer
-		for (h = 0; h < layer._handles.length; h += 1) {
-			handle = layer._handles[h];
+		for (let h = 0; h < layer._handles.length; h += 1) {
+			const handle = layer._handles[h];
 			$canvas.removeLayer(handle);
 		}
 		layer._handles.length = 0;
@@ -476,8 +459,7 @@ function removeHandles(layer: JCanvasObject) {
 }
 
 function objectContainsPathCoords(obj: object) {
-	var prop;
-	for (prop in obj) {
+	for (const prop in obj) {
 		if (
 			Object.prototype.hasOwnProperty.call(obj, prop) &&
 			prop.match(/^(x|y)\d+$/)
@@ -497,12 +479,11 @@ $.extend($.jCanvas.eventHooks, {
 	},
 	// Remove handles of layer is removed
 	remove: function (layer: JCanvasObject) {
-		var $canvas, handle, h;
 		if (layer._handles) {
-			$canvas = $(this);
+			const $canvas = $(this);
 			// Remove handles from layer
-			for (h = 0; h < layer._handles.length; h += 1) {
-				handle = layer._handles[h];
+			for (let h = 0; h < layer._handles.length; h += 1) {
+				const handle = layer._handles[h];
 				$canvas.removeLayer(handle);
 			}
 			layer._handles.length = 0;
