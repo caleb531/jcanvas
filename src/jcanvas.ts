@@ -2513,7 +2513,7 @@ $.fn.draw = function draw(args) {
 		// @ts-expect-error TODO (not sure how to fix this: "This expression is
 		// not callable. Each member of the union type '...' has signatures, but
 		// none of those signatures are compatible with each other.")
-		fn(args);
+		fn.call($canvases, args);
 	} else {
 		for (let e = 0; e < $canvases.length; e += 1) {
 			const canvas = $canvases[e];
