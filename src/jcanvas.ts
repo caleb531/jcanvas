@@ -1854,7 +1854,7 @@ function _addLayer(
 		} else if (params.method) {
 			params._method = $.fn[params.method];
 		} else if (params.type) {
-			params._method = $.fn[maps.drawings[params.type]];
+			params._method = $.fn[maps.drawings[params.type] as keyof typeof $.fn];
 		}
 	}
 
@@ -2618,8 +2618,12 @@ $.fn.draw = function draw(args) {
 	const params = new JCanvasObject(args);
 
 	// Draw using any other method
-	if (params.type && maps.drawings[params.type] && params.type !== "function") {
-		$canvases[maps.drawings[params.type]](args);
+	const fn = $.fn[maps.drawings[params.type!] as keyof typeof $.fn];
+	if (params.type && maps.drawings[params.type] && isFunction(fn)) {
+		// @ts-expect-error TODO (not sure how to fix this: "This expression is
+		// not callable. Each member of the union type '...' has signatures, but
+		// none of those signatures are compatible with each other.")
+		fn(args);
 	} else {
 		for (let e = 0; e < $canvases.length; e += 1) {
 			const canvas = $canvases[e];
