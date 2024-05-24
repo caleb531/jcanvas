@@ -15,7 +15,7 @@ export default inputPaths.map((inputPath) => {
 			{
 				file: `dist/umd/${inputFilenameWithoutExtension}.min.js`,
 				format: "umd",
-				name: "jCanvas",
+				name: `jCanvas_${inputFilenameWithoutExtension}`,
 				sourcemap: true,
 				globals: {
 					jquery: "$",
