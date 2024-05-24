@@ -195,12 +195,12 @@ class jCanvasDefaults implements JCanvasDefaults {
 const defaults = new jCanvasDefaults();
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
-class jCanvasObject extends jCanvasDefaults implements JCanvasObject {
-	constructor(args?: jCanvasObject) {
-		super();
-		extendObject(this, args);
-	}
-}
+const jCanvasObject: JCanvasObjectFunction = function jCanvasObject(
+	this: JCanvasObject,
+	args?: Partial<JCanvasObject>
+): JCanvasObject {
+	return extendObject(this, args);
+} as JCanvasObjectFunction;
 jCanvasObject.prototype = defaults;
 
 /* Internal helper methods */
@@ -238,7 +238,7 @@ function _getContext(
 }
 
 // Coerce designated number properties from strings to numbers
-function _coerceNumericProps(props: Partial<jCanvasObject>) {
+function _coerceNumericProps(props: Partial<JCanvasObject>) {
 	// Loop through all properties in given property map
 	for (const propName in props) {
 		if (Object.prototype.hasOwnProperty.call(props, propName)) {
@@ -301,7 +301,7 @@ function _restoreCanvas(
 function _setStyle(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
+	params: JCanvasObject,
 	styleName: "fillStyle" | "strokeStyle"
 ) {
 	const styleValue = params[styleName];
@@ -320,7 +320,7 @@ function _setStyle(
 function _setGlobalProps(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject
+	params: JCanvasObject
 ) {
 	_setStyle(canvas, ctx, params, "fillStyle");
 	_setStyle(canvas, ctx, params, "strokeStyle");
@@ -367,7 +367,7 @@ function _setGlobalProps(
 function _enableMasking(
 	ctx: CanvasRenderingContext2D,
 	data: JCanvasInternalData,
-	params: jCanvasObject
+	params: JCanvasObject
 ) {
 	if (params.mask) {
 		// If jCanvas autosave is enabled
@@ -385,7 +385,7 @@ function _enableMasking(
 // Restore individual shape transformation
 function _restoreTransform(
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject
+	params: JCanvasObject
 ) {
 	// If shape has been transformed by jCanvas
 	if (params._transformed) {
@@ -398,7 +398,7 @@ function _restoreTransform(
 function _closePath(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject
+	params: JCanvasObject
 ) {
 	let data;
 
@@ -452,7 +452,7 @@ function _closePath(
 function _transformShape(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
+	params: JCanvasObject,
 	width: number | null = null,
 	height: number | null = null
 ) {
@@ -539,24 +539,24 @@ class JCanvasInternalData {
 	// The associated canvas element
 	canvas: HTMLCanvasElement;
 	// Layers array
-	layers: jCanvasObject[] = [];
+	layers: JCanvasObject[] = [];
 	// Layer maps
 	layer: {
-		names: Record<string, jCanvasObject>;
-		groups: Record<string, jCanvasObject[]>;
+		names: Record<string, JCanvasObject>;
+		groups: Record<string, JCanvasObject[]>;
 	} = {
 		names: {},
 		groups: {},
 	};
 	eventHooks = {};
 	// All layers that intersect with the event coordinates (regardless of visibility)
-	intersecting: jCanvasObject[] = [];
+	intersecting: JCanvasObject[] = [];
 	// The topmost layer whose area contains the event coordinates
 	lastIntersected = null;
 	cursor: string;
 	// Properties for the current drag event
 	drag = {
-		layer: null as jCanvasObject | null,
+		layer: null as JCanvasObject | null,
 		dragging: false,
 	};
 	// Data for the current event
@@ -578,7 +578,7 @@ class JCanvasInternalData {
 	// Whether a layer is being animated or not
 	animating = false;
 	// The layer currently being animated
-	animated: jCanvasObject | null = null;
+	animated: JCanvasObject | null = null;
 	// The device pixel ratio
 	pixelRatio = 1;
 	// Whether pixel ratio transformations have been applied
@@ -622,7 +622,7 @@ function _getCanvasData(canvas: HTMLCanvasElement) {
 function _addLayerEvents(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: jCanvasObject
+	layer: JCanvasObject
 ) {
 	// Determine which jCanvas events need to be bound to this layer
 	for (let eventName in jCanvas.events) {
@@ -665,7 +665,7 @@ function _addLayerEvents(
 function _addLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	eventName: string
 ) {
 	// Use touch events if appropriate
@@ -681,7 +681,7 @@ function _addLayerEvent(
 function _addExplicitLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	eventName: string
 ) {
 	_addLayerEvent($canvas, data, layer, eventName);
@@ -698,7 +698,7 @@ function _addExplicitLayerEvent(
 function _enableDrag(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: jCanvasObject
+	layer: JCanvasObject
 ) {
 	// Only make layer draggable if necessary
 	if (layer.draggable || layer.cursors) {
@@ -720,8 +720,8 @@ function _enableDrag(
 // Update a layer property map if property is changed
 function _updateLayerName(
 	data: JCanvasInternalData,
-	layer: jCanvasObject,
-	props?: Partial<jCanvasObject>
+	layer: JCanvasObject,
+	props?: Partial<JCanvasObject>
 ) {
 	const nameMap = data.layer.names;
 
@@ -748,8 +748,8 @@ function _updateLayerName(
 // Create or update the data map for the given layer and group type
 function _updateLayerGroups(
 	data: JCanvasInternalData,
-	layer: jCanvasObject,
-	props?: Partial<jCanvasObject>
+	layer: JCanvasObject,
+	props?: Partial<JCanvasObject>
 ) {
 	let groupMap = data.layer.groups;
 	let index: number | undefined = undefined;
@@ -836,7 +836,7 @@ $.fn.setEventHooks = function setEventHooks(eventHooks) {
 // Get jCanvas layers array
 $.fn.getLayers = function getLayers(callback) {
 	const $canvases = this;
-	let matching: jCanvasObject[] = [];
+	let matching: JCanvasObject[] = [];
 
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
@@ -887,7 +887,7 @@ $.fn.getLayer = function getLayer(layerId) {
 			layerId.layer
 		) {
 			// Return the actual layer object if given
-			layer = layerId as jCanvasObject;
+			layer = layerId as JCanvasObject;
 		} else if (idType === "number") {
 			// Retrieve the layer using the given index
 
@@ -923,7 +923,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 	const $canvases = this;
 	const idType = typeOf(groupId);
 
-	let group: jCanvasObject[];
+	let group: JCanvasObject[];
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
 		if (!_isCanvas(canvas)) {
@@ -1253,7 +1253,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 
 // Get topmost layer that intersects with event coordinates
 function _getIntersectingLayer(data: JCanvasInternalData) {
-	let layer: jCanvasObject | null, mask: jCanvasObject, m;
+	let layer: JCanvasObject | null, mask: JCanvasObject, m;
 
 	// Store the topmost layer
 	layer = null;
@@ -1299,7 +1299,7 @@ function _getIntersectingLayer(data: JCanvasInternalData) {
 function _drawLayer(
 	$canvas: JQuery,
 	ctx: CanvasRenderingContext2D,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	nextLayerIndex?: number
 ) {
 	if (layer && layer.visible && layer._method) {
@@ -1322,7 +1322,7 @@ function _handleLayerDrag(
 	eventType: string
 ) {
 	const drag = data.drag;
-	const layer = drag.layer as jCanvasObject;
+	const layer = drag.layer as JCanvasObject;
 	const dragGroups = (layer && layer.dragGroups) || [];
 	const layers = data.layers;
 
@@ -1423,7 +1423,7 @@ function _handleLayerDrag(
 // Set cursor on canvas
 function _setCursor(
 	$canvas: JQuery<HTMLCanvasElement>,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	eventType: string
 ) {
 	let cursor;
@@ -1457,9 +1457,9 @@ function _resetCursor(
 // Run the given event callback with the given arguments
 function _runEventCallback(
 	$canvas: JQuery<HTMLCanvasElement>,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	eventType: string,
-	callbacks: Record<string, (layer: jCanvasObject, arg: any) => void>,
+	callbacks: Record<string, (layer: JCanvasObject, arg: any) => void>,
 	arg: any
 ) {
 	// Prevent callback from firing recursively
@@ -1474,7 +1474,7 @@ function _runEventCallback(
 }
 
 // Determine if the given layer can "legally" fire the given event
-function _layerCanFireEvent(layer: jCanvasObject, eventType: string) {
+function _layerCanFireEvent(layer: JCanvasObject, eventType: string) {
 	// If events are disable and if
 	// layer is tangible or event is not tangible
 	return (
@@ -1487,7 +1487,7 @@ function _layerCanFireEvent(layer: jCanvasObject, eventType: string) {
 function _triggerLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	eventType: string,
 	arg?: any
 ) {
@@ -1722,9 +1722,9 @@ $.fn.drawLayers = function drawLayers(args) {
 // Add a jCanvas layer (internal)
 function _addLayer(
 	canvas: HTMLCanvasElement,
-	params: jCanvasObject,
-	args?: jCanvasObject,
-	method?: (args: jCanvasObject) => JQuery
+	params: JCanvasObject,
+	args?: JCanvasObject,
+	method?: (args: JCanvasObject) => JQuery
 ) {
 	let layer = params._layer ? args : params;
 
@@ -1851,13 +1851,13 @@ $.fn.addLayer = function addLayer(args) {
 /* Animation API */
 
 // Hide/show jCanvas/CSS properties so they can be animated using jQuery
-function _showProps(obj: Partial<jCanvasObject>) {
+function _showProps(obj: Partial<JCanvasObject>) {
 	for (let p = 0; p < css.props.length; p += 1) {
 		const cssProp = css.props[p];
 		obj[cssProp] = obj["_" + cssProp];
 	}
 }
-function _hideProps(obj: Partial<jCanvasObject>, reset?: boolean) {
+function _hideProps(obj: Partial<JCanvasObject>, reset?: boolean) {
 	for (let p = 0; p < css.props.length; p += 1) {
 		const cssProp = css.props[p];
 		// Hide property using same name with leading underscore
@@ -1874,7 +1874,7 @@ function _hideProps(obj: Partial<jCanvasObject>, reset?: boolean) {
 // Evaluate property values that are functions
 function _parseEndValues(
 	canvas: HTMLCanvasElement,
-	layer: jCanvasObject,
+	layer: JCanvasObject,
 	endValues: Record<string, any>
 ) {
 	// Loop through all properties in map of end values
@@ -1910,7 +1910,7 @@ function _parseEndValues(
 }
 
 // Remove sub-property aliases from layer object
-function _removeSubPropAliases(layer: jCanvasObject) {
+function _removeSubPropAliases(layer: JCanvasObject) {
 	for (const propName in layer) {
 		if (Object.prototype.hasOwnProperty.call(layer, propName)) {
 			if (propName.indexOf(".") !== -1) {
@@ -2047,7 +2047,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 	function complete(
 		$canvas: JQuery<HTMLCanvasElement>,
 		data: JCanvasInternalData,
-		layer: jCanvasObject
+		layer: JCanvasObject
 	) {
 		return function () {
 			_showProps(layer);
@@ -2078,7 +2078,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 	function step(
 		$canvas: JQuery<HTMLCanvasElement>,
 		data: JCanvasInternalData,
-		layer: jCanvasObject
+		layer: JCanvasObject
 	) {
 		return function (now: any, fx: any) {
 			let parts,
@@ -2405,7 +2405,7 @@ _createEvents([
 function _detectEvents(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject
+	params: JCanvasObject
 ) {
 	// Use the layer object stored by the given parameters object
 	const layer = params._args;
@@ -2635,7 +2635,7 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 // Rotates canvas (internal)
 function _rotateCanvas(
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
+	params: JCanvasObject,
 	transforms: JCanvasBaseTransforms | null
 ) {
 	// Get conversion factor for radians
@@ -2656,7 +2656,7 @@ function _rotateCanvas(
 // Scales canvas (internal)
 function _scaleCanvas(
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
+	params: JCanvasObject,
 	transforms: JCanvasBaseTransforms | null
 ) {
 	// Scale both the x- and y- axis using the 'scale' property
@@ -2680,7 +2680,7 @@ function _scaleCanvas(
 // Translates canvas (internal)
 function _translateCanvas(
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
+	params: JCanvasObject,
 	transforms: JCanvasBaseTransforms | null
 ) {
 	// Translate both the x- and y-axis using the 'translate' property
@@ -2872,11 +2872,11 @@ function _getCoterminal(angle: number) {
 }
 
 // Retrieves the x-coordinate for the given angle in a circle
-function _getArcX(params: jCanvasObject, angle: number) {
+function _getArcX(params: JCanvasObject, angle: number) {
 	return params.x + params.radius * cos(angle);
 }
 // Retrieves the y-coordinate for the given angle in a circle
-function _getArcY(params: jCanvasObject, angle: number) {
+function _getArcY(params: JCanvasObject, angle: number) {
 	return params.y + params.radius * sin(angle);
 }
 
@@ -2884,8 +2884,8 @@ function _getArcY(params: jCanvasObject, angle: number) {
 function _drawArc(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject
+	params: JCanvasObject,
+	path: JCanvasObject
 ) {
 	let offsetX: number;
 	let offsetY: number;
@@ -3166,8 +3166,8 @@ $.fn.drawSlice = function drawSlice(args) {
 function _addArrow(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject,
+	params: JCanvasObject,
+	path: JCanvasObject,
 	x1: number,
 	y1: number,
 	x2: number,
@@ -3208,8 +3208,8 @@ function _addArrow(
 function _addStartArrow(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject,
+	params: JCanvasObject,
+	path: JCanvasObject,
 	x1: number,
 	y1: number,
 	x2: number,
@@ -3228,8 +3228,8 @@ function _addStartArrow(
 function _addEndArrow(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject,
+	params: JCanvasObject,
+	path: JCanvasObject,
 	x1: number,
 	y1: number,
 	x2: number,
@@ -3248,8 +3248,8 @@ function _addEndArrow(
 function _drawLine(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject
+	params: JCanvasObject,
+	path: JCanvasObject
 ) {
 	let l = 2;
 	_addStartArrow(
@@ -3328,8 +3328,8 @@ $.fn.drawLine = function drawLine(args) {
 function _drawQuadratic(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject
+	params: JCanvasObject,
+	path: JCanvasObject
 ) {
 	let l = 2;
 
@@ -3421,8 +3421,8 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 function _drawBezier(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject
+	params: JCanvasObject,
+	path: JCanvasObject
 ) {
 	let l = 2;
 	let lc = 1;
@@ -3520,13 +3520,13 @@ $.fn.drawBezier = function drawBezier(args) {
 };
 
 // Retrieves the x-coordinate for the given vector angle and length
-function _getVectorX(params: jCanvasObject, angle: number, length: number) {
+function _getVectorX(params: JCanvasObject, angle: number, length: number) {
 	angle *= params._toRad;
 	angle -= PI / 2;
 	return length * cos(angle);
 }
 // Retrieves the y-coordinate for the given vector angle and length
-function _getVectorY(params: jCanvasObject, angle: number, length: number) {
+function _getVectorY(params: JCanvasObject, angle: number, length: number) {
 	angle *= params._toRad;
 	angle -= PI / 2;
 	return length * sin(angle);
@@ -3536,8 +3536,8 @@ function _getVectorY(params: jCanvasObject, angle: number, length: number) {
 function _drawVector(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
-	path: jCanvasObject
+	params: JCanvasObject,
+	path: JCanvasObject
 ) {
 	// Determine offset from dragging
 	let offsetX: number;
@@ -3683,7 +3683,7 @@ $.fn.drawPath = function drawPath(args) {
 function _setCanvasFont(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject
+	params: JCanvasObject
 ) {
 	// Otherwise, use the given font attributes
 	if (!isNaN(Number(params.fontSize))) {
@@ -3698,7 +3698,7 @@ function _setCanvasFont(
 function _measureText(
 	canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
-	params: jCanvasObject,
+	params: JCanvasObject,
 	lines: string[]
 ) {
 	const propCache = caches.propCache;
@@ -3744,7 +3744,7 @@ function _measureText(
 }
 
 // Wraps a string of text within a defined width
-function _wrapText(ctx: CanvasRenderingContext2D, params: jCanvasObject) {
+function _wrapText(ctx: CanvasRenderingContext2D, params: JCanvasObject) {
 	const allText = String(params.text);
 	// Maximum line width (optional)
 	const maxWidth = params.maxWidth;
@@ -4008,7 +4008,7 @@ $.fn.measureText = function measureText(args) {
 $.fn.drawImage = function drawImage(args) {
 	const $canvases = this;
 	let img: HTMLImageElement | HTMLCanvasElement | null = null,
-		source: jCanvasObject["source"],
+		source: JCanvasObject["source"],
 		imageCache = caches.imageCache;
 
 	// Draw image function
@@ -4016,8 +4016,8 @@ $.fn.drawImage = function drawImage(args) {
 		canvas: HTMLCanvasElement,
 		ctx: CanvasRenderingContext2D,
 		data: JCanvasInternalData,
-		params: jCanvasObject,
-		layer: jCanvasObject | undefined
+		params: JCanvasObject,
+		layer: JCanvasObject | undefined
 	) {
 		if (!img) {
 			return;
@@ -4132,8 +4132,8 @@ $.fn.drawImage = function drawImage(args) {
 		canvas: HTMLCanvasElement,
 		ctx: CanvasRenderingContext2D,
 		data: JCanvasInternalData,
-		params: jCanvasObject,
-		layer: jCanvasObject | undefined
+		params: JCanvasObject,
+		layer: JCanvasObject | undefined
 	) {
 		return function () {
 			const $canvas = $(canvas);
@@ -4229,7 +4229,7 @@ $.fn.createPattern = function createPattern(args) {
 	let source: HTMLImageElement | HTMLCanvasElement | string;
 
 	// Function to be called when pattern loads
-	function onload(ctx: CanvasRenderingContext2D, params: jCanvasObject) {
+	function onload(ctx: CanvasRenderingContext2D, params: JCanvasObject) {
 		// Create pattern
 		pattern = ctx.createPattern(img, params.repeat);
 		// Run callback function if defined

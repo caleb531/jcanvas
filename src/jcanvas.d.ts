@@ -68,11 +68,14 @@ type JCanvasLayerId = JCanvasObject | string | number | RegExp;
 type jCanvasLayerGroupId = JCanvasObject[] | string | RegExp;
 type JCanvasLayerCallback = (layer: JCanvasObject) => any;
 
+type JCanvasObjectFunction = {
+	new (this: JCanvasObject, args?: Partial<JCanvasObject>): JCanvasObject;
+	(this: JCanvasObject, args?: Partial<JCanvasObject>): JCanvasObject;
+};
+
 interface JQueryStatic {
 	jCanvas: JCanvas;
-	jCanvasObject: {
-		new (args?: JCanvasObject): JCanvasObject;
-	};
+	jCanvasObject: JCanvasObjectFunction;
 }
 
 interface JQuery<TElement> {
