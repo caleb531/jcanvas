@@ -168,8 +168,8 @@ interface JCanvasDefaults {
 	dragGroups: string[] | null;
 	groups: string[] | null;
 	data: object | null;
-	dx: number | null;
-	dy: number | null;
+	dx: number;
+	dy: number;
 	end: number;
 	eventX: number | null;
 	eventY: number | null;

@@ -128,8 +128,8 @@ class jCanvasDefaults implements JCanvasDefaults {
 	dragGroups: string[] | null = null;
 	groups: string[] | null = null;
 	data: object | null = null;
-	dx: number | null = null;
-	dy: number | null = null;
+	dx: number = 0;
+	dy: number = 0;
 	end: number = 360;
 	eventX: number | null = null;
 	eventY: number | null = null;
