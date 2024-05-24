@@ -6,7 +6,7 @@
 import "jcanvas";
 import $ from "jquery";
 
-var PI = Math.PI;
+const PI = Math.PI;
 
 $.jCanvas.extend({
 	name: "drawHeart",
@@ -15,13 +15,13 @@ $.jCanvas.extend({
 		size: 0,
 	},
 	fn: function (ctx, params) {
-		var canvas = this,
-			width = params.size,
+		let canvas = this,
+			width: number = params.size,
 			factor = 0.75,
 			height = width * factor,
 			angle = PI * (factor * (1 - factor)),
-			x,
-			y;
+			x: number,
+			y: number;
 
 		// Enable shape transformation
 		$.jCanvas.transformShape(canvas, ctx, params, width, height);
