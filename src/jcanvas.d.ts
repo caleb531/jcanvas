@@ -147,7 +147,7 @@ interface JQuery<TElement> {
 	createGradient(args: JCanvasObject): void;
 	setPixels(args: JCanvasObject): void;
 	getCanvasImage(type: string, quality?: number): void;
-	detectPixelRatio(callback: (ratio: number) => void): void;
+	detectPixelRatio(callback?: (ratio: number) => void): void;
 }
 
 interface JCanvasDefaults {
