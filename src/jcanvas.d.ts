@@ -1,13 +1,13 @@
 /// <reference path="../node_modules/@types/jquery/index.d.ts" />
 
-interface JCanvasPluginParams {
+interface JCanvasPluginParams<TProps> {
 	name: string;
 	props?: Record<string, any>;
 	type?: keyofJCanvasMapsdrawings;
 	fn: (
 		this: HTMLCanvasElement,
 		ctx: CanvasRenderingContext2D,
-		params: JCanvasObject
+		params: JCanvasObject & TProps
 	) => void;
 }
 
@@ -39,7 +39,7 @@ interface JCanvas {
 	events: Record<string, ($canvas: JQuery, data: JCanvasInternalData) => void>;
 	eventHooks: JCanvasEventHooks;
 	future: Record<string, any>;
-	extend(plugin: JCanvasPluginParams): void;
+	extend<TProps extends object>(plugin: JCanvasPluginParams<TProps>): void;
 	clearCache(): void;
 	transformShape(
 		canvas: HTMLCanvasElement,
