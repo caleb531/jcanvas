@@ -4,7 +4,11 @@ interface JCanvasPluginParams {
 	name: string;
 	props?: Record<string, any>;
 	type?: keyof typeof maps.drawings;
-	fn: (ctx: CanvasRenderingContext2D, params: JCanvasObject) => void;
+	fn: (
+		this: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		params: JCanvasObject
+	) => void;
 }
 
 interface JCanvasCache {
@@ -28,8 +32,25 @@ interface JCanvas {
 	events: Record<string, ($canvas: JQuery, data: JCanvasInternalData) => void>;
 	eventHooks: JCanvasEventHooks;
 	future: Record<string, any>;
-	extend: null | ((plugin: JCanvasPluginParams) => void);
-	clearCache: null | (() => void);
+	extend(plugin: JCanvasPluginParams): void;
+	clearCache(): void;
+	transformShape(
+		canvas: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		params: jCanvasObject,
+		width: number | null = null,
+		height: number | null = null
+	): void;
+	detectEvents(
+		canvas: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		params: jCanvasObject
+	): void;
+	closePath(
+		canvas: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		params: jCanvasObject
+	): void;
 }
 
 interface JQueryEventWithFix extends JQuery.EventExtensions {
@@ -39,6 +60,11 @@ interface JQueryEventWithFix extends JQuery.EventExtensions {
 type JCanvasLayerId = JCanvasObject | string | number | RegExp;
 type jCanvasLayerGroupId = JCanvasObject[] | string | RegExp;
 type JCanvasLayerCallback = (layer: JCanvasObject) => any;
+
+interface JQueryStatic {
+	jCanvas: JCanvas;
+	jCanvasObject: any;
+}
 
 interface JQuery<TElement> {
 	getEventHooks(): JCanvasEventHooks;
