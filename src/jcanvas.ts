@@ -2185,8 +2185,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 // Animate all layers in a layer group
 $.fn.animateLayerGroup = function animateLayerGroup(groupId) {
 	const $canvases = this;
-	let $canvas,
-		args = arraySlice.call(arguments, 0);
+	const args = arraySlice.call(arguments, 0);
 
 	for (let e = 0; e < $canvases.length; e += 1) {
 		const $canvas = $($canvases[e]);
