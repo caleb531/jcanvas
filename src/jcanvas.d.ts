@@ -3,12 +3,18 @@
 interface JCanvasPluginParams {
 	name: string;
 	props?: Record<string, any>;
-	type?: keyof typeof maps.drawings;
+	type?: keyofJCanvasMapsdrawings;
 	fn: (
 		this: HTMLCanvasElement,
 		ctx: CanvasRenderingContext2D,
 		params: JCanvasObject
 	) => void;
+}
+
+interface JCanvasMaps {
+	drawings: Record<string, string>;
+	touchEvents: Record<string, string>;
+	mouseEvents: Record<string, string>;
 }
 
 interface JCanvasCache {
@@ -215,7 +221,7 @@ interface JCanvasDefaults {
 	translate: number;
 	translateX: number;
 	translateY: number;
-	type: keyof (typeof maps)["drawings"] | null;
+	type: keyof JCanvasMaps["drawings"] | null;
 	visible: boolean;
 	width: number | null;
 	x: number;

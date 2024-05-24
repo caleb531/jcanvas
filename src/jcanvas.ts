@@ -25,7 +25,7 @@ const extendObject = $.extend,
 	// jQuery's internal event normalization function
 	jQueryEventFix = ($.event as JQueryEventWithFix).fix,
 	// Object for storing a number of internal property maps
-	maps = {
+	maps: JCanvasMaps = {
 		// Map drawing names with their respective method names
 		drawings: {
 			arc: "drawArc",
@@ -46,18 +46,18 @@ const extendObject = $.extend,
 			rotate: "rotateCanvas",
 			scale: "scaleCanvas",
 			translate: "translateCanvas",
-		} as Record<string, string>,
+		},
 		touchEvents: {
 			mousedown: "touchstart",
 			mouseup: "touchend",
 			mousemove: "touchmove",
-		} as Record<string, string>,
+		},
 		// Map standard touch events to mouse events
 		mouseEvents: {
 			touchstart: "mousedown",
 			touchend: "mouseup",
 			touchmove: "mousemove",
-		} as Record<string, string>,
+		},
 	},
 	// jQuery internal caches
 	caches: JCanvasCache = {
@@ -94,13 +94,15 @@ const extendObject = $.extend,
 	];
 
 // jCanvas object in which global settings are other data are stored
-const jCanvas: JCanvas = {
+const jCanvas = {
 	// Events object for storing jCanvas event initiation functions
 	events: {},
 	// Object containing all jCanvas event hooks
 	eventHooks: {},
 	// Settings for enabling future jCanvas features
 	future: {},
+	// Need to type assert since some public API methods like transformShape are
+	// lazily added to this object
 } as JCanvas;
 
 // jCanvas default property values
