@@ -2183,9 +2183,8 @@ $.fn.animateLayer = function animateLayer(...args) {
 };
 
 // Animate all layers in a layer group
-$.fn.animateLayerGroup = function animateLayerGroup(groupId) {
+$.fn.animateLayerGroup = function animateLayerGroup(groupId, props, ...args) {
 	const $canvases = this;
-	const args = arraySlice.call(arguments, 0);
 
 	for (let e = 0; e < $canvases.length; e += 1) {
 		const $canvas = $($canvases[e]);
@@ -2195,7 +2194,7 @@ $.fn.animateLayerGroup = function animateLayerGroup(groupId) {
 			for (let l = 0; l < group.length; l += 1) {
 				// Replace first argument with layer
 				args[0] = group[l];
-				$canvas.animateLayer.apply($canvas, args);
+				$canvas.animateLayer.apply($canvas, [props, ...args]);
 			}
 		}
 	}
