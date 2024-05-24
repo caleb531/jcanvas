@@ -35,6 +35,7 @@ interface JCanvasBaseTransforms {
 type JCanvasEventHooks = Record<string, (layer: JCanvasObject) => void>;
 
 interface JCanvas {
+	defaults: JCanvasDefaults;
 	events: Record<string, ($canvas: JQuery, data: JCanvasInternalData) => void>;
 	eventHooks: JCanvasEventHooks;
 	future: Record<string, any>;
@@ -69,7 +70,7 @@ type JCanvasLayerCallback = (layer: JCanvasObject) => any;
 
 interface JQueryStatic {
 	jCanvas: JCanvas;
-	jCanvasObject: any;
+	jCanvasObject: typeof JCanvasObject;
 }
 
 interface JQuery<TElement> {
@@ -150,6 +151,7 @@ interface JCanvasDefaults {
 	arrowRadius: number;
 	autosave: boolean;
 	baseline: CanvasRenderingContext2D["textBaseline"];
+	bringToFront: boolean;
 	ccw: boolean;
 	closed: boolean;
 	compositing: CanvasRenderingContext2D["globalCompositeOperation"];
@@ -228,3 +230,5 @@ interface JCanvasDefaults {
 	y: number;
 	[key: string]: any;
 }
+
+interface JCanvasObject extends JCanvasDefaults {}
