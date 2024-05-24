@@ -3,6 +3,7 @@
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
+import "jcanvas";
 import $ from "jquery";
 
 // Cache some functions and constants

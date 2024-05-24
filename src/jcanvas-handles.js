@@ -3,6 +3,7 @@
  * Copyright 2015 Caleb Evans
  * Released under the MIT license
  */
+import "jcanvas";
 import $ from "jquery";
 
 // Add a 'resizeFromCenter' property for rectangles
