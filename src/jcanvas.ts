@@ -2853,22 +2853,17 @@ function _getCoterminal(angle: number) {
 	return angle;
 }
 
-// Retrieves the x-coordinate for the given angle in a circle
+// Retrieves the x-coordinate for the given angle in an arc/ellipse
 function _getConicX(x: number, radiusX: number, angle: number) {
 	return x + radiusX * cos(angle);
 }
-// Retrieves the y-coordinate for the given angle in a circle
+// Retrieves the y-coordinate for the given angle in an arc/ellipse
 function _getConicY(y: number, radiusY: number, angle: number) {
 	return y + radiusY * sin(angle);
 }
 
-// Draws arc (internal)
-function _drawArc(
-	canvas: HTMLCanvasElement,
-	ctx: CanvasRenderingContext2D,
-	params: JCanvasObject,
-	path: JCanvasObject
-) {
+// Modify the path
+function _getConicOffsets(params: JCanvasObject, path: JCanvasObject) {
 	let offsetX: number;
 	let offsetY: number;
 	let diff: number;
@@ -2890,35 +2885,49 @@ function _drawArc(
 		path.end = PI * 2;
 	}
 
-	// Convert angles to radians
-	path.start *= params._toRad;
-	path.end *= params._toRad;
-	// Consider 0deg due north of arc
-	path.start -= PI / 2;
-	path.end -= PI / 2;
+	// Convert angles to radians, then offset to make 0deg due north of arc
+	const pathStartAngle = path.start * params._toRad - PI / 2;
+	const pathEndAngle =
+		!path.inDegrees && path.end === 360
+			? PI * 2
+			: path.end * params._toRad - PI / 2;
 
 	// Ensure arrows are pointed correctly for CCW arcs
 	diff = PI / 180;
 	if (path.ccw) {
 		diff *= -1;
 	}
+	return { pathX, pathY, diff, pathStartAngle, pathEndAngle };
+}
+
+// Draws arc (internal)
+function _drawArc(
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+	params: JCanvasObject,
+	path: JCanvasObject
+) {
+	const { pathX, pathY, diff, pathStartAngle, pathEndAngle } = _getConicOffsets(
+		params,
+		path
+	);
 
 	// Calculate coordinates for start arrow
-	const x1 = _getConicX(pathX, path.radius, path.start + diff);
-	const y1 = _getConicY(pathY, path.radius, path.start + diff);
-	const x2 = _getConicX(pathX, path.radius, path.start);
-	const y2 = _getConicY(pathY, path.radius, path.start);
+	const x1 = _getConicX(pathX, path.radius, pathStartAngle + diff);
+	const y1 = _getConicY(pathY, path.radius, pathStartAngle + diff);
+	const x2 = _getConicX(pathX, path.radius, pathStartAngle);
+	const y2 = _getConicY(pathY, path.radius, pathStartAngle);
 
 	_addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2);
 
 	// Draw arc
-	ctx.arc(pathX, pathY, path.radius, path.start, path.end, path.ccw);
+	ctx.arc(pathX, pathY, path.radius, pathStartAngle, pathEndAngle, path.ccw);
 
 	// Calculate coordinates for end arrow
-	const x3 = _getConicX(pathX, path.radius, path.end + diff);
-	const y3 = _getConicY(pathY, path.radius, path.end + diff);
-	const x4 = _getConicX(pathX, path.radius, path.end);
-	const y4 = _getConicY(pathY, path.radius, path.end);
+	const x3 = _getConicX(pathX, path.radius, pathEndAngle + diff);
+	const y3 = _getConicY(pathY, path.radius, pathEndAngle + diff);
+	const x4 = _getConicX(pathX, path.radius, pathEndAngle);
+	const y4 = _getConicY(pathY, path.radius, pathEndAngle);
 
 	_addEndArrow(canvas, ctx, params, path, x4, y4, x3, y3);
 }
@@ -2930,67 +2939,38 @@ function _drawEllipse(
 	params: JCanvasObject,
 	path: JCanvasObject
 ) {
-	let offsetX: number;
-	let offsetY: number;
-	let diff: number;
-
-	// Determine offset from dragging
-	if (params === path) {
-		offsetX = 0;
-		offsetY = 0;
-	} else {
-		offsetX = params.x;
-		offsetY = params.y;
-	}
-
-	const pathX = params.x + offsetX;
-	const pathY = params.y + offsetY;
-
-	// Convert default end angle to radians
-	if (!path.inDegrees && path.end === 360) {
-		path.end = PI * 2;
-	}
-
-	// Convert angles to radians
-	path.start *= params._toRad;
-	path.end *= params._toRad;
-	// Consider 0deg due north of arc
-	path.start -= PI / 2;
-	path.end -= PI / 2;
-
-	// Ensure arrows are pointed correctly for CCW arcs
-	diff = PI / 180;
-	if (path.ccw) {
-		diff *= -1;
-	}
+	const { pathX, pathY, diff, pathStartAngle, pathEndAngle } = _getConicOffsets(
+		params,
+		path
+	);
 
 	const nonNullWidth = path.width || 0;
 	const nonNullHeight = path.height || 0;
 
 	// Calculate coordinates for start arrow
-	const x1 = _getConicX(path.x, nonNullWidth / 2, path.start + diff);
-	const y1 = _getConicY(path.y, nonNullHeight / 2, path.start + diff);
-	const x2 = _getConicX(path.x, nonNullWidth / 2, path.start);
-	const y2 = _getConicY(path.y, nonNullHeight / 2, path.start);
+	const x1 = _getConicX(pathX, nonNullWidth / 2, pathStartAngle + diff);
+	const y1 = _getConicY(pathY, nonNullHeight / 2, pathStartAngle + diff);
+	const x2 = _getConicX(pathX, nonNullWidth / 2, pathStartAngle);
+	const y2 = _getConicY(pathY, nonNullHeight / 2, pathStartAngle);
 
 	_addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2);
 
 	ctx.ellipse(
-		params.x + offsetX,
-		params.y + offsetY,
+		pathX,
+		pathY,
 		nonNullWidth / 2,
 		nonNullHeight / 2,
 		0,
-		params.start,
-		params.end,
-		params.ccw
+		pathStartAngle,
+		pathEndAngle,
+		path.ccw
 	);
 
 	// Calculate coordinates for end arrow
-	const x3 = _getConicX(pathX, nonNullWidth / 2, path.end + diff);
-	const y3 = _getConicY(pathY, nonNullHeight / 2, path.end + diff);
-	const x4 = _getConicX(pathX, nonNullWidth / 2, path.end);
-	const y4 = _getConicY(pathY, nonNullHeight / 2, path.end);
+	const x3 = _getConicX(pathX, nonNullWidth / 2, pathEndAngle + diff);
+	const y3 = _getConicY(pathY, nonNullHeight / 2, pathEndAngle + diff);
+	const x4 = _getConicX(pathX, nonNullWidth / 2, pathEndAngle);
+	const y4 = _getConicY(pathY, nonNullHeight / 2, pathEndAngle);
 
 	_addEndArrow(canvas, ctx, params, path, x4, y4, x3, y3);
 }
