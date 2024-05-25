@@ -8,6 +8,8 @@
   "types": "src/jcanvas.d.ts",
   "scripts": {
     "build": "rollup -c",
+    "prepare": "rollup -c",
+    "watch": "rollup -c -w",
     "lint": "eslint src/*.js"
   },
   "homepage": "https://projects.calebevans.me/jcanvas/",
