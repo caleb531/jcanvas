@@ -3023,31 +3023,16 @@ $.fn.drawEllipse = function drawEllipse(args) {
 		if (params.visible) {
 			_transformShape(canvas, ctx, params, params.width, params.height);
 			_setGlobalProps(canvas, ctx, params);
-
-			// Calculate control width and height
-			let controlW = (params.width || 0) * (4 / 3);
-			let controlH = params.height || 0;
-
-			// Create ellipse using curves
-			ctx.beginPath();
-			ctx.moveTo(params.x, params.y - controlH / 2);
-			// Left side
-			ctx.bezierCurveTo(
-				params.x - controlW / 2,
-				params.y - controlH / 2,
-				params.x - controlW / 2,
-				params.y + controlH / 2,
+			const nonNullWidth = params.width || 0;
+			const nonNullHeight = params.height || 0;
+			ctx.ellipse(
 				params.x,
-				params.y + controlH / 2
-			);
-			// Right side
-			ctx.bezierCurveTo(
-				params.x + controlW / 2,
-				params.y + controlH / 2,
-				params.x + controlW / 2,
-				params.y - controlH / 2,
-				params.x,
-				params.y - controlH / 2
+				params.y,
+				nonNullWidth / 2,
+				nonNullHeight / 2,
+				0,
+				0,
+				2 * Math.PI
 			);
 			// Check for jCanvas events
 			_detectEvents(canvas, ctx, params);
