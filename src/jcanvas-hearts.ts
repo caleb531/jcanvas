@@ -15,19 +15,17 @@ $.jCanvas.extend<{ size: number }>({
 		size: 0,
 	},
 	fn: function (ctx, params) {
-		let canvas = this,
+		const canvas = this,
 			width = params.size,
 			factor = 0.75,
 			height = width * factor,
-			angle = PI * (factor * (1 - factor)),
-			x: number,
-			y: number;
+			angle = PI * (factor * (1 - factor));
 
 		// Enable shape transformation
 		$.jCanvas.transformShape(canvas, ctx, params, width, height);
 
-		x = params.x;
-		y = params.y + width / 8;
+		const x = params.x;
+		const y = params.y + width / 8;
 
 		ctx.beginPath();
 		ctx.moveTo(x, y + height / 2);

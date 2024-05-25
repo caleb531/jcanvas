@@ -95,7 +95,7 @@ function addRectHandle(
 	px: number,
 	py: number
 ) {
-	let handle, cursor;
+	let cursor;
 
 	// Determine cursor to use depending on handle's placement
 	if ((px === -1 && py === -1) || (px === 1 && py === 1)) {
@@ -110,7 +110,7 @@ function addRectHandle(
 
 	const nonNullWidth = parent.width || 0;
 	const nonNullHeight = parent.height || 0;
-	handle = $.extend(
+	const handle = $.extend(
 		{
 			// Set cursors for handle
 			cursors: {
@@ -309,8 +309,9 @@ function addPathHandles(
 
 // Update handle guides for line path
 function updatePathGuides(parent: JCanvasObject) {
-	let handles = parent._handles,
-		guides = parent._guides;
+	let handles = parent._handles;
+	const guides = parent._guides;
+
 	if (parent._method === $.fn.drawQuadratic) {
 		if (handles) {
 			const guide = parent._guide;

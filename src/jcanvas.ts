@@ -1,10 +1,10 @@
-/// <reference path="./jcanvas.d.ts" />
 /**
  * @license jCanvas v21.0.1
  * Copyright 2017 Caleb Evans
  * Released under the MIT license
  */
 import $ from "jquery";
+import "./jcanvas.d";
 
 // Define local aliases to frequently used properties
 const extendObject = $.extend,
@@ -20,8 +20,6 @@ const extendObject = $.extend,
 	sin = Math.sin,
 	cos = Math.cos,
 	atan2 = Math.atan2,
-	// The Array slice() method
-	arraySlice = Array.prototype.slice,
 	// jQuery's internal event normalization function
 	jQueryEventFix = ($.event as JQueryEventWithFix).fix,
 	// Object for storing a number of internal property maps
@@ -218,11 +216,6 @@ function isFunction(operand: any): operand is Function {
 	return typeOf(operand) === "function";
 }
 
-// Determines if the given operand is a function
-function isObject<T extends object>(operand: any): operand is T {
-	return typeOf(operand) === "object";
-}
-
 // Determines if the given operand is numeric
 function isNumeric(operand: any): operand is number | string {
 	return !isNaN(Number(operand)) && !isNaN(parseFloat(operand));
@@ -275,9 +268,8 @@ function _cloneTransforms(transforms: JCanvasBaseTransforms) {
 
 // Save canvas context and update transformation stack
 function _saveCanvas(ctx: CanvasRenderingContext2D, data: JCanvasInternalData) {
-	let transforms;
 	ctx.save();
-	transforms = _cloneTransforms(data.transforms);
+	const transforms = _cloneTransforms(data.transforms);
 	data.savedTransforms.push(transforms);
 }
 
@@ -344,12 +336,12 @@ function _setGlobalProps(
 	if (ctx.setLineDash) {
 		ctx.setLineDash(params.strokeDash);
 	}
-	// @ts-expect-error
+	// @ts-expect-error Permit vendor-prefixed property
 	ctx.webkitLineDash = params.strokeDash;
 	ctx.lineDashOffset =
-		// @ts-expect-error
+		// @ts-expect-error Permit vendor-prefixed property
 		ctx.webkitLineDashOffset =
-		// @ts-expect-error
+		// @ts-expect-error Permit vendor-prefixed property
 		ctx.mozDashOffset =
 			params.strokeDashOffset;
 	// Drop shadow
@@ -529,7 +521,6 @@ jCanvas.extend = function extend(plugin) {
 		// @ts-expect-error TODO: fix this
 		$.fn[plugin.name] = function self(args) {
 			const $canvases = this;
-			let canvas, params;
 
 			for (let e = 0; e < $canvases.length; e += 1) {
 				const canvas = $canvases[e];
@@ -621,8 +612,8 @@ class JCanvasInternalData {
 
 // Retrieved the stored jCanvas data for a canvas element
 function _getCanvasData(canvas: HTMLCanvasElement) {
-	let dataCache = caches.dataCache,
-		data;
+	const dataCache = caches.dataCache;
+	let data;
 	if (dataCache._canvas === canvas && dataCache._data) {
 		// Retrieve canvas data from cache if possible
 		data = dataCache._data;
@@ -649,7 +640,7 @@ function _addLayerEvents(
 	layer: JCanvasObject
 ) {
 	// Determine which jCanvas events need to be bound to this layer
-	for (let eventName in jCanvas.events) {
+	for (const eventName in jCanvas.events) {
 		if (Object.prototype.hasOwnProperty.call(jCanvas.events, eventName)) {
 			// If layer has callback function to complement it
 			if (layer[eventName] || (layer.cursors && layer.cursors[eventName])) {
@@ -775,7 +766,7 @@ function _updateLayerGroups(
 	layer: JCanvasObject,
 	props?: Partial<JCanvasObject>
 ) {
-	let groupMap = data.layer.groups;
+	const groupMap = data.layer.groups;
 	let index: number | undefined = undefined;
 
 	// If group name is not changing
@@ -893,7 +884,7 @@ $.fn.getLayers = function getLayers(callback) {
 // Get a single jCanvas layer object
 $.fn.getLayer = function getLayer(layerId) {
 	const $canvases = this;
-	let canvas, data, layers, layer, l, idType;
+	let layer;
 
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
@@ -924,7 +915,7 @@ $.fn.getLayer = function getLayer(layerId) {
 			// Get layer with the given index
 			layer = layers[layerIndex];
 		} else if (idType === "regexp") {
-			let layerPattern = layerId as RegExp;
+			const layerPattern = layerId as RegExp;
 			// Get layer with the name that matches the given regex
 			for (let l = 0; l < layers.length; l += 1) {
 				// Check if layer matches name
@@ -934,7 +925,7 @@ $.fn.getLayer = function getLayer(layerId) {
 				}
 			}
 		} else {
-			let layerName = layerId as string;
+			const layerName = layerId as string;
 			// Get layer with the given name
 			layer = data.layer.names[layerName];
 		}
@@ -947,7 +938,6 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 	const $canvases = this;
 	const idType = typeOf(groupId);
 
-	let group: JCanvasObject[];
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
 		if (!_isCanvas(canvas)) {
@@ -958,12 +948,12 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 			// Return layer group if given
 			return groupId as Exclude<typeof groupId, string>;
 		} else if (idType === "regexp") {
-			let groupPattern = groupId as RegExp;
+			const groupPattern = groupId as RegExp;
 			// Get canvas data
 			const data = _getCanvasData(canvas);
 			const groups = data.layer.groups;
 			// Loop through all layers groups for this canvas
-			for (let groupName in groups) {
+			for (const groupName in groups) {
 				// Find a group whose name matches the given regex
 				if (groupName.match(groupPattern)) {
 					// Stop after finding the first matching group
@@ -972,7 +962,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 			}
 		} else if (typeof groupId === "string") {
 			// Find layer group with the given group name
-			let groupName = groupId as string;
+			const groupName = groupId as string;
 			const data = _getCanvasData(canvas);
 			return data.layer.groups[groupName];
 		}
@@ -1455,10 +1445,6 @@ function _setCursor(
 		// Retrieve cursor from cursors object if it exists
 		cursor = layer.cursors[eventType];
 	}
-	// Prefix any CSS3 cursor
-	if ($.inArray(cursor, css.cursors) !== -1) {
-		cursor = cursor;
-	}
 	// If cursor is defined
 	if (cursor) {
 		// Set canvas cursor
@@ -1590,7 +1576,7 @@ $.fn.drawLayers = function drawLayers(args) {
 		if (!_isCanvas(canvas)) {
 			continue;
 		}
-		let $canvas = $(canvas);
+		const $canvas = $(canvas);
 		const ctx = _getContext(canvas);
 		if (!ctx) {
 			continue;
@@ -2352,14 +2338,14 @@ function _getMouseEventName(eventName: string) {
 function _createEvent(eventName: string) {
 	jCanvas.events[eventName] = function ($canvas, data) {
 		// Retrieve canvas's event cache
-		let eventCache = data.event;
+		const eventCache = data.event;
 
 		// Both mouseover/mouseout events will be managed by a single mousemove event
-		let helperEventName =
+		const helperEventName =
 			eventName === "mouseover" || eventName === "mouseout"
 				? "mousemove"
 				: eventName;
-		let touchEventName = _getTouchEventName(helperEventName);
+		const touchEventName = _getTouchEventName(helperEventName);
 
 		function eventCallback(event: MouseEvent) {
 			// Cache current mouse position and redraw layers
@@ -2435,8 +2421,8 @@ function _detectEvents(
 	const layer = params._args;
 	// Canvas must have event bindings
 	if (layer) {
-		let data = _getCanvasData(canvas);
-		let eventCache = data.event;
+		const data = _getCanvasData(canvas);
+		const eventCache = data.event;
 		let intersects: boolean = false;
 		let x: number;
 		let y: number;
@@ -2455,7 +2441,7 @@ function _detectEvents(
 					(ctx.isPointInStroke && ctx.isPointInStroke(x, y));
 			}
 		}
-		let transforms = data.transforms;
+		const transforms = data.transforms;
 
 		// Allow callback functions to retrieve the mouse coordinates
 		layer.eventX = eventCache.x;
@@ -2465,7 +2451,7 @@ function _detectEvents(
 		// Adjust coordinates to match current canvas transformation
 
 		// Keep track of some transformation values
-		let angle = data.transforms.rotate;
+		const angle = data.transforms.rotate;
 		x = layer.eventX;
 		y = layer.eventY;
 
@@ -2840,9 +2826,9 @@ $.fn.drawRect = function drawRect(args) {
 		const nonNullWidth = params.width || 0;
 		const nonNullHeight = params.height || 0;
 		ctx.beginPath();
-		let x1 = params.x - nonNullWidth / 2;
-		let y1 = params.y - nonNullHeight / 2;
-		let r = abs(params.cornerRadius);
+		const x1 = params.x - nonNullWidth / 2;
+		const y1 = params.y - nonNullHeight / 2;
+		const r = abs(params.cornerRadius);
 		// If corner radius is defined and is not zero
 		if (r) {
 			// Draw rectangle with rounded corners if cornerRadius is defined
@@ -2918,10 +2904,10 @@ function _drawArc(
 	}
 
 	// Calculate coordinates for start arrow
-	let x1 = _getConicX(pathX, path.radius, path.start + diff);
-	let y1 = _getConicY(pathY, path.radius, path.start + diff);
-	let x2 = _getConicX(pathX, path.radius, path.start);
-	let y2 = _getConicY(pathY, path.radius, path.start);
+	const x1 = _getConicX(pathX, path.radius, path.start + diff);
+	const y1 = _getConicY(pathY, path.radius, path.start + diff);
+	const x2 = _getConicX(pathX, path.radius, path.start);
+	const y2 = _getConicY(pathY, path.radius, path.start);
 
 	_addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2);
 
@@ -2929,10 +2915,10 @@ function _drawArc(
 	ctx.arc(pathX, pathY, path.radius, path.start, path.end, path.ccw);
 
 	// Calculate coordinates for end arrow
-	let x3 = _getConicX(pathX, path.radius, path.end + diff);
-	let y3 = _getConicY(pathY, path.radius, path.end + diff);
-	let x4 = _getConicX(pathX, path.radius, path.end);
-	let y4 = _getConicY(pathY, path.radius, path.end);
+	const x3 = _getConicX(pathX, path.radius, path.end + diff);
+	const y3 = _getConicY(pathY, path.radius, path.end + diff);
+	const x4 = _getConicX(pathX, path.radius, path.end);
+	const y4 = _getConicY(pathY, path.radius, path.end);
 
 	_addEndArrow(canvas, ctx, params, path, x4, y4, x3, y3);
 }
@@ -2982,10 +2968,10 @@ function _drawEllipse(
 	const nonNullHeight = path.height || 0;
 
 	// Calculate coordinates for start arrow
-	let x1 = _getConicX(path.x, nonNullWidth / 2, path.start + diff);
-	let y1 = _getConicY(path.y, nonNullHeight / 2, path.start + diff);
-	let x2 = _getConicX(path.x, nonNullWidth / 2, path.start);
-	let y2 = _getConicY(path.y, nonNullHeight / 2, path.start);
+	const x1 = _getConicX(path.x, nonNullWidth / 2, path.start + diff);
+	const y1 = _getConicY(path.y, nonNullHeight / 2, path.start + diff);
+	const x2 = _getConicX(path.x, nonNullWidth / 2, path.start);
+	const y2 = _getConicY(path.y, nonNullHeight / 2, path.start);
 
 	_addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2);
 
@@ -3001,10 +2987,10 @@ function _drawEllipse(
 	);
 
 	// Calculate coordinates for end arrow
-	let x3 = _getConicX(pathX, nonNullWidth / 2, path.end + diff);
-	let y3 = _getConicY(pathY, nonNullHeight / 2, path.end + diff);
-	let x4 = _getConicX(pathX, nonNullWidth / 2, path.end);
-	let y4 = _getConicY(pathY, nonNullHeight / 2, path.end);
+	const x3 = _getConicX(pathX, nonNullWidth / 2, path.end + diff);
+	const y3 = _getConicY(pathY, nonNullHeight / 2, path.end + diff);
+	const x4 = _getConicX(pathX, nonNullWidth / 2, path.end);
+	const y4 = _getConicY(pathY, nonNullHeight / 2, path.end);
 
 	_addEndArrow(canvas, ctx, params, path, x4, y4, x3, y3);
 }
@@ -3597,10 +3583,10 @@ function _drawVector(
 	}
 
 	let l = 1;
-	let x = path.x + offsetX;
+	const x = path.x + offsetX;
 	let x3 = x;
 	let x4 = x;
-	let y = path.y + offsetY;
+	const y = path.y + offsetY;
 	let y3 = y;
 	let y4 = y;
 
@@ -3621,7 +3607,7 @@ function _drawVector(
 	}
 	while (true) {
 		const angle = path["a" + l];
-		length = path["l" + l];
+		const length = path["l" + l];
 
 		if (angle !== undefined && length !== undefined) {
 			// Convert the angle to radians with 0 degrees starting at north
@@ -3932,7 +3918,7 @@ $.fn.drawText = function drawText(args) {
 		}
 
 		if (params.radius) {
-			let fontSize = parseFloat(params.fontSize);
+			const fontSize = parseFloat(params.fontSize);
 
 			// Greater values move clockwise
 			if (params.letterSpacing === null) {
@@ -4075,9 +4061,9 @@ $.fn.measureText = function measureText(args) {
 // Draws image on canvas
 $.fn.drawImage = function drawImage(args) {
 	const $canvases = this;
+	const imageCache = caches.imageCache;
 	let img: HTMLImageElement | HTMLCanvasElement | null = null,
-		source: JCanvasObject["source"],
-		imageCache = caches.imageCache;
+		source: JCanvasObject["source"];
 
 	// Draw image function
 	function draw(
@@ -4256,7 +4242,7 @@ $.fn.drawImage = function drawImage(args) {
 			// Use image or canvas element if given
 			img = source;
 		} else if (source) {
-			let cachedImg = imageCache[source];
+			const cachedImg = imageCache[source];
 			if (cachedImg && cachedImg.complete) {
 				// Get the image element from the cache if possible
 				img = cachedImg;
@@ -4295,7 +4281,6 @@ $.fn.createPattern = function createPattern(args) {
 	const $canvases = this;
 	let img: HTMLCanvasElement | HTMLImageElement;
 	let pattern: CanvasPattern | null = null;
-	let source: HTMLImageElement | HTMLCanvasElement | string;
 
 	// Function to be called when pattern loads
 	function onload(ctx: CanvasRenderingContext2D, params: JCanvasObject) {
@@ -4318,7 +4303,7 @@ $.fn.createPattern = function createPattern(args) {
 	const params = new jCanvasObject(args);
 
 	// Cache the given source
-	source = params.source;
+	const source = params.source;
 
 	// Draw when image is loaded (if load() callback function is defined)
 
@@ -4328,7 +4313,7 @@ $.fn.createPattern = function createPattern(args) {
 		img = $("<canvas />")[0] as HTMLCanvasElement;
 		img.width = params.width || 0;
 		img.height = params.height || 0;
-		let imgCtx = _getContext(img);
+		const imgCtx = _getContext(img);
 		source.call(img, imgCtx);
 		onload(ctx, params);
 	} else {
@@ -4413,7 +4398,7 @@ $.fn.createGradient = function createGradient(args) {
 			stops.push(null);
 		}
 	}
-	let nstops = stops.length;
+	const nstops = stops.length;
 
 	// Define start stop if not already defined
 	if (stops[0] === null) {
@@ -4499,14 +4484,14 @@ $.fn.setPixels = function setPixels(args) {
 		if (params.width !== 0 && params.height !== 0) {
 			// Only set pixels if width and height are not zero
 
-			let imgData = ctx.getImageData(
+			const imgData = ctx.getImageData(
 				(params.x - params.width / 2) * canvasData.pixelRatio,
 				(params.y - params.height / 2) * canvasData.pixelRatio,
 				params.width * canvasData.pixelRatio,
 				params.height * canvasData.pixelRatio
 			);
-			let pixelData = imgData.data;
-			let len = pixelData.length;
+			const pixelData = imgData.data;
+			const len = pixelData.length;
 
 			// Loop through pixels with the "each" callback function
 			if (params.each) {
@@ -4567,19 +4552,19 @@ $.fn.detectPixelRatio = function detectPixelRatio(callback) {
 		if (!ctx) {
 			continue;
 		}
-		let data = _getCanvasData(canvas);
+		const data = _getCanvasData(canvas);
 
 		// If canvas has not already been scaled with this method
 		if (!data.scaled) {
 			// Determine device pixel ratios
-			let ratio = window.devicePixelRatio || 1;
+			const ratio = window.devicePixelRatio || 1;
 
 			if (ratio !== 1) {
 				// Scale canvas relative to ratio
 
 				// Get the current canvas dimensions for future use
-				let oldWidth = canvas.width;
-				let oldHeight = canvas.height;
+				const oldWidth = canvas.width;
+				const oldHeight = canvas.height;
 
 				// Resize canvas relative to the determined ratio
 				canvas.width = oldWidth * ratio;
@@ -4609,7 +4594,7 @@ $.fn.detectPixelRatio = function detectPixelRatio(callback) {
 
 // Clears the jCanvas cache
 jCanvas.clearCache = function clearCache() {
-	for (let cacheName in caches) {
+	for (const cacheName in caches) {
 		if (Object.prototype.hasOwnProperty.call(caches, cacheName)) {
 			caches[cacheName as keyof typeof caches] = {};
 		}

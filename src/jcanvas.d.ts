@@ -1,5 +1,3 @@
-/// <reference path="../node_modules/@types/jquery/index.d.ts" />
-
 interface JCanvasPluginParams<TProps> {
 	name: string;
 	props?: Record<string, any>;
@@ -79,7 +77,7 @@ interface JQueryStatic {
 	jCanvasObject: JCanvasObjectFunction;
 }
 
-interface JQuery<TElement> {
+interface JQuery {
 	getEventHooks(): JCanvasEventHooks;
 	setEventHooks(eventHooks: JCanvasEventHooks): JQuery;
 	getLayers(callback?: JCanvasLayerCallback): JCanvasObject[];
