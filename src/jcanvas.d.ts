@@ -44,8 +44,8 @@ interface JCanvas {
 		canvas: HTMLCanvasElement,
 		ctx: CanvasRenderingContext2D,
 		params: jCanvasObject,
-		width: number | null = null,
-		height: number | null = null
+		width?: number | null,
+		height?: number | null
 	): void;
 	detectEvents(
 		canvas: HTMLCanvasElement,
