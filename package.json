@@ -5,6 +5,7 @@
   "version": "22.1.3",
   "main": "dist/umd/jcanvas.min.js",
   "module": "dist/esm/jcanvas.min.js",
+  "types": "src/jcanvas.d.ts",
   "scripts": {
     "build": "rollup -c",
     "prepare": "rollup -c",
@@ -31,12 +32,15 @@
   "license": "MIT",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
-    "@rollup/plugin-terser": "^0.4.4",
+    "@types/jquery": "^3.5.30",
     "eslint": "^8.56.0",
     "glob": "^10.3.10",
     "jquery": "^3.7.1",
     "qunit": "^2.20.0",
-    "rollup": "^4.9.1"
+    "rollup": "^4.17.2",
+    "rollup-plugin-esbuild": "^6.1.1",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5"
   },
   "peerDependencies": {
     "jquery": ">=1.4.0"

@@ -1,34 +1,34 @@
-import path from 'node:path';
-import { globSync } from 'glob';
-import commonjs from '@rollup/plugin-commonjs';
-import terser from '@rollup/plugin-terser';
+import commonjs from "@rollup/plugin-commonjs";
+import { globSync } from "glob";
+import path from "node:path";
+import esbuild from "rollup-plugin-esbuild";
 
-const inputPaths = globSync('src/*.js');
+const inputPaths = globSync(["src/jcanvas.ts", "src/jcanvas-*.ts"]);
 
 export default inputPaths.map((inputPath) => {
-  const inputFilenameWithoutExtension = path.basename(inputPath, '.js');
-  return {
-    input: [inputPath],
-    external: ['jquery'],
-    output: [
-      {
-        file: `dist/umd/${inputFilenameWithoutExtension}.min.js`,
-        format: 'umd',
-        name: 'jCanvas',
-        sourcemap: true,
-        globals: {
-          jquery: '$'
-        }
-      },
-      {
-        file: `dist/esm/${inputFilenameWithoutExtension}.min.js`,
-        format: 'esm',
-        sourcemap: true,
-        globals: {
-          jquery: '$'
-        }
-      }
-    ],
-    plugins: [commonjs(), terser()]
-  };
+	const inputFilenameWithoutExtension = path.basename(inputPath, ".ts");
+	return {
+		input: [inputPath],
+		external: ["jquery", "jcanvas"],
+		output: [
+			{
+				file: `dist/umd/${inputFilenameWithoutExtension}.min.js`,
+				format: "umd",
+				name: `jCanvas_${inputFilenameWithoutExtension}`,
+				sourcemap: true,
+				globals: {
+					jquery: "$",
+				},
+			},
+			{
+				file: `dist/esm/${inputFilenameWithoutExtension}.min.js`,
+				format: "esm",
+				sourcemap: true,
+				globals: {
+					jquery: "$",
+				},
+			},
+		],
+		plugins: [commonjs(), esbuild({ minify: true })],
+	};
 });
