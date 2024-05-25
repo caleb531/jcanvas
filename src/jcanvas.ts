@@ -2868,12 +2868,12 @@ function _getCoterminal(angle: number) {
 }
 
 // Retrieves the x-coordinate for the given angle in a circle
-function _getArcX(params: JCanvasObject, angle: number) {
-	return params.x + params.radius * cos(angle);
+function _getConicX(x: number, radiusX: number, angle: number) {
+	return x + radiusX * cos(angle);
 }
 // Retrieves the y-coordinate for the given angle in a circle
-function _getArcY(params: JCanvasObject, angle: number) {
-	return params.y + params.radius * sin(angle);
+function _getConicY(y: number, radiusY: number, angle: number) {
+	return y + radiusY * sin(angle);
 }
 
 // Draws arc (internal)
@@ -2896,6 +2896,9 @@ function _drawArc(
 		offsetY = params.y;
 	}
 
+	const pathX = path.x + offsetX;
+	const pathY = path.y + offsetY;
+
 	// Convert default end angle to radians
 	if (!path.inDegrees && path.end === 360) {
 		path.end = PI * 2;
@@ -2915,28 +2918,93 @@ function _drawArc(
 	}
 
 	// Calculate coordinates for start arrow
-	let x1 = _getArcX(path, path.start + diff);
-	let y1 = _getArcY(path, path.start + diff);
-	let x2 = _getArcX(path, path.start);
-	let y2 = _getArcY(path, path.start);
+	let x1 = _getConicX(pathX, path.radius, path.start + diff);
+	let y1 = _getConicY(pathY, path.radius, path.start + diff);
+	let x2 = _getConicX(pathX, path.radius, path.start);
+	let y2 = _getConicY(pathY, path.radius, path.start);
 
 	_addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2);
 
 	// Draw arc
-	ctx.arc(
-		path.x + offsetX,
-		path.y + offsetY,
-		path.radius,
-		path.start,
-		path.end,
-		path.ccw
+	ctx.arc(pathX, pathY, path.radius, path.start, path.end, path.ccw);
+
+	// Calculate coordinates for end arrow
+	let x3 = _getConicX(pathX, path.radius, path.end + diff);
+	let y3 = _getConicY(pathY, path.radius, path.end + diff);
+	let x4 = _getConicX(pathX, path.radius, path.end);
+	let y4 = _getConicY(pathY, path.radius, path.end);
+
+	_addEndArrow(canvas, ctx, params, path, x4, y4, x3, y3);
+}
+
+// Draws ellipse (internal)
+function _drawEllipse(
+	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
+	params: JCanvasObject,
+	path: JCanvasObject
+) {
+	let offsetX: number;
+	let offsetY: number;
+	let diff: number;
+
+	// Determine offset from dragging
+	if (params === path) {
+		offsetX = 0;
+		offsetY = 0;
+	} else {
+		offsetX = params.x;
+		offsetY = params.y;
+	}
+
+	const pathX = params.x + offsetX;
+	const pathY = params.y + offsetY;
+
+	// Convert default end angle to radians
+	if (!path.inDegrees && path.end === 360) {
+		path.end = PI * 2;
+	}
+
+	// Convert angles to radians
+	path.start *= params._toRad;
+	path.end *= params._toRad;
+	// Consider 0deg due north of arc
+	path.start -= PI / 2;
+	path.end -= PI / 2;
+
+	// Ensure arrows are pointed correctly for CCW arcs
+	diff = PI / 180;
+	if (path.ccw) {
+		diff *= -1;
+	}
+
+	const nonNullWidth = path.width || 0;
+	const nonNullHeight = path.height || 0;
+
+	// Calculate coordinates for start arrow
+	let x1 = _getConicX(path.x, nonNullWidth / 2, path.start + diff);
+	let y1 = _getConicY(path.y, nonNullHeight / 2, path.start + diff);
+	let x2 = _getConicX(path.x, nonNullWidth / 2, path.start);
+	let y2 = _getConicY(path.y, nonNullHeight / 2, path.start);
+
+	_addStartArrow(canvas, ctx, params, path, x1, y1, x2, y2);
+
+	ctx.ellipse(
+		params.x + offsetX,
+		params.y + offsetY,
+		nonNullWidth / 2,
+		nonNullHeight / 2,
+		0,
+		params.start,
+		params.end,
+		params.ccw
 	);
 
 	// Calculate coordinates for end arrow
-	let x3 = _getArcX(path, path.end + diff);
-	let y3 = _getArcY(path, path.end + diff);
-	let x4 = _getArcX(path, path.end);
-	let y4 = _getArcY(path, path.end);
+	let x3 = _getConicX(pathX, nonNullWidth / 2, path.end + diff);
+	let y3 = _getConicY(pathY, nonNullHeight / 2, path.end + diff);
+	let x4 = _getConicX(pathX, nonNullWidth / 2, path.end);
+	let y4 = _getConicY(pathY, nonNullHeight / 2, path.end);
 
 	_addEndArrow(canvas, ctx, params, path, x4, y4, x3, y3);
 }
@@ -2992,33 +3060,11 @@ $.fn.drawEllipse = function drawEllipse(args) {
 		}
 		_transformShape(canvas, ctx, params, params.width, params.height);
 		_setGlobalProps(canvas, ctx, params);
-		const nonNullWidth = params.width || 0;
-		const nonNullHeight = params.height || 0;
-		// Convert default end angle to radians
-		if (!params.inDegrees && params.end === 360) {
-			params.end = PI * 2;
-		}
-
-		// Convert angles to radians
-		params.start *= params._toRad;
-		params.end *= params._toRad;
-		// Consider 0deg due north of arc
-		params.start -= PI / 2;
-		params.end -= PI / 2;
-		ctx.ellipse(
-			params.x,
-			params.y,
-			nonNullWidth / 2,
-			nonNullHeight / 2,
-			0,
-			params.start,
-			params.end,
-			params.ccw
-		);
+		ctx.beginPath();
+		_drawEllipse(canvas, ctx, params, params);
 		// Check for jCanvas events
 		_detectEvents(canvas, ctx, params);
 		// Always close path
-		params.closed = true;
 		_closePath(canvas, ctx, params);
 	}
 	return $canvases;
@@ -3675,6 +3721,8 @@ $.fn.drawPath = function drawPath(args) {
 						_drawVector(canvas, ctx, params, lp);
 					} else if (lp.type === "arc") {
 						_drawArc(canvas, ctx, params, lp);
+					} else if (lp.type === "ellipse") {
+						_drawEllipse(canvas, ctx, params, lp);
 					}
 					l += 1;
 				} else {
