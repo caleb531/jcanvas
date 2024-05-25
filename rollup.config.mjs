@@ -1,8 +1,7 @@
 import commonjs from "@rollup/plugin-commonjs";
-import terser from "@rollup/plugin-terser";
-import typescript from "@rollup/plugin-typescript";
 import { globSync } from "glob";
 import path from "node:path";
+import esbuild from "rollup-plugin-esbuild";
 
 const inputPaths = globSync(["src/jcanvas.ts", "src/jcanvas-*.ts"]);
 
@@ -30,6 +29,6 @@ export default inputPaths.map((inputPath) => {
 				},
 			},
 		],
-		plugins: [commonjs(), typescript(), terser()],
+		plugins: [commonjs(), esbuild({ minify: true })],
 	};
 });
