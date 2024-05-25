@@ -2994,14 +2994,26 @@ $.fn.drawEllipse = function drawEllipse(args) {
 		_setGlobalProps(canvas, ctx, params);
 		const nonNullWidth = params.width || 0;
 		const nonNullHeight = params.height || 0;
+		// Convert default end angle to radians
+		if (!params.inDegrees && params.end === 360) {
+			params.end = PI * 2;
+		}
+
+		// Convert angles to radians
+		params.start *= params._toRad;
+		params.end *= params._toRad;
+		// Consider 0deg due north of arc
+		params.start -= PI / 2;
+		params.end -= PI / 2;
 		ctx.ellipse(
 			params.x,
 			params.y,
 			nonNullWidth / 2,
 			nonNullHeight / 2,
 			0,
-			0,
-			2 * Math.PI
+			params.start,
+			params.end,
+			params.ccw
 		);
 		// Check for jCanvas events
 		_detectEvents(canvas, ctx, params);
