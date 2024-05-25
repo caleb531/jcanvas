@@ -36,6 +36,7 @@
     "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.10.0",
     "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.10",
     "jquery": "^3.7.1",
     "qunit": "^2.20.0",
