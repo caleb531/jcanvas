@@ -21,6 +21,7 @@ interface JCanvasCache {
 	dataCache: Record<string, any>;
 	propCache: Partial<JCanvasObject>;
 	imageCache: Record<string, HTMLImageElement>;
+	pathCache: Record<string, Path2D>;
 }
 
 interface JCanvasBaseTransforms {
@@ -170,12 +171,14 @@ interface JCanvasDefaults {
 	draggable: boolean;
 	dragGroups: string[] | null;
 	groups: string[] | null;
+	d: string | null;
 	data: object | null;
 	dx: number;
 	dy: number;
 	end: number;
 	eventX: number | null;
 	eventY: number | null;
+	fillRule: CanvasFillRule;
 	fillStyle: string | Function;
 	fontStyle: string;
 	fontSize: string;

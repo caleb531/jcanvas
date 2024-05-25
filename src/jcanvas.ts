@@ -64,6 +64,7 @@ const extendObject = $.extend,
 		dataCache: {},
 		propCache: {},
 		imageCache: {},
+		pathCache: {},
 	},
 	// Base transformations
 	baseTransforms: JCanvasBaseTransforms = {
@@ -127,12 +128,14 @@ class jCanvasDefaults implements JCanvasDefaults {
 	draggable: boolean = false;
 	dragGroups: string[] | null = null;
 	groups: string[] | null = null;
+	d: string | null = null;
 	data: object | null = null;
 	dx: number = 0;
 	dy: number = 0;
 	end: number = 360;
 	eventX: number | null = null;
 	eventY: number | null = null;
+	fillRule: CanvasFillRule = "nonzero";
 	fillStyle: string | Function = "transparent";
 	fontStyle: string = "normal";
 	fontSize: string = "12pt";
@@ -376,7 +379,11 @@ function _enableMasking(
 			_saveCanvas(ctx, data);
 		}
 		// Clip the current path
-		ctx.clip();
+		if (params._path) {
+			ctx.clip(params._path, params.fillRule);
+		} else {
+			ctx.clip(params.fillRule);
+		}
 		// Keep track of current masks
 		data.transforms.masks.push(params._args);
 	}
@@ -411,24 +418,41 @@ function _closePath(
 		// Extend the shadow to include the stroke of a drawing
 
 		// Add a stroke shadow by stroking before filling
-		ctx.stroke();
-		ctx.fill();
+		if (params._path) {
+			ctx.stroke(params._path);
+			ctx.fill(params._path, params.fillRule);
+		} else {
+			ctx.stroke();
+			ctx.fill(params.fillRule);
+		}
 		// Ensure the below stroking does not inherit a shadow
 		ctx.shadowColor = "transparent";
 		ctx.shadowBlur = 0;
 		// Stroke over fill as usual
-		ctx.stroke();
+		if (params._path) {
+			ctx.stroke(params._path);
+		} else {
+			ctx.stroke();
+		}
 	} else {
 		// If shadowStroke is not enabled, stroke & fill as usual
 
-		ctx.fill();
+		if (params._path) {
+			ctx.fill(params._path, params.fillRule);
+		} else {
+			ctx.fill(params.fillRule);
+		}
 		// Prevent extra shadow created by stroke (but only when fill is present)
 		if (params.fillStyle !== "transparent") {
 			ctx.shadowColor = "transparent";
 		}
 		if (params.strokeWidth !== 0) {
 			// Only stroke if the stroke is not 0
-			ctx.stroke();
+			if (params._path) {
+				ctx.stroke(params._path);
+			} else {
+				ctx.stroke();
+			}
 		}
 	}
 
@@ -2421,9 +2445,15 @@ function _detectEvents(
 			x = eventCache.x * data.pixelRatio;
 			y = eventCache.y * data.pixelRatio;
 			// Determine if the given coordinates are in the current path
-			intersects =
-				ctx.isPointInPath(x, y) ||
-				(ctx.isPointInStroke && ctx.isPointInStroke(x, y));
+			if (layer._path) {
+				intersects =
+					ctx.isPointInPath(layer._path, x, y) ||
+					(ctx.isPointInStroke && ctx.isPointInStroke(layer._path, x, y));
+			} else {
+				intersects =
+					ctx.isPointInPath(x, y) ||
+					(ctx.isPointInStroke && ctx.isPointInStroke(x, y));
+			}
 		}
 		let transforms = data.transforms;
 
@@ -3640,31 +3670,43 @@ $.fn.drawPath = function drawPath(args) {
 			continue;
 		}
 		const params = new jCanvasObject(args);
+		if (params.d) {
+			// The only way to offset an SVG path drawn with Path2D() is to
+			// translate it (making sure we undo the translation it at the end
+			// of the method); note that we cannot use ctx.save() and
+			// ctx.restore() because it would cause any masking to be undone at
+			// the end of the drawPath() code
+			ctx.translate(params.x, params.y);
+			params._path = caches.pathCache[params.d] || new Path2D(params.d);
+			caches.pathCache[params.d] = params._path;
+		}
 		_addLayer(canvas, params, args, drawPath);
 		if (params.visible) {
 			_transformShape(canvas, ctx, params);
 			_setGlobalProps(canvas, ctx, params);
 
-			ctx.beginPath();
-			let l = 1;
-			while (true) {
-				let lp = params["p" + l];
-				if (lp !== undefined) {
-					lp = new jCanvasObject(lp);
-					if (lp.type === "line") {
-						_drawLine(canvas, ctx, params, lp);
-					} else if (lp.type === "quadratic") {
-						_drawQuadratic(canvas, ctx, params, lp);
-					} else if (lp.type === "bezier") {
-						_drawBezier(canvas, ctx, params, lp);
-					} else if (lp.type === "vector") {
-						_drawVector(canvas, ctx, params, lp);
-					} else if (lp.type === "arc") {
-						_drawArc(canvas, ctx, params, lp);
+			if (!params.d) {
+				ctx.beginPath();
+				let l = 1;
+				while (true) {
+					let lp = params["p" + l];
+					if (lp !== undefined) {
+						lp = new jCanvasObject(lp);
+						if (lp.type === "line") {
+							_drawLine(canvas, ctx, params, lp);
+						} else if (lp.type === "quadratic") {
+							_drawQuadratic(canvas, ctx, params, lp);
+						} else if (lp.type === "bezier") {
+							_drawBezier(canvas, ctx, params, lp);
+						} else if (lp.type === "vector") {
+							_drawVector(canvas, ctx, params, lp);
+						} else if (lp.type === "arc") {
+							_drawArc(canvas, ctx, params, lp);
+						}
+						l += 1;
+					} else {
+						break;
 					}
-					l += 1;
-				} else {
-					break;
 				}
 			}
 
@@ -3672,6 +3714,11 @@ $.fn.drawPath = function drawPath(args) {
 			_detectEvents(canvas, ctx, params);
 			// Optionally close path
 			_closePath(canvas, ctx, params);
+
+			// Remember to restore the earlier translation
+			if (params.d) {
+				ctx.translate(-params.x, -params.y);
+			}
 		}
 	}
 	return $canvases;
