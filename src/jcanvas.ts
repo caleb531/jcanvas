@@ -2843,43 +2843,7 @@ $.fn.drawRect = function drawRect(args) {
 			// If corner radius is defined and is not zero
 			if (r) {
 				// Draw rectangle with rounded corners if cornerRadius is defined
-
-				let x2 = params.x + nonNullWidth / 2;
-				let y2 = params.y + nonNullHeight / 2;
-
-				// Handle negative width
-				if (nonNullWidth < 0) {
-					const temp = x1;
-					x1 = x2;
-					x2 = temp;
-				}
-				// Handle negative height
-				if (nonNullHeight < 0) {
-					const temp = y1;
-					y1 = y2;
-					y2 = temp;
-				}
-
-				// Prevent over-rounded corners
-				if (x2 - x1 - 2 * r < 0) {
-					r = (x2 - x1) / 2;
-				}
-				if (y2 - y1 - 2 * r < 0) {
-					r = (y2 - y1) / 2;
-				}
-
-				// Draw rectangle
-				ctx.moveTo(x1 + r, y1);
-				ctx.lineTo(x2 - r, y1);
-				ctx.arc(x2 - r, y1 + r, r, (3 * PI) / 2, PI * 2, false);
-				ctx.lineTo(x2, y2 - r);
-				ctx.arc(x2 - r, y2 - r, r, 0, PI / 2, false);
-				ctx.lineTo(x1 + r, y2);
-				ctx.arc(x1 + r, y2 - r, r, PI / 2, PI, false);
-				ctx.lineTo(x1, y1 + r);
-				ctx.arc(x1 + r, y1 + r, r, PI, (3 * PI) / 2, false);
-				// Always close path
-				params.closed = true;
+				ctx.roundRect(x1, y1, nonNullWidth, nonNullHeight, r);
 			} else {
 				// Otherwise, draw rectangle with square corners
 				ctx.rect(x1, y1, nonNullWidth, nonNullHeight);
