@@ -1930,45 +1930,41 @@ function _removeSubPropAliases(layer: JCanvasObject) {
 	}
 }
 
-// Convert a color value to an array of RGB values
-function _colorToRgbArray(color: string) {
-	let originalColor: string,
-		headElem: HTMLHeadElement,
-		rgb: any = [],
-		multiple = 1;
-
-	// Deal with complete transparency
+// Convert the given color to a normalized RGB/RGBA color string
+function _normalizeColor(color: string) {
 	if (color === "transparent") {
-		color = "rgba(0, 0, 0, 0)";
+		// Deal with complete transparency
+		return "rgba(0, 0, 0, 0)";
 	} else if (color.match(/^([a-z]+|#[0-9a-f]+)$/gi)) {
 		// Deal with hexadecimal colors and color names (note: element must be
 		// in the DOM for this to work consistently)
-		headElem = document.head;
-		originalColor = headElem.style.color;
+		const headElem = document.head;
+		const originalColor = headElem.style.color;
 		headElem.style.color = color;
-		color = $.css(headElem, "color");
+		const normalizedColor = $.css(headElem, "color");
 		headElem.style.color = originalColor;
+		return normalizedColor;
 	}
+}
+
+// Convert a color value to an array of RGB values
+function _colorToRgbArray(color: string) {
+	const normalizedColor: string = _normalizeColor(color);
 	// Parse RGB string
-	if (color.match(/^rgb/gi)) {
-		rgb = color.match(/(\d+(\.\d+)?)/gi);
+	if (/^rgb/gi.test(normalizedColor)) {
+		const rgbMatches: string[] = normalizedColor.match(/(\d+(\.\d+)?)/gi) || [];
 		// Deal with RGB percentages
-		if (color.match(/%/gi)) {
-			multiple = 2.55;
-		}
-		rgb[0] *= multiple;
-		rgb[1] *= multiple;
-		rgb[2] *= multiple;
-		// Ad alpha channel if given
-		if (rgb[3] !== undefined) {
-			rgb[3] = parseFloat(String(rgb[3]));
-		} else {
-			rgb[3] = 1;
-		}
+		const multiple = /%/gi.test(normalizedColor) ? 2.55 : 1;
+		return [
+			Number(rgbMatches[0]) * multiple,
+			Number(rgbMatches[1]) * multiple,
+			Number(rgbMatches[2]) * multiple,
+			rgbMatches[3] ? Number(rgbMatches[3]) * multiple : 1,
+		];
 	} else {
-		console.error(`Color format unsupported: ${color}`);
+		console.error(`Color format unsupported: ${normalizedColor}`);
+		return [];
 	}
-	return rgb;
 }
 
 // Blend two colors by the given percentage
