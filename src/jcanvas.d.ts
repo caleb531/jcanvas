@@ -238,3 +238,7 @@ interface JCanvasDefaults {
 }
 
 interface JCanvasObject extends JCanvasDefaults {}
+
+interface JCanvasPropHooks {
+	[key: string]: JQuery.PropHook<JCanvasObject>;
+}

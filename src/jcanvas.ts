@@ -1941,7 +1941,8 @@ function _colorToRgbArray(color: string) {
 	if (color === "transparent") {
 		color = "rgba(0, 0, 0, 0)";
 	} else if (color.match(/^([a-z]+|#[0-9a-f]+)$/gi)) {
-		// Deal with hexadecimal colors and color names
+		// Deal with hexadecimal colors and color names (note: element must be
+		// in the DOM for this to work consistently)
 		headElem = document.head;
 		originalColor = headElem.style.color;
 		headElem.style.color = color;
@@ -1964,47 +1965,23 @@ function _colorToRgbArray(color: string) {
 		} else {
 			rgb[3] = 1;
 		}
+	} else {
+		console.error(`Color format unsupported: ${color}`);
 	}
 	return rgb;
 }
 
-// Animate a hex or RGB color
-function _animateColor(fx: any) {
-	let n = 3;
-	// Only parse start and end colors once
-	if (typeOf(fx.start) !== "array") {
-		fx.start = _colorToRgbArray(fx.start);
-		fx.end = _colorToRgbArray(fx.end);
-	}
-	fx.now = [];
+// Blend two colors by the given percentage
+function _blendColors(color1: string, color2: string, percentage: number) {
+	const [r1, g1, b1, a1] = _colorToRgbArray(color1);
+	const [r2, g2, b2, a2] = _colorToRgbArray(color2);
 
-	// If colors are RGBA, animate transparency
-	if (fx.start[3] !== 1 || fx.end[3] !== 1) {
-		n = 4;
-	}
+	const r = round(r1 + (r2 - r1) * percentage);
+	const g = round(g1 + (g2 - g1) * percentage);
+	const b = round(b1 + (b2 - b1) * percentage);
+	const a = a1 + (a2 - a1) * percentage;
 
-	// Calculate current frame for red, green, blue, and alpha
-	for (let i = 0; i < n; i += 1) {
-		fx.now[i] = fx.start[i] + (fx.end[i] - fx.start[i]) * fx.pos;
-		// Only the red, green, and blue values must be integers
-		if (i < 3) {
-			fx.now[i] = round(fx.now[i]);
-		}
-	}
-	if (fx.start[3] !== 1 || fx.end[3] !== 1) {
-		// Only use RGBA if RGBA colors are given
-		fx.now = "rgba(" + fx.now.join(",") + ")";
-	} else {
-		// Otherwise, animate as solid colors
-		fx.now.slice(0, 3);
-		fx.now = "rgb(" + fx.now.join(",") + ")";
-	}
-	// Animate colors for both canvas layers and DOM elements
-	if (fx.elem.nodeName) {
-		fx.elem.style[fx.prop] = fx.now;
-	} else {
-		fx.elem[fx.prop] = fx.now;
-	}
+	return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
 // Animate jCanvas layer
@@ -2297,7 +2274,18 @@ $.fn.stopLayerGroup = function stopLayerGroup(groupId, clearQueue) {
 // Enable animation for color properties
 function _supportColorProps(props: string[]) {
 	for (let p = 0; p < props.length; p += 1) {
-		$.fx.step[props[p]] = _animateColor;
+		($.Tween.propHooks as JCanvasPropHooks)[props[p]] = {
+			get: function (tween) {
+				return tween.elem[tween.prop];
+			},
+			set: function (tween) {
+				tween.elem[tween.prop] = _blendColors(
+					tween.start as any,
+					tween.end as any,
+					tween.pos || 0
+				);
+			},
+		};
 	}
 }
 
