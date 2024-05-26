@@ -38,7 +38,12 @@ interface JCanvasPx {
 	a: number;
 }
 
-type JCanvasEventHooks = Record<string, (layer: JCanvasObject) => void>;
+type JCanvasLayerCallbackWithProps = (
+	layer: JCanvasObject,
+	props?: Partial<JCanvasObject>
+) => void;
+
+type JCanvasEventHooks = Record<string, JCanvasLayerCallbackWithProps>;
 
 interface JCanvas {
 	defaults: JCanvasDefaults;
@@ -72,7 +77,8 @@ interface JQueryEventWithFix extends JQuery.EventExtensions {
 
 type JCanvasLayerId = JCanvasObject | string | number | RegExp | undefined;
 type jCanvasLayerGroupId = JCanvasObject[] | string | RegExp;
-type JCanvasLayerCallback = (layer: JCanvasObject) => any;
+type JCanvasLayerCallback = (layer: JCanvasObject) => void;
+type JCanvasGetLayersCallback = (layer: JCanvasObject) => any;
 
 type JCanvasObjectFunction = {
 	new (this: JCanvasObject, args?: Partial<JCanvasObject>): JCanvasObject;
@@ -87,14 +93,14 @@ interface JQueryStatic {
 interface JQuery {
 	getEventHooks(): JCanvasEventHooks;
 	setEventHooks(eventHooks: JCanvasEventHooks): JQuery;
-	getLayers(callback?: JCanvasLayerCallback): JCanvasObject[];
+	getLayers(callback?: JCanvasGetLayersCallback): JCanvasObject[];
 	getLayer(layerId: JCanvasLayerId): JCanvasObject | undefined;
 	getLayerGroup(groupId: jCanvasLayerGroupId): JCanvasObject[] | undefined;
 	getLayerIndex(layerId: JCanvasLayerId): number;
 	setLayer(layerId: JCanvasLayerId, props: Partial<JCanvasObject>): JQuery;
 	setLayers(
 		props: Partial<JCanvasObject>,
-		callback: JCanvasLayerCallback
+		callback: JCanvasGetLayersCallback
 	): JQuery;
 	setLayerGroup(
 		groupId: jCanvasLayerGroupId,
@@ -241,6 +247,42 @@ interface JCanvasDefaults {
 	width: number | null;
 	x: number;
 	y: number;
+	each?: (
+		this: HTMLCanvasElement,
+		px: JCanvasPx,
+		params: JCanvasObject
+	) => void;
+	load?: (
+		this: HTMLCanvasElement,
+		arg: JCanvasObject | CanvasPattern | null
+	) => void;
+	click?: JCanvasLayerCallback;
+	dblclick?: JCanvasLayerCallback;
+	mousedown?: JCanvasLayerCallback;
+	mouseup?: JCanvasLayerCallback;
+	mousemove?: JCanvasLayerCallback;
+	mouseover?: JCanvasLayerCallback;
+	mouseout?: JCanvasLayerCallback;
+	touchstart?: JCanvasLayerCallback;
+	touchend?: JCanvasLayerCallback;
+	touchmove?: JCanvasLayerCallback;
+	dragstart?: JCanvasLayerCallback;
+	dragstop?: JCanvasLayerCallback;
+	drag?: JCanvasLayerCallback;
+	dragcancel?: JCanvasLayerCallback;
+	pointerdown?: JCanvasLayerCallback;
+	pointerup?: JCanvasLayerCallback;
+	pointermove?: JCanvasLayerCallback;
+	contextmenu?: JCanvasLayerCallback;
+	add?: JCanvasLayerCallback;
+	remove?: JCanvasLayerCallback;
+	change?: JCanvasLayerCallbackWithProps;
+	move?: JCanvasLayerCallback;
+	animatestart?: JCanvasLayerCallback;
+	animate?: (layer: JCanvasObject, fx: JQuery.Tween) => void;
+	animateend?: JCanvasLayerCallback;
+	stop?: JCanvasLayerCallback;
+	delay?: JCanvasLayerCallback;
 	[key: string]: any;
 }
 

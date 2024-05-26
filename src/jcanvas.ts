@@ -4155,7 +4155,7 @@ $.fn.drawImage = function drawImage(args) {
 			if (params.layer && layer) {
 				// Trigger 'load' event for layers
 				_triggerLayerEvent($canvas, data, layer, "load");
-			} else if (params.load) {
+			} else if (params.load && layer) {
 				// Run 'load' callback for non-layers
 				params.load.call($canvas[0], layer);
 			}
@@ -4247,7 +4247,7 @@ $.fn.createPattern = function createPattern(args) {
 		// Create pattern
 		pattern = ctx.createPattern(img, params.repeat);
 		// Run callback function if defined
-		if (params.load) {
+		if (params.load && pattern) {
 			params.load.call($canvases[0], pattern);
 		}
 	}
