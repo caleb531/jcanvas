@@ -31,6 +31,13 @@ interface JCanvasBaseTransforms {
 	masks: JCanvasObject[];
 }
 
+interface JCanvasPx {
+	r: number;
+	g: number;
+	b: number;
+	a: number;
+}
+
 type JCanvasEventHooks = Record<string, (layer: JCanvasObject) => void>;
 
 interface JCanvas {
@@ -63,7 +70,7 @@ interface JQueryEventWithFix extends JQuery.EventExtensions {
 	fix: (event: Event) => Event;
 }
 
-type JCanvasLayerId = JCanvasObject | string | number | RegExp;
+type JCanvasLayerId = JCanvasObject | string | number | RegExp | undefined;
 type jCanvasLayerGroupId = JCanvasObject[] | string | RegExp;
 type JCanvasLayerCallback = (layer: JCanvasObject) => any;
 
@@ -81,8 +88,8 @@ interface JQuery {
 	getEventHooks(): JCanvasEventHooks;
 	setEventHooks(eventHooks: JCanvasEventHooks): JQuery;
 	getLayers(callback?: JCanvasLayerCallback): JCanvasObject[];
-	getLayer(layerId: JCanvasLayerId): JCanvasObject;
-	getLayerGroup(groupId: jCanvasLayerGroupId): JCanvasObject[];
+	getLayer(layerId: JCanvasLayerId): JCanvasObject | undefined;
+	getLayerGroup(groupId: jCanvasLayerGroupId): JCanvasObject[] | undefined;
 	getLayerIndex(layerId: JCanvasLayerId): number;
 	setLayer(layerId: JCanvasLayerId, props: Partial<JCanvasObject>): JQuery;
 	setLayers(
@@ -107,7 +114,7 @@ interface JQuery {
 		index?: number;
 		complete?: () => void;
 	}): void;
-	addLayer(args: JCanvasObject): void;
+	addLayer(args: Partial<JCanvasObject>): void;
 	animateLayer(
 		layerId: JCanvasLayerId,
 		props: Partial<JCanvasObject>,
@@ -122,29 +129,29 @@ interface JQuery {
 	delayLayerGroup(groupId: jCanvasLayerGroupId, duration: number): void;
 	stopLayer(layerId: JCanvasLayerId, clearQueue?: boolean): void;
 	stopLayerGroup(groupId: jCanvasLayerGroupId, clearQueue?: boolean): void;
-	draw(args: JCanvasObject): JQuery;
+	draw(args: Partial<JCanvasObject>): JQuery;
 	clearCanvas(args?: JCanvasObject): void;
 	saveCanvas(args?: JCanvasObject): void;
 	restoreCanvas(args?: JCanvasObject): void;
 	rotateCanvas(args?: JCanvasObject): void;
 	scaleCanvas(args?: JCanvasObject): void;
 	translateCanvas(args?: JCanvasObject): void;
-	drawRect(args: JCanvasObject): void;
-	drawArc(args: JCanvasObject): void;
-	drawEllipse(args: JCanvasObject): void;
-	drawPolygon(args: JCanvasObject): void;
-	drawSlice(args: JCanvasObject): void;
-	drawLine(args: JCanvasObject): void;
-	drawQuadratic(args: JCanvasObject): void;
-	drawBezier(args: JCanvasObject): void;
-	drawVector(args: JCanvasObject): void;
-	drawPath(args: JCanvasObject): void;
-	drawText(args: JCanvasObject): void;
-	measureText(args: JCanvasObject): void;
-	drawImage(args: JCanvasObject): void;
-	createPattern(args: JCanvasObject): void;
-	createGradient(args: JCanvasObject): void;
-	setPixels(args: JCanvasObject): void;
+	drawRect(args: Partial<JCanvasObject>): void;
+	drawArc(args: Partial<JCanvasObject>): void;
+	drawEllipse(args: Partial<JCanvasObject>): void;
+	drawPolygon(args: Partial<JCanvasObject>): void;
+	drawSlice(args: Partial<JCanvasObject>): void;
+	drawLine(args: Partial<JCanvasObject>): void;
+	drawQuadratic(args: Partial<JCanvasObject>): void;
+	drawBezier(args: Partial<JCanvasObject>): void;
+	drawVector(args: Partial<JCanvasObject>): void;
+	drawPath(args: Partial<JCanvasObject>): void;
+	drawText(args: Partial<JCanvasObject>): void;
+	measureText(args: JCanvasLayerId): void;
+	drawImage(args: Partial<JCanvasObject>): void;
+	createPattern(args: Partial<JCanvasObject>): void;
+	createGradient(args: Partial<JCanvasObject>): void;
+	setPixels(args: Partial<JCanvasObject>): void;
 	getCanvasImage(type: string, quality?: number): void;
 	detectPixelRatio(callback?: (ratio: number) => void): void;
 }

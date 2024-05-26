@@ -567,7 +567,7 @@ class JCanvasInternalData {
 	// All layers that intersect with the event coordinates (regardless of visibility)
 	intersecting: JCanvasObject[] = [];
 	// The topmost layer whose area contains the event coordinates
-	lastIntersected = null;
+	lastIntersected: JCanvasObject | null = null;
 	cursor: string;
 	// Properties for the current drag event
 	drag = {
@@ -613,7 +613,7 @@ class JCanvasInternalData {
 // Retrieved the stored jCanvas data for a canvas element
 function _getCanvasData(canvas: HTMLCanvasElement) {
 	const dataCache = caches.dataCache;
-	let data;
+	let data: JCanvasInternalData;
 	if (dataCache._canvas === canvas && dataCache._data) {
 		// Retrieve canvas data from cache if possible
 		data = dataCache._data;
@@ -884,12 +884,11 @@ $.fn.getLayers = function getLayers(callback) {
 // Get a single jCanvas layer object
 $.fn.getLayer = function getLayer(layerId) {
 	const $canvases = this;
-	let layer;
 
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
 		if (!_isCanvas(canvas)) {
-			return null;
+			return undefined;
 		}
 		const data = _getCanvasData(canvas);
 		const layers = data.layers;
@@ -902,7 +901,7 @@ $.fn.getLayer = function getLayer(layerId) {
 			layerId.layer
 		) {
 			// Return the actual layer object if given
-			layer = layerId as JCanvasObject;
+			return layerId;
 		} else if (idType === "number") {
 			// Retrieve the layer using the given index
 
@@ -913,24 +912,23 @@ $.fn.getLayer = function getLayer(layerId) {
 				layerIndex = layers.length + layerIndex;
 			}
 			// Get layer with the given index
-			layer = layers[layerIndex];
+			return layers[layerIndex];
 		} else if (idType === "regexp") {
 			const layerPattern = layerId as RegExp;
 			// Get layer with the name that matches the given regex
 			for (let l = 0; l < layers.length; l += 1) {
+				const layer = layers[l];
 				// Check if layer matches name
-				if (isString(layers[l].name) && layers[l].name.match(layerPattern)) {
-					layer = layers[l];
-					break;
+				if (isString(layer.name) && layer.name.match(layerPattern)) {
+					return layer;
 				}
 			}
 		} else {
 			const layerName = layerId as string;
 			// Get layer with the given name
-			layer = data.layer.names[layerName];
+			return data.layer.names[layerName];
 		}
 	}
-	return layer;
 };
 
 // Get all layers in the given group
@@ -946,7 +944,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 
 		if (idType === "array") {
 			// Return layer group if given
-			return groupId as Exclude<typeof groupId, string>;
+			return groupId as Exclude<typeof groupId, string | RegExp>;
 		} else if (idType === "regexp") {
 			const groupPattern = groupId as RegExp;
 			// Get canvas data
@@ -1218,7 +1216,7 @@ $.fn.addLayerToGroup = function addLayerToGroup(layerId, groupName) {
 		const layer = $canvas.getLayer(layerId);
 
 		// If layer is not already in group
-		if (layer.groups) {
+		if (layer?.groups) {
 			// Clone groups list
 			groups = layer.groups.slice(0);
 			// If layer is not already in group
@@ -1243,7 +1241,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 		const $canvas = $($canvases[e]);
 		const layer = $canvas.getLayer(layerId);
 
-		if (layer.groups) {
+		if (layer && layer.groups) {
 			// Find index of layer in group
 			const index = inArray(groupName, layer.groups);
 
@@ -1552,7 +1550,9 @@ $.fn.drawLayer = function drawLayer(layerId) {
 			continue;
 		}
 		const layer = $canvas.getLayer(layerId);
-		_drawLayer($canvas, ctx, layer);
+		if (layer) {
+			_drawLayer($canvas, ctx, layer);
+		}
 	}
 	return $canvases;
 };
@@ -1644,7 +1644,7 @@ $.fn.drawLayers = function drawLayers(args) {
 		let eventType = eventCache.type;
 
 		// If jCanvas has detected a dragstart
-		if (data.drag.layer) {
+		if (data.drag.layer && eventType) {
 			// Handle dragging of layer
 			_handleLayerDrag($canvas, data, eventType);
 		}
@@ -1665,7 +1665,7 @@ $.fn.drawLayers = function drawLayers(args) {
 			_resetCursor($canvas, data);
 		}
 
-		if (layer) {
+		if (layer && eventType) {
 			// Use mouse event callbacks if no touch event callbacks are given
 			if (!layer[eventType]) {
 				eventType = _getMouseEventName(eventType);
@@ -1733,10 +1733,10 @@ $.fn.drawLayers = function drawLayers(args) {
 function _addLayer(
 	canvas: HTMLCanvasElement,
 	params: JCanvasObject,
-	args?: JCanvasObject,
+	args?: Partial<JCanvasObject>,
 	method?: (args: JCanvasObject) => JQuery
 ) {
-	let layer = params._layer ? args : params;
+	let layer = params._layer ? (args as JCanvasObject) : params;
 
 	// Store arguments object for later use
 	params._args = args;
@@ -1791,7 +1791,7 @@ function _addLayer(
 				layer.data = {};
 			}
 			// If layer stores a list of associated groups
-			if (layer.groups !== null) {
+			if (layer.groups) {
 				// Clone list
 				layer.groups = layer.groups.slice(0);
 			} else {
@@ -3991,7 +3991,7 @@ $.fn.measureText = function measureText(args) {
 	let params = $canvases.getLayer(args);
 	// If layer does not exist or if returned object is not a jCanvas layer
 	if (!params || (params && !params._layer)) {
-		params = new jCanvasObject(args);
+		params = new jCanvasObject(args as JCanvasObject);
 	}
 
 	const canvas = $canvases[0];
