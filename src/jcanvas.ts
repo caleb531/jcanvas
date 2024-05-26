@@ -4566,7 +4566,9 @@ jCanvas.clearCache = function clearCache() {
 };
 
 // Enable canvas feature detection with $.support
-$.support.canvas = typeof HTMLCanvasElement !== "undefined";
+if ($.support) {
+	$.support.canvas = typeof HTMLCanvasElement !== "undefined";
+}
 
 // Export jCanvas functions
 extendObject(jCanvas, {
