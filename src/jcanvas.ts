@@ -134,7 +134,8 @@ class jCanvasDefaults implements JCanvasDefaults {
 	eventX: number | null = null;
 	eventY: number | null = null;
 	fillRule: CanvasFillRule = "nonzero";
-	fillStyle: string | Function = "transparent";
+	fillStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction =
+		"transparent";
 	fontStyle: string = "normal";
 	fontSize: string = "12pt";
 	fontFamily: string = "sans-serif";
@@ -177,7 +178,8 @@ class jCanvasDefaults implements JCanvasDefaults {
 	strokeDash: number[] | null = null;
 	strokeDashOffset: CanvasRenderingContext2D["lineDashOffset"] = 0;
 	strokeJoin: CanvasRenderingContext2D["lineJoin"] = "miter";
-	strokeStyle: string | Function = "transparent";
+	strokeStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction =
+		"transparent";
 	strokeWidth: number = 1;
 	sWidth: number | null = null;
 	sx: number | null = null;

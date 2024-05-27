@@ -79,6 +79,9 @@ type JCanvasLayerId = JCanvasObject | string | number | RegExp | undefined;
 type jCanvasLayerGroupId = JCanvasObject[] | string | RegExp;
 type JCanvasLayerCallback = (layer: JCanvasObject) => void;
 type JCanvasGetLayersCallback = (layer: JCanvasObject) => any;
+type JCanvasStyleFunction = (
+	layer: JCanvasObject
+) => string | CanvasGradient | CanvasPattern;
 
 type JCanvasObjectFunction = {
 	new (this: JCanvasObject, args?: Partial<JCanvasObject>): JCanvasObject;
@@ -190,7 +193,7 @@ interface JCanvasDefaults {
 	eventX: number | null;
 	eventY: number | null;
 	fillRule: CanvasFillRule;
-	fillStyle: string | Function;
+	fillStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction;
 	fontStyle: string;
 	fontSize: string;
 	fontFamily: string;
@@ -233,7 +236,7 @@ interface JCanvasDefaults {
 	strokeDash: number[] | null;
 	strokeDashOffset: CanvasRenderingContext2D["lineDashOffset"];
 	strokeJoin: CanvasRenderingContext2D["lineJoin"];
-	strokeStyle: string | Function;
+	strokeStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction;
 	strokeWidth: number;
 	sWidth: number | null;
 	sx: number | null;
