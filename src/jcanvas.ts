@@ -4277,7 +4277,7 @@ $.fn.createPattern = function createPattern(args) {
 	if (isFunction(source)) {
 		// Draw pattern using function if given
 
-		img = $("<canvas />")[0] as HTMLCanvasElement;
+		img = document.createElement("canvas");
 		img.width = params.width || 0;
 		img.height = params.height || 0;
 		const imgCtx = _getContext(img);
