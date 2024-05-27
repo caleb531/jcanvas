@@ -7,7 +7,7 @@ import $ from "jquery";
 import "./jcanvas.d";
 
 // Define local aliases to frequently used properties
-const extendObject = $.extend,
+const extendObject = Object.assign,
 	inArray = $.inArray,
 	typeOf = function (operand: any) {
 		return Object.prototype.toString.call(operand).slice(8, -1).toLowerCase();
