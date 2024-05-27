@@ -210,13 +210,22 @@ class jCanvasDefaults implements JCanvasDefaults {
 const defaults = new jCanvasDefaults();
 
 // Constructor for creating objects that inherit from jCanvas preferences and defaults
-const jCanvasObject: JCanvasObjectFunction = function jCanvasObject(
-	this: JCanvasObject,
-	args?: Partial<JCanvasObject>
-): JCanvasObject {
+const jCanvasObject: JCanvasObjectFunction = function jCanvasObject(args) {
 	return extendObject(this, args);
 } as JCanvasObjectFunction;
 jCanvasObject.prototype = defaults;
+
+// Constructor for creating a fully-qualified jCanvas layer
+const jCanvasLayer: JCanvasLayerFunction = function jCanvasLayer(
+	canvas,
+	params
+) {
+	Object.assign(this, params, {
+		canvas,
+		_layer: true,
+	});
+} as JCanvasLayerFunction;
+jCanvasLayer.prototype = jCanvasObject.prototype;
 
 /* Internal helper methods */
 
@@ -568,24 +577,24 @@ class JCanvasInternalData {
 	// The associated canvas element
 	canvas: HTMLCanvasElement;
 	// Layers array
-	layers: JCanvasObject[] = [];
+	layers: JCanvasLayer[] = [];
 	// Layer maps
 	layer: {
-		names: Record<string, JCanvasObject>;
-		groups: Record<string, JCanvasObject[]>;
+		names: Record<string, JCanvasLayer>;
+		groups: Record<string, JCanvasLayer[]>;
 	} = {
 		names: {},
 		groups: {},
 	};
 	eventHooks = {};
 	// All layers that intersect with the event coordinates (regardless of visibility)
-	intersecting: JCanvasObject[] = [];
+	intersecting: JCanvasLayer[] = [];
 	// The topmost layer whose area contains the event coordinates
-	lastIntersected: JCanvasObject | null = null;
+	lastIntersected: JCanvasLayer | null = null;
 	cursor: string;
 	// Properties for the current drag event
 	drag = {
-		layer: null as JCanvasObject | null,
+		layer: null as JCanvasLayer | null,
 		dragging: false,
 	};
 	// Data for the current event
@@ -607,7 +616,7 @@ class JCanvasInternalData {
 	// Whether a layer is being animated or not
 	animating = false;
 	// The layer currently being animated
-	animated: JCanvasObject | null = null;
+	animated: JCanvasLayer | null = null;
 	// The device pixel ratio
 	pixelRatio = 1;
 	// Whether pixel ratio transformations have been applied
@@ -651,7 +660,7 @@ function _getCanvasData(canvas: HTMLCanvasElement) {
 function _addLayerEvents(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: JCanvasObject
+	layer: JCanvasLayer
 ) {
 	// Determine which jCanvas events need to be bound to this layer
 	for (const eventName in jCanvas.events) {
@@ -699,7 +708,7 @@ function _addLayerEvents(
 function _addLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	eventName: string
 ) {
 	// Use touch events if appropriate
@@ -715,7 +724,7 @@ function _addLayerEvent(
 function _addExplicitLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	eventName: string
 ) {
 	_addLayerEvent($canvas, data, layer, eventName);
@@ -732,7 +741,7 @@ function _addExplicitLayerEvent(
 function _enableDrag(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: JCanvasObject
+	layer: JCanvasLayer
 ) {
 	// Only make layer draggable if necessary
 	if (layer.draggable || layer.cursors) {
@@ -754,7 +763,7 @@ function _enableDrag(
 // Update a layer property map if property is changed
 function _updateLayerName(
 	data: JCanvasInternalData,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	props?: Partial<JCanvasObject>
 ) {
 	const nameMap = data.layer.names;
@@ -782,7 +791,7 @@ function _updateLayerName(
 // Create or update the data map for the given layer and group type
 function _updateLayerGroups(
 	data: JCanvasInternalData,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	props?: Partial<JCanvasObject>
 ) {
 	const groupMap = data.layer.groups;
@@ -870,7 +879,7 @@ $.fn.setEventHooks = function setEventHooks(eventHooks) {
 // Get jCanvas layers array
 $.fn.getLayers = function getLayers(callback) {
 	const $canvases = this;
-	let matching: JCanvasObject[] = [];
+	let matching: JCanvasLayer[] = [];
 
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
@@ -1284,7 +1293,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 
 // Get topmost layer that intersects with event coordinates
 function _getIntersectingLayer(data: JCanvasInternalData) {
-	let layer: JCanvasObject | null, mask: JCanvasObject, m;
+	let layer: JCanvasLayer | null, mask: JCanvasObject, m;
 
 	// Store the topmost layer
 	layer = null;
@@ -1330,7 +1339,7 @@ function _getIntersectingLayer(data: JCanvasInternalData) {
 function _drawLayer(
 	$canvas: JQuery,
 	ctx: CanvasRenderingContext2D,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	nextLayerIndex?: number
 ) {
 	if (layer && layer.visible && layer._method) {
@@ -1353,7 +1362,7 @@ function _handleLayerDrag(
 	eventType: string
 ) {
 	const drag = data.drag;
-	const layer = drag.layer as JCanvasObject;
+	const layer = drag.layer as JCanvasLayer;
 	const dragGroups = (layer && layer.dragGroups) || [];
 	const layers = data.layers;
 
@@ -1454,7 +1463,7 @@ function _handleLayerDrag(
 // Set cursor on canvas
 function _setCursor(
 	$canvas: JQuery<HTMLCanvasElement>,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	eventType: string
 ) {
 	let cursor;
@@ -1484,9 +1493,9 @@ function _resetCursor(
 // Run the given event callback with the given arguments
 function _runEventCallback(
 	$canvas: JQuery<HTMLCanvasElement>,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	eventType: string,
-	callbacks: Record<string, (layer: JCanvasObject, arg: any) => void>,
+	callbacks: Record<string, (layer: JCanvasLayer, arg: any) => void>,
 	arg: any
 ) {
 	// Prevent callback from firing recursively
@@ -1501,7 +1510,7 @@ function _runEventCallback(
 }
 
 // Determine if the given layer can "legally" fire the given event
-function _layerCanFireEvent(layer: JCanvasObject, eventType: string) {
+function _layerCanFireEvent(layer: JCanvasLayer, eventType: string) {
 	// If events are disable and if
 	// layer is tangible or event is not tangible
 	return (
@@ -1514,7 +1523,7 @@ function _layerCanFireEvent(layer: JCanvasObject, eventType: string) {
 function _triggerLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	eventType: string,
 	arg?: any
 ) {
@@ -1754,8 +1763,10 @@ function _addLayer(
 	params: JCanvasObject,
 	args?: Partial<JCanvasObject>,
 	method?: (args: JCanvasObject) => JQuery
-) {
-	let layer = params._layer ? (args as JCanvasObject) : params;
+): JCanvasLayer | null {
+	const layer: JCanvasObject | JCanvasLayer = params._layer
+		? (args as JCanvasLayer)
+		: params;
 
 	// Store arguments object for later use
 	params._args = args;
@@ -1795,66 +1806,67 @@ function _addLayer(
 			_coerceNumericProps(params);
 
 			// Ensure layers are unique across canvases by cloning them
-			layer = new jCanvasObject(params);
-			layer.canvas = canvas;
+			const newLayer = new jCanvasLayer(canvas, params);
+			newLayer.canvas = canvas;
 			// Indicate that this is a layer for future checks
-			layer.layer = true;
-			layer._layer = true;
-			layer._running = {};
+			newLayer.layer = true;
+			newLayer._layer = true;
+			newLayer._running = {};
 			// If layer stores user-defined data
-			if (layer.data !== null) {
+			if (newLayer.data !== null) {
 				// Clone object
-				layer.data = extendObject({}, layer.data);
+				newLayer.data = extendObject({}, newLayer.data);
 			} else {
 				// Otherwise, create data object
-				layer.data = {};
+				newLayer.data = {};
 			}
 			// If layer stores a list of associated groups
-			if (layer.groups) {
+			if (newLayer.groups) {
 				// Clone list
-				layer.groups = layer.groups.slice(0);
+				newLayer.groups = newLayer.groups.slice(0);
 			} else {
 				// Otherwise, create empty list
-				layer.groups = [];
+				newLayer.groups = [];
 			}
 
 			// Update layer group maps
-			_updateLayerName(data, layer);
-			_updateLayerGroups(data, layer);
+			_updateLayerName(data, newLayer);
+			_updateLayerGroups(data, newLayer);
 
 			// Check for any associated jCanvas events and enable them
-			_addLayerEvents($canvas, data, layer);
+			_addLayerEvents($canvas, data, newLayer);
 
 			// Optionally enable drag-and-drop support and cursor support
-			_enableDrag($canvas, data, layer);
+			_enableDrag($canvas, data, newLayer);
 
 			// Copy _event property to parameters object
-			params._event = layer._event;
+			params._event = newLayer._event;
 
 			// Calculate width/height for text layers
-			if (layer._method === $.fn.drawText) {
-				$canvas.measureText(layer);
+			if (newLayer._method === $.fn.drawText) {
+				$canvas.measureText(newLayer);
 			}
 
 			// Add layer to end of array if no index is specified
-			if (layer.index === null) {
-				layer.index = layers.length;
+			if (newLayer.index === null) {
+				newLayer.index = layers.length;
 			}
 
 			// Add layer to layers array at specified index
-			layers.splice(layer.index, 0, layer);
+			layers.splice(newLayer.index, 0, newLayer);
 
 			// Store layer on parameters object
-			params._args = layer;
+			params._args = newLayer;
 
 			// Trigger an 'add' event
-			_triggerLayerEvent($canvas, data, layer, "add");
+			_triggerLayerEvent($canvas, data, newLayer, "add");
+			return newLayer;
 		}
 	} else if (!params.layer) {
 		_coerceNumericProps(params);
 	}
 
-	return layer;
+	return null;
 }
 
 // Add a jCanvas layer
@@ -1903,7 +1915,7 @@ function _hideProps(obj: Partial<JCanvasObject>, reset?: boolean) {
 // Evaluate property values that are functions
 function _parseEndValues(
 	canvas: HTMLCanvasElement,
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	endValues: Record<string, any>
 ) {
 	// Loop through all properties in map of end values
@@ -1939,7 +1951,7 @@ function _parseEndValues(
 }
 
 // Remove sub-property aliases from layer object
-function _removeSubPropAliases(layer: JCanvasObject) {
+function _removeSubPropAliases(layer: JCanvasLayer) {
 	for (const propName in layer) {
 		if (Object.prototype.hasOwnProperty.call(layer, propName)) {
 			if (propName.indexOf(".") !== -1) {
@@ -2049,7 +2061,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 	function complete(
 		$canvas: JQuery<HTMLCanvasElement>,
 		data: JCanvasInternalData,
-		layer: JCanvasObject
+		layer: JCanvasLayer
 	) {
 		return function () {
 			_showProps(layer);
@@ -2080,7 +2092,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 	function step(
 		$canvas: JQuery<HTMLCanvasElement>,
 		data: JCanvasInternalData,
-		layer: JCanvasObject
+		layer: JCanvasLayer
 	) {
 		return function (now: any, fx: any) {
 			let parts,
@@ -4007,11 +4019,8 @@ $.fn.measureText = function measureText(args) {
 	const $canvases = this;
 
 	// Attempt to retrieve layer
-	let params = $canvases.getLayer(args);
-	// If layer does not exist or if returned object is not a jCanvas layer
-	if (!params || (params && !params._layer)) {
-		params = new jCanvasObject(args as JCanvasObject);
-	}
+	const params =
+		$canvases.getLayer(args) || new jCanvasObject(args as JCanvasObject);
 
 	const canvas = $canvases[0];
 	if (!_isCanvas(canvas)) {
@@ -4050,7 +4059,7 @@ $.fn.drawImage = function drawImage(args) {
 		ctx: CanvasRenderingContext2D,
 		data: JCanvasInternalData,
 		params: JCanvasObject,
-		layer: JCanvasObject | undefined
+		layer: JCanvasLayer | null
 	) {
 		if (!img) {
 			return;
@@ -4166,7 +4175,7 @@ $.fn.drawImage = function drawImage(args) {
 		ctx: CanvasRenderingContext2D,
 		data: JCanvasInternalData,
 		params: JCanvasObject,
-		layer: JCanvasObject | undefined
+		layer: JCanvasLayer | null
 	) {
 		return function () {
 			const $canvas = $(canvas);

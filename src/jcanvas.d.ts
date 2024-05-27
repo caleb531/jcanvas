@@ -39,7 +39,7 @@ interface JCanvasPx {
 }
 
 type JCanvasLayerCallbackWithProps = (
-	layer: JCanvasObject,
+	layer: JCanvasLayer,
 	props?: Partial<JCanvasObject>
 ) => void;
 
@@ -75,17 +75,30 @@ interface JQueryEventWithFix extends JQuery.EventExtensions {
 	fix: (event: Event) => Event;
 }
 
-type JCanvasLayerId = JCanvasObject | string | number | RegExp | undefined;
-type jCanvasLayerGroupId = JCanvasObject[] | string | RegExp;
-type JCanvasLayerCallback = (layer: JCanvasObject) => void;
-type JCanvasGetLayersCallback = (layer: JCanvasObject) => any;
+type JCanvasLayerId = JCanvasLayer | string | number | RegExp | undefined;
+type jCanvasLayerGroupId = JCanvasLayer[] | string | RegExp;
+type JCanvasLayerCallback = (layer: JCanvasLayer) => void;
+type JCanvasGetLayersCallback = (layer: JCanvasLayer) => any;
 type JCanvasStyleFunction = (
-	layer: JCanvasObject
+	layer: JCanvasLayer
 ) => string | CanvasGradient | CanvasPattern;
 
 type JCanvasObjectFunction = {
 	new (this: JCanvasObject, args?: Partial<JCanvasObject>): JCanvasObject;
 	(this: JCanvasObject, args?: Partial<JCanvasObject>): JCanvasObject;
+};
+
+type JCanvasLayerFunction = {
+	new (
+		this: JCanvasLayer,
+		canvas: HTMLCanvasElement,
+		params: JCanvasObject
+	): JCanvasLayer;
+	(
+		this: JCanvasLayer,
+		canvas: HTMLCanvasElement,
+		params: JCanvasObject
+	): JCanvasLayer;
 };
 
 interface JQueryStatic {
@@ -96,18 +109,18 @@ interface JQueryStatic {
 interface JQuery {
 	getEventHooks(): JCanvasEventHooks;
 	setEventHooks(eventHooks: JCanvasEventHooks): JQuery;
-	getLayers(callback?: JCanvasGetLayersCallback): JCanvasObject[];
-	getLayer(layerId: JCanvasLayerId): JCanvasObject | undefined;
-	getLayerGroup(groupId: jCanvasLayerGroupId): JCanvasObject[] | undefined;
+	getLayers(callback?: JCanvasGetLayersCallback): JCanvasLayer[];
+	getLayer(layerId: JCanvasLayerId): JCanvasLayer | undefined;
+	getLayerGroup(groupId: jCanvasLayerGroupId): JCanvasLayer[] | undefined;
 	getLayerIndex(layerId: JCanvasLayerId): number;
 	setLayer(layerId: JCanvasLayerId, props: Partial<JCanvasObject>): JQuery;
 	setLayers(
-		props: Partial<JCanvasObject>,
+		props: Partial<JCanvasLayer>,
 		callback: JCanvasGetLayersCallback
 	): JQuery;
 	setLayerGroup(
 		groupId: jCanvasLayerGroupId,
-		props: Partial<JCanvasObject>
+		props: Partial<JCanvasLayer>
 	): JQuery;
 	moveLayer(layerId: JCanvasLayerId, index: number): JQuery;
 	removeLayer(layerId: JCanvasLayerId): JQuery;
@@ -277,8 +290,8 @@ interface JCanvasDefaults {
 	dragstop?: JCanvasLayerCallback;
 	drag?: JCanvasLayerCallback;
 	dragcancel?: JCanvasLayerCallback;
-	updateDragX?: (layer: JCanvasObject, newX: number) => number;
-	updateDragY?: (layer: JCanvasObject, newY: number) => number;
+	updateDragX?: (layer: JCanvasLayer, newX: number) => number;
+	updateDragY?: (layer: JCanvasLayer, newY: number) => number;
 	pointerdown?: JCanvasLayerCallback;
 	pointerup?: JCanvasLayerCallback;
 	pointermove?: JCanvasLayerCallback;
@@ -288,7 +301,7 @@ interface JCanvasDefaults {
 	change?: JCanvasLayerCallbackWithProps;
 	move?: JCanvasLayerCallback;
 	animatestart?: JCanvasLayerCallback;
-	animate?: (layer: JCanvasObject, fx: JQuery.Tween) => void;
+	animate?: (layer: JCanvasLayer, fx: JQuery.Tween) => void;
 	animateend?: JCanvasLayerCallback;
 	stop?: JCanvasLayerCallback;
 	delay?: JCanvasLayerCallback;
@@ -305,14 +318,19 @@ interface JCanvasDefaults {
 
 interface JCanvasObject extends JCanvasDefaults {}
 
+interface JCanvasLayer extends JCanvasObject {
+	canvas: NonNullable<JCanvasObject["canvas"]>;
+	_layer?: true;
+}
+
 interface JCanvasPropHooks {
 	[key: string]: JQuery.PropHook<JCanvasObject>;
 }
 
-type NumberProperties = {
+type JCanvasNumberParams = {
 	[K in keyof JCanvasObject]: JCanvasObject[K] extends number ? K : never;
 };
 
 type JCanvasAnimatableProps = {
-	[K in keyof NumberProperties]: NumberProperties[K] | number | string;
+	[K in keyof JCanvasNumberParams]: NumberProperties[K] | number | string;
 };
