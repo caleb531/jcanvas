@@ -4325,11 +4325,11 @@ $.fn.createGradient = function createGradient(args) {
 	const params = new jCanvasObject(args);
 	const canvas = $canvases[0];
 	if (!_isCanvas(canvas)) {
-		return;
+		return null;
 	}
 	const ctx = _getContext(canvas);
 	if (!ctx) {
-		return;
+		return null;
 	}
 	// Gradient coordinates must be defined
 	params.x1 = params.x1 || 0;
