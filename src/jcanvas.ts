@@ -1975,6 +1975,8 @@ function _normalizeColor(color: string) {
 		const normalizedColor = $.css(headElem, "color");
 		headElem.style.color = originalColor;
 		return normalizedColor;
+	} else {
+		return color;
 	}
 }
 
