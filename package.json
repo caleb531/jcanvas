@@ -10,7 +10,7 @@
     "build": "rollup -c",
     "prepare": "rollup -c",
     "watch": "rollup -c -w",
-    "lint": "eslint src/*.ts"
+    "lint": "eslint src/*.ts && tsc --noEmit"
   },
   "homepage": "https://projects.calebevans.me/jcanvas/",
   "author": "Caleb Evans",
