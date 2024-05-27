@@ -126,7 +126,7 @@ interface JQuery {
 	addLayer(args: Partial<JCanvasObject>): void;
 	animateLayer(
 		layerId: JCanvasLayerId,
-		props: Partial<JCanvasObject>,
+		props: Partial<JCanvasAnimatableProps>,
 		...args: any[]
 	): void;
 	animateLayerGroup(
@@ -172,6 +172,7 @@ interface JCanvasDefaults {
 	autosave: boolean;
 	baseline: CanvasRenderingContext2D["textBaseline"];
 	bringToFront: boolean;
+	canvas: HTMLCanvasElement | null;
 	ccw: boolean;
 	closed: boolean;
 	compositing: CanvasRenderingContext2D["globalCompositeOperation"];
@@ -183,6 +184,7 @@ interface JCanvasDefaults {
 	cursors: Record<string, string> | null;
 	disableEvents: boolean;
 	draggable: boolean;
+	dragging: boolean;
 	dragGroups: string[] | null;
 	groups: string[] | null;
 	d: string | null;
@@ -203,11 +205,13 @@ interface JCanvasDefaults {
 	inDegrees: boolean;
 	intangible: boolean;
 	index: number | null;
+	intersects: boolean;
 	letterSpacing: number | null;
 	lineHeight: number;
 	layer: boolean;
 	mask: boolean;
 	maxWidth: number | null;
+	method: keyof JQuery | null;
 	miterLimit: number;
 	name: string | null;
 	opacity: number;
@@ -273,6 +277,8 @@ interface JCanvasDefaults {
 	dragstop?: JCanvasLayerCallback;
 	drag?: JCanvasLayerCallback;
 	dragcancel?: JCanvasLayerCallback;
+	updateDragX?: (layer: JCanvasObject, newX: number) => number;
+	updateDragY?: (layer: JCanvasObject, newY: number) => number;
 	pointerdown?: JCanvasLayerCallback;
 	pointerup?: JCanvasLayerCallback;
 	pointermove?: JCanvasLayerCallback;
@@ -286,6 +292,14 @@ interface JCanvasDefaults {
 	animateend?: JCanvasLayerCallback;
 	stop?: JCanvasLayerCallback;
 	delay?: JCanvasLayerCallback;
+	[key: `x${number}`]: number;
+	[key: `y${number}`]: number;
+	[key: `cx${number}`]: number;
+	[key: `cy${number}`]: number;
+	[key: `a${number}`]: number;
+	[key: `l${number}`]: number;
+	[key: `p${number}`]: number;
+	[key: `_${string}`]: any;
 	[key: string]: any;
 }
 
@@ -294,3 +308,11 @@ interface JCanvasObject extends JCanvasDefaults {}
 interface JCanvasPropHooks {
 	[key: string]: JQuery.PropHook<JCanvasObject>;
 }
+
+type NumberProperties = {
+	[K in keyof JCanvasObject]: JCanvasObject[K] extends number ? K : never;
+};
+
+type JCanvasAnimatableProps = {
+	[K in keyof NumberProperties]: NumberProperties[K] | number | string;
+};

@@ -112,6 +112,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	autosave: boolean = true;
 	baseline: CanvasRenderingContext2D["textBaseline"] = "middle";
 	bringToFront: boolean = false;
+	canvas: HTMLCanvasElement | null = null;
 	ccw: boolean = false;
 	closed: boolean = false;
 	compositing: CanvasRenderingContext2D["globalCompositeOperation"] =
@@ -124,6 +125,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	cursors: Record<string, string> | null = null;
 	disableEvents: boolean = false;
 	draggable: boolean = false;
+	dragging: boolean = false;
 	dragGroups: string[] | null = null;
 	groups: string[] | null = null;
 	d: string | null = null;
@@ -145,11 +147,13 @@ class jCanvasDefaults implements JCanvasDefaults {
 	inDegrees: boolean = true;
 	intangible: boolean = false;
 	index: number | null = null;
+	intersects: boolean = false;
 	letterSpacing: number | null = null;
 	lineHeight: number = 1;
 	layer: boolean = false;
 	mask: boolean = false;
 	maxWidth: number | null = null;
+	method: keyof JQuery | null = null;
 	miterLimit: number = 10;
 	name: string | null = null;
 	opacity: number = 1;
@@ -193,6 +197,14 @@ class jCanvasDefaults implements JCanvasDefaults {
 	width: number | null = null;
 	x: number = 0;
 	y: number = 0;
+	[key: `x${number}`]: number;
+	[key: `y${number}`]: number;
+	[key: `cx${number}`]: number;
+	[key: `cy${number}`]: number;
+	[key: `a${number}`]: number;
+	[key: `l${number}`]: number;
+	[key: `p${number}`]: number;
+	[key: `_${string}`]: any;
 	[key: string]: any;
 }
 const defaults = new jCanvasDefaults();
