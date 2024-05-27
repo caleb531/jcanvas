@@ -651,6 +651,7 @@ function _addLayerEvents(
 	}
 	if (!data.events.mouseout) {
 		$canvas.on("mouseout.jCanvas", function () {
+			let shouldRedraw = false;
 			// Retrieve the layer whose drag event was canceled
 			const dragLayer = data.drag.layer;
 			// If cursor mouses out of canvas while dragging
@@ -658,6 +659,7 @@ function _addLayerEvents(
 				// Cancel drag
 				data.drag = { layer: null, dragging: false };
 				_triggerLayerEvent($canvas, data, dragLayer, "dragcancel");
+				shouldRedraw = true;
 			}
 			// Loop through all layers
 			for (let l = 0; l < data.layers.length; l += 1) {
@@ -666,10 +668,13 @@ function _addLayerEvents(
 				if (layer && layer._hovered) {
 					// Trigger mouseout on layer
 					$canvas.triggerLayerEvent(data.layers[l], "mouseout");
+					shouldRedraw = true;
 				}
 			}
-			// Redraw layers
-			$canvas.drawLayers();
+			// Redraw layers only if an event has been triggered
+			if (shouldRedraw) {
+				$canvas.drawLayers();
+			}
 		});
 		// Indicate that an event handler has been bound
 		data.events.mouseout = true;
