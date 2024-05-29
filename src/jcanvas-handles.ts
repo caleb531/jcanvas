@@ -6,6 +6,13 @@
 import "jcanvas";
 import $ from "jquery";
 
+interface JCanvasLayerWithHandles extends JCanvasLayer {
+	handlePlacement?: "sides" | "corners" | "both";
+	aspectRatio?: number | null;
+	handle?: JCanvasLayer | null;
+	guide?: JCanvasLayer | null;
+}
+
 // Add a 'resizeFromCenter' property for rectangles
 $.extend($.jCanvas.defaults, {
 	handle: null,
@@ -16,10 +23,10 @@ $.extend($.jCanvas.defaults, {
 	handlePlacement: "corners",
 	minWidth: 0,
 	minHeight: 0,
-});
+} as Partial<JCanvasLayerWithHandles>);
 
 // Determines if the given layer is a rectangular layer
-function isRectLayer(layer: JCanvasLayer) {
+function isRectLayer(layer: JCanvasLayerWithHandles) {
 	const method = layer._method;
 	return (
 		method === $.fn.drawRect ||
@@ -29,7 +36,7 @@ function isRectLayer(layer: JCanvasLayer) {
 }
 
 // Determines if the given layer is a rectangular layer
-function isPathLayer(layer: JCanvasLayer) {
+function isPathLayer(layer: JCanvasLayerWithHandles) {
 	const method = layer._method;
 	return (
 		method === $.fn.drawLine ||
@@ -41,9 +48,9 @@ function isPathLayer(layer: JCanvasLayer) {
 // Add a single handle to line path
 function addPathHandle(
 	$canvas: JQuery<HTMLCanvasElement>,
-	parent: JCanvasLayer,
-	xProp: string,
-	yProp: string
+	parent: JCanvasLayerWithHandles,
+	xProp: `x${number}` | `cx${number}`,
+	yProp: `y${number}` | `cy${number}`
 ) {
 	const handle = $.extend(
 		{
@@ -81,7 +88,7 @@ function addPathHandle(
 			dragcancel: function (layer) {
 				$(this).triggerLayerEvent(layer._parent, "handlecancel");
 			},
-		} as Partial<JCanvasLayer>
+		} as Partial<JCanvasLayerWithHandles>
 	);
 	$canvas.draw(handle);
 	// Add handle to parent layer's list of handles
@@ -91,7 +98,7 @@ function addPathHandle(
 // Add a single handle to rectangle
 function addRectHandle(
 	$canvas: JQuery<HTMLCanvasElement>,
-	parent: JCanvasLayer,
+	parent: JCanvasLayerWithHandles,
 	px: number,
 	py: number
 ) {
@@ -215,7 +222,7 @@ function addRectHandle(
 				const parent = layer._parent;
 				$(this).triggerLayerEvent(parent, "handlecancel");
 			},
-		} as Partial<JCanvasLayer>
+		} as Partial<JCanvasLayerWithHandles>
 	);
 	$canvas.draw(handle);
 	// Add handle to parent layer's list of handles
@@ -225,7 +232,7 @@ function addRectHandle(
 // Add all handles to rectangle
 function addRectHandles(
 	$canvas: JQuery<HTMLCanvasElement>,
-	parent: JCanvasLayer
+	parent: JCanvasLayerWithHandles
 ) {
 	const handlePlacement = parent.handlePlacement;
 	const nonNullWidth = parent.width || 0;
@@ -255,7 +262,7 @@ function addRectHandles(
 }
 
 // Update handle guides for rectangular layer
-function updateRectGuides(parent: JCanvasLayer) {
+function updateRectGuides(parent: JCanvasLayerWithHandles) {
 	const guide = parent._guide;
 	if (guide) {
 		guide.x = parent.x;
@@ -269,7 +276,7 @@ function updateRectGuides(parent: JCanvasLayer) {
 // Add handle guides to rectangular layer
 function addRectGuides(
 	$canvas: JQuery<HTMLCanvasElement>,
-	parent: JCanvasLayer
+	parent: JCanvasLayerWithHandles
 ) {
 	const guideProps = $.extend({}, parent.guide, {
 		layer: true,
@@ -287,15 +294,15 @@ function addRectGuides(
 // Add handles to line path
 function addPathHandles(
 	$canvas: JQuery<HTMLCanvasElement>,
-	parent: JCanvasLayer
+	parent: JCanvasLayerWithHandles
 ) {
 	for (const key in parent) {
 		if (Object.prototype.hasOwnProperty.call(parent, key)) {
 			// If property is a control point
 			if (key.match(/c?x(\d+)/gi) !== null) {
 				// Get the x and y coordinates for that control point
-				const xProp = key;
-				const yProp = key.replace("x", "y");
+				const xProp = key as `x${number}` | `cx${number}`;
+				const yProp = key.replace("x", "y") as `y${number}` | `cy${number}`;
 				// Add handle at control point
 				addPathHandle($canvas, parent, xProp, yProp);
 			}
@@ -308,7 +315,7 @@ function addPathHandles(
 }
 
 // Update handle guides for line path
-function updatePathGuides(parent: JCanvasLayer) {
+function updatePathGuides(parent: JCanvasLayerWithHandles) {
 	let handles = parent._handles;
 	const guides = parent._guides;
 
@@ -343,7 +350,7 @@ function updatePathGuides(parent: JCanvasLayer) {
 // Add guides to path layer
 function addPathGuides(
 	$canvas: JQuery<HTMLCanvasElement>,
-	parent: JCanvasLayer
+	parent: JCanvasLayerWithHandles
 ) {
 	const handles = parent._handles;
 	const guideProps = $.extend({}, parent.guide, {
@@ -394,7 +401,7 @@ function addPathGuides(
 
 // Update position of handles according to
 // size and dimensions of rectangular layer
-function updateRectHandles(parent: JCanvasLayer) {
+function updateRectHandles(parent: JCanvasLayerWithHandles) {
 	const nonNullWidth = parent.width || 0;
 	const nonNullHeight = parent.height || 0;
 	if (parent._handles) {
@@ -416,7 +423,7 @@ function updateRectHandles(parent: JCanvasLayer) {
 
 // Update position of handles according to
 // coordinates and dimensions of path layer
-function updatePathHandles(parent: JCanvasLayer) {
+function updatePathHandles(parent: JCanvasLayerWithHandles) {
 	const handles = parent._handles;
 	if (handles) {
 		// Move handles when dragging
@@ -430,7 +437,7 @@ function updatePathHandles(parent: JCanvasLayer) {
 }
 
 // Add drag handles to all four corners of rectangle layer
-function addHandles(parent: JCanvasLayer) {
+function addHandles(parent: JCanvasLayerWithHandles) {
 	const $canvas = $(parent.canvas);
 
 	// If parent's list of handles doesn't exist
@@ -449,7 +456,7 @@ function addHandles(parent: JCanvasLayer) {
 }
 
 // Remove handles if handle property was removed
-function removeHandles(layer: JCanvasLayer) {
+function removeHandles(layer: JCanvasLayerWithHandles) {
 	const $canvas = $(layer.canvas);
 	if (layer._handles) {
 		// Remove handles from layer
@@ -475,7 +482,7 @@ function objectContainsPathCoords(obj: object) {
 
 $.extend($.jCanvas.eventHooks, {
 	// If necessary, add handles when layer is added
-	add: function (layer) {
+	add: function (layer: JCanvasLayerWithHandles) {
 		if (layer.handle) {
 			addHandles(layer);
 		}
@@ -493,7 +500,7 @@ $.extend($.jCanvas.eventHooks, {
 		}
 	},
 	// Update handle positions when changing parent layer's dimensions
-	change: function (layer, props: Partial<JCanvasLayer>) {
+	change: function (layer, props: Partial<JCanvasLayerWithHandles>) {
 		if (props.handle || objectContainsPathCoords(props)) {
 			// Add handles if handle property was added
 			removeHandles(layer);

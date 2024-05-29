@@ -674,7 +674,7 @@ function _addLayerEvents(
 		if (Object.prototype.hasOwnProperty.call(jCanvas.events, eventName)) {
 			// If layer has callback function to complement it
 			if (
-				layer[eventName as keyof typeof layer] ||
+				layer[eventName as keyof JCanvasLayer] ||
 				(layer.cursors && layer.cursors[eventName])
 			) {
 				// Bind event to layer
@@ -1042,7 +1042,7 @@ $.fn.setLayer = function setLayer(layerId, props) {
 					if (propType === "object" && isPlainObject(propValue)) {
 						// Clone objects
 						layer[propName as any] = extendObject({}, propValue);
-						_coerceNumericProps(layer[propName as keyof typeof layer]);
+						_coerceNumericProps(layer[propName as keyof JCanvasLayer]);
 					} else if (propType === "array") {
 						// Clone arrays
 						layer[propName as any] = propValue.slice(0);
@@ -1709,7 +1709,7 @@ $.fn.drawLayers = function drawLayers(args) {
 
 		if (layer && eventType) {
 			// Use mouse event callbacks if no touch event callbacks are given
-			if (!layer[eventType as keyof typeof layer]) {
+			if (!layer[eventType as keyof JCanvasLayer]) {
 				eventType = _getMouseEventName(eventType);
 			}
 
@@ -1798,7 +1798,7 @@ function _addLayer(
 		} else if (params.method) {
 			params._method = $.fn[params.method];
 		} else if (params.type) {
-			params._method = $.fn[maps.drawings[params.type] as keyof typeof $.fn];
+			params._method = $.fn[maps.drawings[params.type] as keyof JQuery];
 		}
 	}
 
@@ -1909,7 +1909,7 @@ $.fn.addLayer = function addLayer(args) {
 function _showProps(obj: Partial<JCanvasObject>) {
 	for (let p = 0; p < css.props.length; p += 1) {
 		const cssProp = css.props[p];
-		obj[cssProp as keyof typeof obj] = obj[("_" + cssProp) as keyof typeof obj];
+		obj[cssProp as keyof typeof obj] = obj[("_" + cssProp) as `_${string}`];
 	}
 }
 function _hideProps(obj: Partial<JCanvasObject>, reset?: boolean) {
@@ -1917,8 +1917,7 @@ function _hideProps(obj: Partial<JCanvasObject>, reset?: boolean) {
 		const cssProp = css.props[p];
 		// Hide property using same name with leading underscore
 		if (obj[cssProp as keyof typeof obj] !== undefined) {
-			obj[("_" + cssProp) as keyof typeof obj] =
-				obj[cssProp as keyof typeof obj];
+			obj[("_" + cssProp) as `_${string}`] = obj[cssProp as keyof typeof obj];
 			css.propsObj[cssProp] = true;
 			if (reset) {
 				delete obj[cssProp as keyof typeof obj];
@@ -1949,9 +1948,9 @@ function _parseEndValues(
 					if (Object.prototype.hasOwnProperty.call(propValue, subPropName)) {
 						const subPropValue = propValue[subPropName];
 						// Store property's start value at top-level of layer
-						if (layer[propName as keyof typeof layer] !== undefined) {
+						if (layer[propName as keyof JCanvasLayer] !== undefined) {
 							layer[(propName + "." + subPropName) as any] =
-								layer[propName as keyof typeof layer][subPropName];
+								layer[propName as keyof JCanvasLayer][subPropName];
 							// Store property's end value at top-level of end values map
 							endValues[propName + "." + subPropName] = subPropValue;
 						}
@@ -1970,7 +1969,7 @@ function _removeSubPropAliases(layer: JCanvasLayer) {
 	for (const propName in layer) {
 		if (Object.prototype.hasOwnProperty.call(layer, propName)) {
 			if (propName.indexOf(".") !== -1) {
-				delete layer[propName as keyof typeof layer];
+				delete layer[propName as keyof JCanvasLayer];
 			}
 		}
 	}
@@ -2122,7 +2121,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 				hidden = true;
 				// Unhide property temporarily
 				fx.prop = fx.prop.replace("_", "");
-				layer[fx.prop] = layer[("_" + fx.prop) as keyof typeof layer];
+				layer[fx.prop] = layer[("_" + fx.prop) as keyof JCanvasLayer];
 			}
 
 			// If animating property of sub-object
@@ -2130,8 +2129,8 @@ $.fn.animateLayer = function animateLayer(...args) {
 				parts = fx.prop.split(".");
 				propName = parts[0];
 				subPropName = parts[1];
-				if (layer[propName as keyof typeof layer]) {
-					layer[propName as keyof typeof layer][subPropName] = fx.now;
+				if (layer[propName as keyof JCanvasLayer]) {
+					layer[propName as keyof JCanvasLayer][subPropName] = fx.now;
 				}
 			}
 
@@ -2556,7 +2555,7 @@ $.fn.draw = function draw(args) {
 	const params = _getParamsObject(args);
 
 	// Draw using any other method
-	const fn = $.fn[maps.drawings[params.type!] as keyof typeof $.fn];
+	const fn = $.fn[maps.drawings[params.type!] as keyof JQuery];
 	if (params.type && maps.drawings[params.type] && isFunction(fn)) {
 		// @ts-expect-error TODO (not sure how to fix this: "This expression is
 		// not callable. Each member of the union type '...' has signatures, but
@@ -3304,8 +3303,8 @@ function _drawLine(
 	}
 	while (true) {
 		// Calculate next coordinates
-		const lx = path[("x" + l) as keyof typeof path];
-		const ly = path[("y" + l) as keyof typeof path];
+		const lx = path[("x" + l) as `x${number}`];
+		const ly = path[("y" + l) as `y${number}`];
 		// If coordinates are given
 		if (lx !== undefined && ly !== undefined) {
 			// Draw next line
@@ -3323,10 +3322,10 @@ function _drawLine(
 		ctx,
 		params,
 		path,
-		path[("x" + (l - 1)) as keyof typeof path] + params.x,
-		path[("y" + (l - 1)) as keyof typeof path] + params.y,
-		path[("x" + l) as keyof typeof path] + params.x,
-		path[("y" + l) as keyof typeof path] + params.y
+		path[("x" + (l - 1)) as `x${number}`] + params.x,
+		path[("y" + (l - 1)) as `y${number}`] + params.y,
+		path[("x" + l) as `x${number}`] + params.x,
+		path[("y" + l) as `y${number}`] + params.y
 	);
 }
 
@@ -3387,10 +3386,10 @@ function _drawQuadratic(
 	}
 	while (true) {
 		// Calculate next coordinates
-		const lx = path[("x" + l) as keyof typeof path];
-		const ly = path[("y" + l) as keyof typeof path];
-		const lcx = path[("cx" + (l - 1)) as keyof typeof path];
-		const lcy = path[("cy" + (l - 1)) as keyof typeof path];
+		const lx = path[("x" + l) as `x${number}`];
+		const ly = path[("y" + l) as `y${number}`];
+		const lcx = path[("cx" + (l - 1)) as `cx${number}`];
+		const lcy = path[("cy" + (l - 1)) as `cy${number}`];
 		// If coordinates are given
 		if (
 			lx !== undefined &&
@@ -3417,10 +3416,10 @@ function _drawQuadratic(
 		ctx,
 		params,
 		path,
-		path[("cx" + (l - 1)) as keyof typeof path] + params.x,
-		path[("cy" + (l - 1)) as keyof typeof path] + params.y,
-		path[("x" + l) as keyof typeof path] + params.x,
-		path[("y" + l) as keyof typeof path] + params.y
+		path[("cx" + (l - 1)) as `cx${number}`] + params.x,
+		path[("cy" + (l - 1)) as `cy${number}`] + params.y,
+		path[("x" + l) as `x${number}`] + params.x,
+		path[("y" + l) as `y${number}`] + params.y
 	);
 }
 
@@ -3482,12 +3481,12 @@ function _drawBezier(
 	}
 	while (true) {
 		// Calculate next coordinates
-		const lx = path[("x" + l) as keyof typeof path];
-		const ly = path[("y" + l) as keyof typeof path];
-		const lcx1 = path[("cx" + lc) as keyof typeof path];
-		const lcy1 = path[("cy" + lc) as keyof typeof path];
-		const lcx2 = path[("cx" + (lc + 1)) as keyof typeof path];
-		const lcy2 = path[("cy" + (lc + 1)) as keyof typeof path];
+		const lx = path[("x" + l) as `x${number}`];
+		const ly = path[("y" + l) as `y${number}`];
+		const lcx1 = path[("cx" + lc) as `cx${number}`];
+		const lcy1 = path[("cy" + lc) as `cy${number}`];
+		const lcx2 = path[("cx" + (lc + 1)) as `cx${number}`];
+		const lcy2 = path[("cy" + (lc + 1)) as `cy${number}`];
 		// If next coordinates are given
 		if (
 			lx !== undefined &&
@@ -3520,10 +3519,10 @@ function _drawBezier(
 		ctx,
 		params,
 		path,
-		path[("cx" + (lc + 1)) as keyof typeof path] + params.x,
-		path[("cy" + (lc + 1)) as keyof typeof path] + params.y,
-		path[("x" + l) as keyof typeof path] + params.x,
-		path[("y" + l) as keyof typeof path] + params.y
+		path[("cx" + (lc + 1)) as `cx${number}`] + params.x,
+		path[("cy" + (lc + 1)) as `cy${number}`] + params.y,
+		path[("x" + l) as `x${number}`] + params.x,
+		path[("y" + l) as `y${number}`] + params.y
 	);
 }
 
@@ -3614,8 +3613,8 @@ function _drawVector(
 		ctx.moveTo(x, y);
 	}
 	while (true) {
-		const angle = path[("a" + l) as keyof typeof path];
-		const length = path[("l" + l) as keyof typeof path];
+		const angle = path[("a" + l) as `a${number}`];
+		const length = path[("l" + l) as `l${number}`];
 
 		if (angle !== undefined && length !== undefined) {
 			// Convert the angle to radians with 0 degrees starting at north

@@ -332,7 +332,7 @@ interface JCanvasLayer extends JCanvasObject {
 }
 
 interface JCanvasPropHooks {
-	[key: string]: JQuery.PropHook<JCanvasObject>;
+	[key: string]: JQuery.PropHook<JCanvasLayer>;
 }
 
 type JCanvasNumberParams = {
