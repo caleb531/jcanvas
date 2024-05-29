@@ -205,10 +205,12 @@ interface JCanvasDefaults {
 	dx: number;
 	dy: number;
 	end: number;
+	endArrow: boolean;
 	eventX: number | null;
 	eventY: number | null;
 	fillRule: CanvasFillRule;
 	fillStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction;
+	flipArcText: boolean;
 	fontStyle: string;
 	fontSize: string;
 	fontFamily: string;
@@ -249,12 +251,14 @@ interface JCanvasDefaults {
 	source: string | HTMLImageElement | HTMLCanvasElement;
 	spread: number;
 	start: number;
+	startArrow: boolean;
 	strokeCap: CanvasRenderingContext2D["lineCap"];
 	strokeDash: number[] | null;
 	strokeDashOffset: CanvasRenderingContext2D["lineDashOffset"];
 	strokeJoin: CanvasRenderingContext2D["lineJoin"];
 	strokeStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction;
 	strokeWidth: number;
+	style: Record<string, boolean>;
 	sWidth: number | null;
 	sx: number | null;
 	sy: number | null;
@@ -275,6 +279,11 @@ interface JCanvasDefaults {
 	load?: (
 		this: HTMLCanvasElement,
 		arg: JCanvasObject | CanvasPattern | null
+	) => void;
+	fn?: (
+		this: HTMLCanvasElement,
+		ctx: CanvasRenderingContext2D,
+		params: JCanvasObject
 	) => void;
 	click?: JCanvasLayerCallback;
 	dblclick?: JCanvasLayerCallback;
@@ -313,7 +322,6 @@ interface JCanvasDefaults {
 	[key: `l${number}`]: number;
 	[key: `p${number}`]: number;
 	[key: `_${string}`]: any;
-	[key: string]: any;
 }
 
 interface JCanvasObject extends JCanvasDefaults {}

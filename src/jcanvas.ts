@@ -133,11 +133,13 @@ class jCanvasDefaults implements JCanvasDefaults {
 	dx: number = 0;
 	dy: number = 0;
 	end: number = 360;
+	endArrow: boolean = false;
 	eventX: number | null = null;
 	eventY: number | null = null;
 	fillRule: CanvasFillRule = "nonzero";
 	fillStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction =
 		"transparent";
+	flipArcText: boolean = false;
 	fontStyle: string = "normal";
 	fontSize: string = "12pt";
 	fontFamily: string = "sans-serif";
@@ -178,6 +180,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	source: string | HTMLImageElement | HTMLCanvasElement = "";
 	spread: number = 0;
 	start: number = 0;
+	startArrow: boolean = true;
 	strokeCap: CanvasRenderingContext2D["lineCap"] = "butt";
 	strokeDash: number[] | null = null;
 	strokeDashOffset: CanvasRenderingContext2D["lineDashOffset"] = 0;
@@ -185,6 +188,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	strokeStyle: string | CanvasGradient | CanvasPattern | JCanvasStyleFunction =
 		"transparent";
 	strokeWidth: number = 1;
+	style: Record<string, boolean> = {};
 	sWidth: number | null = null;
 	sx: number | null = null;
 	sy: number | null = null;
@@ -205,7 +209,6 @@ class jCanvasDefaults implements JCanvasDefaults {
 	[key: `l${number}`]: number;
 	[key: `p${number}`]: number;
 	[key: `_${string}`]: any;
-	[key: string]: any;
 }
 const defaults = new jCanvasDefaults();
 
@@ -226,6 +229,10 @@ const jCanvasLayer: JCanvasLayerFunction = function jCanvasLayer(
 	});
 } as JCanvasLayerFunction;
 jCanvasLayer.prototype = jCanvasObject.prototype;
+
+function _getParamsObject(args?: Partial<JCanvasObject>) {
+	return args?._layer ? (args as JCanvasLayer) : new jCanvasObject(args);
+}
 
 /* Internal helper methods */
 
@@ -261,7 +268,7 @@ function _coerceNumericProps(props: Partial<JCanvasObject>) {
 	// Loop through all properties in given property map
 	for (const propName in props) {
 		if (Object.prototype.hasOwnProperty.call(props, propName)) {
-			const propValue = props[propName];
+			const propValue = props[propName as keyof typeof props];
 			const propType = typeOf(propValue);
 			// If property is non-empty string and value is numeric
 			if (
@@ -270,7 +277,7 @@ function _coerceNumericProps(props: Partial<JCanvasObject>) {
 				propName !== "text"
 			) {
 				// Convert value to number
-				props[propName] = parseFloat(String(propValue));
+				props[propName as keyof typeof props] = parseFloat(String(propValue));
 			}
 		}
 	}
@@ -554,7 +561,7 @@ jCanvas.extend = function extend(plugin) {
 				if (!ctx) {
 					continue;
 				}
-				const params = new jCanvasObject(args);
+				const params = _getParamsObject(args);
 				_addLayer(canvas, params, args, self);
 
 				_setGlobalProps(canvas, ctx, params);
@@ -666,7 +673,10 @@ function _addLayerEvents(
 	for (const eventName in jCanvas.events) {
 		if (Object.prototype.hasOwnProperty.call(jCanvas.events, eventName)) {
 			// If layer has callback function to complement it
-			if (layer[eventName] || (layer.cursors && layer.cursors[eventName])) {
+			if (
+				layer[eventName as keyof typeof layer] ||
+				(layer.cursors && layer.cursors[eventName])
+			) {
 				// Bind event to layer
 				_addExplicitLayerEvent($canvas, data, layer, eventName);
 			}
@@ -1027,36 +1037,36 @@ $.fn.setLayer = function setLayer(layerId, props) {
 			// Merge properties with layer
 			for (const propName in props) {
 				if (Object.prototype.hasOwnProperty.call(props, propName)) {
-					const propValue = props[propName];
+					const propValue = props[propName as keyof typeof props];
 					const propType = typeOf(propValue);
 					if (propType === "object" && isPlainObject(propValue)) {
 						// Clone objects
-						layer[propName] = extendObject({}, propValue);
-						_coerceNumericProps(layer[propName]);
+						layer[propName as any] = extendObject({}, propValue);
+						_coerceNumericProps(layer[propName as keyof typeof layer]);
 					} else if (propType === "array") {
 						// Clone arrays
-						layer[propName] = propValue.slice(0);
+						layer[propName as any] = propValue.slice(0);
 					} else if (propType === "string") {
 						if (propValue.indexOf("+=") === 0) {
 							// Increment numbers prefixed with +=
-							layer[propName] += parseFloat(propValue.substr(2));
+							layer[propName as any] += parseFloat(propValue.substr(2));
 						} else if (propValue.indexOf("-=") === 0) {
 							// Decrement numbers prefixed with -=
-							layer[propName] -= parseFloat(propValue.substr(2));
+							layer[propName as any] -= parseFloat(propValue.substr(2));
 						} else if (
 							!isNaN(propValue) &&
 							isNumeric(propValue) &&
 							propName !== "text"
 						) {
 							// Convert numeric values as strings to numbers
-							layer[propName] = parseFloat(String(propValue));
+							layer[propName as any] = parseFloat(String(propValue));
 						} else {
 							// Otherwise, set given string value
-							layer[propName] = propValue;
+							layer[propName as any] = propValue;
 						}
 					} else {
 						// Otherwise, set given value
-						layer[propName] = propValue;
+						layer[propName as any] = propValue;
 					}
 				}
 			}
@@ -1495,11 +1505,15 @@ function _runEventCallback(
 	$canvas: JQuery<HTMLCanvasElement>,
 	layer: JCanvasLayer,
 	eventType: string,
-	callbacks: Record<string, (layer: JCanvasLayer, arg: any) => void>,
+	callbacks: any,
 	arg: any
 ) {
 	// Prevent callback from firing recursively
-	if (callbacks[eventType] && layer._running && !layer._running[eventType]) {
+	if (
+		callbacks[eventType as any] &&
+		layer._running &&
+		!layer._running[eventType]
+	) {
 		// Signify the start of callback execution for this event
 		layer._running[eventType] = true;
 		// Run event callback with the given arguments
@@ -1695,7 +1709,7 @@ $.fn.drawLayers = function drawLayers(args) {
 
 		if (layer && eventType) {
 			// Use mouse event callbacks if no touch event callbacks are given
-			if (!layer[eventType]) {
+			if (!layer[eventType as keyof typeof layer]) {
 				eventType = _getMouseEventName(eventType);
 			}
 
@@ -1882,7 +1896,7 @@ $.fn.addLayer = function addLayer(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		params.layer = true;
 		_addLayer(canvas, params, args);
 	}
@@ -1895,18 +1909,19 @@ $.fn.addLayer = function addLayer(args) {
 function _showProps(obj: Partial<JCanvasObject>) {
 	for (let p = 0; p < css.props.length; p += 1) {
 		const cssProp = css.props[p];
-		obj[cssProp] = obj["_" + cssProp];
+		obj[cssProp as keyof typeof obj] = obj[("_" + cssProp) as keyof typeof obj];
 	}
 }
 function _hideProps(obj: Partial<JCanvasObject>, reset?: boolean) {
 	for (let p = 0; p < css.props.length; p += 1) {
 		const cssProp = css.props[p];
 		// Hide property using same name with leading underscore
-		if (obj[cssProp] !== undefined) {
-			obj["_" + cssProp] = obj[cssProp];
+		if (obj[cssProp as keyof typeof obj] !== undefined) {
+			obj[("_" + cssProp) as keyof typeof obj] =
+				obj[cssProp as keyof typeof obj];
 			css.propsObj[cssProp] = true;
 			if (reset) {
-				delete obj[cssProp];
+				delete obj[cssProp as keyof typeof obj];
 			}
 		}
 	}
@@ -1934,9 +1949,9 @@ function _parseEndValues(
 					if (Object.prototype.hasOwnProperty.call(propValue, subPropName)) {
 						const subPropValue = propValue[subPropName];
 						// Store property's start value at top-level of layer
-						if (layer[propName] !== undefined) {
-							layer[propName + "." + subPropName] =
-								layer[propName][subPropName];
+						if (layer[propName as keyof typeof layer] !== undefined) {
+							layer[(propName + "." + subPropName) as any] =
+								layer[propName as keyof typeof layer][subPropName];
 							// Store property's end value at top-level of end values map
 							endValues[propName + "." + subPropName] = subPropValue;
 						}
@@ -1955,7 +1970,7 @@ function _removeSubPropAliases(layer: JCanvasLayer) {
 	for (const propName in layer) {
 		if (Object.prototype.hasOwnProperty.call(layer, propName)) {
 			if (propName.indexOf(".") !== -1) {
-				delete layer[propName];
+				delete layer[propName as keyof typeof layer];
 			}
 		}
 	}
@@ -2107,7 +2122,7 @@ $.fn.animateLayer = function animateLayer(...args) {
 				hidden = true;
 				// Unhide property temporarily
 				fx.prop = fx.prop.replace("_", "");
-				layer[fx.prop] = layer["_" + fx.prop];
+				layer[fx.prop] = layer[("_" + fx.prop) as keyof typeof layer];
 			}
 
 			// If animating property of sub-object
@@ -2115,8 +2130,8 @@ $.fn.animateLayer = function animateLayer(...args) {
 				parts = fx.prop.split(".");
 				propName = parts[0];
 				subPropName = parts[1];
-				if (layer[propName]) {
-					layer[propName][subPropName] = fx.now;
+				if (layer[propName as keyof typeof layer]) {
+					layer[propName as keyof typeof layer][subPropName] = fx.now;
 				}
 			}
 
@@ -2305,10 +2320,10 @@ function _supportColorProps(props: string[]) {
 	for (let p = 0; p < props.length; p += 1) {
 		($.Tween.propHooks as JCanvasPropHooks)[props[p]] = {
 			get: function (tween) {
-				return tween.elem[tween.prop];
+				return tween.elem[tween.prop as keyof typeof tween.elem];
 			},
 			set: function (tween) {
-				tween.elem[tween.prop] = _blendColors(
+				tween.elem[tween.prop as any] = _blendColors(
 					tween.start as any,
 					tween.end as any,
 					tween.pos || 0
@@ -2538,7 +2553,7 @@ $.event.fix = function (event) {
 // Draws on canvas using a function
 $.fn.draw = function draw(args) {
 	const $canvases = this;
-	const params = new jCanvasObject(args);
+	const params = _getParamsObject(args);
 
 	// Draw using any other method
 	const fn = $.fn[maps.drawings[params.type!] as keyof typeof $.fn];
@@ -2557,7 +2572,7 @@ $.fn.draw = function draw(args) {
 			if (!ctx) {
 				continue;
 			}
-			const params = new jCanvasObject(args);
+			const params = _getParamsObject(args);
 			_addLayer(canvas, params, args, draw);
 			if (!params.visible) {
 				continue;
@@ -2574,7 +2589,7 @@ $.fn.draw = function draw(args) {
 // Clears canvas
 $.fn.clearCanvas = function clearCanvas(args) {
 	const $canvases = this;
-	const params = new jCanvasObject(args);
+	const params = _getParamsObject(args);
 
 	for (let e = 0; e < $canvases.length; e += 1) {
 		const canvas = $canvases[e];
@@ -2629,7 +2644,7 @@ $.fn.saveCanvas = function saveCanvas(args) {
 		}
 		const data = _getCanvasData(canvas);
 
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, saveCanvas);
 
 		// Restore a number of times using the given count
@@ -2655,7 +2670,7 @@ $.fn.restoreCanvas = function restoreCanvas(args) {
 		}
 		const data = _getCanvasData(canvas);
 
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, restoreCanvas);
 
 		// Restore a number of times using the given count
@@ -2748,7 +2763,7 @@ $.fn.rotateCanvas = function rotateCanvas(args) {
 		}
 		const data = _getCanvasData(canvas);
 
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, rotateCanvas);
 
 		// Autosave transformation state by default
@@ -2776,7 +2791,7 @@ $.fn.scaleCanvas = function scaleCanvas(args) {
 		}
 		const data = _getCanvasData(canvas);
 
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, scaleCanvas);
 
 		// Autosave transformation state by default
@@ -2804,7 +2819,7 @@ $.fn.translateCanvas = function translateCanvas(args) {
 		}
 		const data = _getCanvasData(canvas);
 
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, translateCanvas);
 
 		// Autosave transformation state by default
@@ -2832,7 +2847,7 @@ $.fn.drawRect = function drawRect(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawRect);
 		if (!params.visible) {
 			continue;
@@ -3001,7 +3016,7 @@ $.fn.drawArc = function drawArc(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawArc);
 		if (!params.visible) {
 			continue;
@@ -3032,7 +3047,7 @@ $.fn.drawEllipse = function drawEllipse(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawEllipse);
 		if (!params.visible) {
 			continue;
@@ -3062,7 +3077,7 @@ $.fn.drawPolygon = function drawPolygon(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawPolygon);
 		if (!params.visible) {
 			continue;
@@ -3126,7 +3141,7 @@ $.fn.drawSlice = function drawSlice(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawSlice);
 		if (!params.visible) {
 			continue;
@@ -3289,8 +3304,8 @@ function _drawLine(
 	}
 	while (true) {
 		// Calculate next coordinates
-		const lx = path["x" + l];
-		const ly = path["y" + l];
+		const lx = path[("x" + l) as keyof typeof path];
+		const ly = path[("y" + l) as keyof typeof path];
 		// If coordinates are given
 		if (lx !== undefined && ly !== undefined) {
 			// Draw next line
@@ -3308,10 +3323,10 @@ function _drawLine(
 		ctx,
 		params,
 		path,
-		path["x" + (l - 1)] + params.x,
-		path["y" + (l - 1)] + params.y,
-		path["x" + l] + params.x,
-		path["y" + l] + params.y
+		path[("x" + (l - 1)) as keyof typeof path] + params.x,
+		path[("y" + (l - 1)) as keyof typeof path] + params.y,
+		path[("x" + l) as keyof typeof path] + params.x,
+		path[("y" + l) as keyof typeof path] + params.y
 	);
 }
 
@@ -3328,7 +3343,7 @@ $.fn.drawLine = function drawLine(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawLine);
 		if (!params.visible) {
 			continue;
@@ -3372,10 +3387,10 @@ function _drawQuadratic(
 	}
 	while (true) {
 		// Calculate next coordinates
-		const lx = path["x" + l];
-		const ly = path["y" + l];
-		const lcx = path["cx" + (l - 1)];
-		const lcy = path["cy" + (l - 1)];
+		const lx = path[("x" + l) as keyof typeof path];
+		const ly = path[("y" + l) as keyof typeof path];
+		const lcx = path[("cx" + (l - 1)) as keyof typeof path];
+		const lcy = path[("cy" + (l - 1)) as keyof typeof path];
 		// If coordinates are given
 		if (
 			lx !== undefined &&
@@ -3402,10 +3417,10 @@ function _drawQuadratic(
 		ctx,
 		params,
 		path,
-		path["cx" + (l - 1)] + params.x,
-		path["cy" + (l - 1)] + params.y,
-		path["x" + l] + params.x,
-		path["y" + l] + params.y
+		path[("cx" + (l - 1)) as keyof typeof path] + params.x,
+		path[("cy" + (l - 1)) as keyof typeof path] + params.y,
+		path[("x" + l) as keyof typeof path] + params.x,
+		path[("y" + l) as keyof typeof path] + params.y
 	);
 }
 
@@ -3422,7 +3437,7 @@ $.fn.drawQuadratic = function drawQuadratic(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawQuadratic);
 		if (!params.visible) {
 			continue;
@@ -3467,12 +3482,12 @@ function _drawBezier(
 	}
 	while (true) {
 		// Calculate next coordinates
-		const lx = path["x" + l];
-		const ly = path["y" + l];
-		const lcx1 = path["cx" + lc];
-		const lcy1 = path["cy" + lc];
-		const lcx2 = path["cx" + (lc + 1)];
-		const lcy2 = path["cy" + (lc + 1)];
+		const lx = path[("x" + l) as keyof typeof path];
+		const ly = path[("y" + l) as keyof typeof path];
+		const lcx1 = path[("cx" + lc) as keyof typeof path];
+		const lcy1 = path[("cy" + lc) as keyof typeof path];
+		const lcx2 = path[("cx" + (lc + 1)) as keyof typeof path];
+		const lcy2 = path[("cy" + (lc + 1)) as keyof typeof path];
 		// If next coordinates are given
 		if (
 			lx !== undefined &&
@@ -3505,10 +3520,10 @@ function _drawBezier(
 		ctx,
 		params,
 		path,
-		path["cx" + (lc + 1)] + params.x,
-		path["cy" + (lc + 1)] + params.y,
-		path["x" + l] + params.x,
-		path["y" + l] + params.y
+		path[("cx" + (lc + 1)) as keyof typeof path] + params.x,
+		path[("cy" + (lc + 1)) as keyof typeof path] + params.y,
+		path[("x" + l) as keyof typeof path] + params.x,
+		path[("y" + l) as keyof typeof path] + params.y
 	);
 }
 
@@ -3525,7 +3540,7 @@ $.fn.drawBezier = function drawBezier(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawBezier);
 		if (!params.visible) {
 			continue;
@@ -3599,8 +3614,8 @@ function _drawVector(
 		ctx.moveTo(x, y);
 	}
 	while (true) {
-		const angle = path["a" + l];
-		const length = path["l" + l];
+		const angle = path[("a" + l) as keyof typeof path];
+		const length = path[("l" + l) as keyof typeof path];
 
 		if (angle !== undefined && length !== undefined) {
 			// Convert the angle to radians with 0 degrees starting at north
@@ -3633,7 +3648,7 @@ $.fn.drawVector = function drawVector(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawVector);
 		if (!params.visible) {
 			continue;
@@ -3665,7 +3680,7 @@ $.fn.drawPath = function drawPath(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		if (params.d) {
 			// The only way to offset an SVG path drawn with Path2D() is to
 			// translate it (making sure we undo the translation it at the end
@@ -3687,7 +3702,7 @@ $.fn.drawPath = function drawPath(args) {
 			ctx.beginPath();
 			let l = 1;
 			while (true) {
-				let lp = params["p" + l];
+				let lp = params[("p" + l) as keyof typeof params];
 				if (lp !== undefined) {
 					lp = new jCanvasObject(lp);
 					if (lp.type === "line") {
@@ -3863,7 +3878,7 @@ $.fn.drawText = function drawText(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, drawText);
 		if (!params.visible) {
 			continue;
@@ -4217,7 +4232,7 @@ $.fn.drawImage = function drawImage(args) {
 			continue;
 		}
 		const data = _getCanvasData(canvas);
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		const layer = _addLayer(canvas, params, args, drawImage);
 		if (!params.visible) {
 			continue;
@@ -4290,7 +4305,7 @@ $.fn.createPattern = function createPattern(args) {
 	if (!ctx) {
 		return null;
 	}
-	const params = new jCanvasObject(args);
+	const params = _getParamsObject(args);
 
 	// Cache the given source
 	const source = params.source;
@@ -4345,7 +4360,7 @@ $.fn.createGradient = function createGradient(args) {
 	let gradient: CanvasGradient | null = null;
 	const stops: (number | null)[] = [];
 
-	const params = new jCanvasObject(args);
+	const params = _getParamsObject(args);
 	const canvas = $canvases[0];
 	if (!_isCanvas(canvas)) {
 		return null;
@@ -4381,9 +4396,13 @@ $.fn.createGradient = function createGradient(args) {
 	}
 
 	// Count number of color stops
-	for (let i = 1; params["c" + i] !== undefined; i += 1) {
-		if (params["s" + i] !== undefined) {
-			stops.push(params["s" + i]);
+	for (
+		let i = 1;
+		params[("c" + i) as keyof typeof params] !== undefined;
+		i += 1
+	) {
+		if (params[("s" + i) as keyof typeof params] !== undefined) {
+			stops.push(params[("s" + i) as keyof typeof params]);
 		} else {
 			stops.push(null);
 		}
@@ -4439,7 +4458,10 @@ $.fn.createGradient = function createGradient(args) {
 		// Add color stop to gradient object
 		const stop = stops[i];
 		if (stop !== null) {
-			gradient.addColorStop(stop, params["c" + (i + 1)]);
+			gradient.addColorStop(
+				stop,
+				params[("c" + (i + 1)) as keyof typeof params]
+			);
 		}
 	}
 	return gradient;
@@ -4459,7 +4481,7 @@ $.fn.setPixels = function setPixels(args) {
 		if (!ctx) {
 			continue;
 		}
-		const params = new jCanvasObject(args);
+		const params = _getParamsObject(args);
 		_addLayer(canvas, params, args, setPixels);
 		_transformShape(canvas, ctx, params, params.width, params.height);
 
