@@ -1,3 +1,15 @@
+declare module "jcanvas";
+declare module "jcanvas/dist/umd/jcanvas.min.js";
+declare module "jcanvas/dist/umd/jcanvas-crescents.min.js";
+declare module "jcanvas/dist/umd/jcanvas-donuts.min.js";
+declare module "jcanvas/dist/umd/jcanvas-hearts.min.js";
+declare module "jcanvas/dist/umd/jcanvas-handles.min.js";
+declare module "jcanvas/dist/esm/jcanvas.min.js";
+declare module "jcanvas/dist/esm/jcanvas-crescents.min.js";
+declare module "jcanvas/dist/esm/jcanvas-donuts.min.js";
+declare module "jcanvas/dist/esm/jcanvas-hearts.min.js";
+declare module "jcanvas/dist/esm/jcanvas-handles.min.js";
+
 interface JCanvasPluginParams<TProps> {
 	name: string;
 	props?: Record<string, any>;
