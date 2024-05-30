@@ -1776,7 +1776,7 @@ function _addLayer(
 	params: JCanvasObject,
 	args?: Partial<JCanvasObject>,
 	method?: (args: JCanvasObject) => JQuery<HTMLElement>
-): JCanvasObject | null {
+): JCanvasObject {
 	const layer: JCanvasObject = params._layer ? (args as JCanvasLayer) : params;
 
 	// Store arguments object for later use
