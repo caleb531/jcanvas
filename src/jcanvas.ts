@@ -1776,10 +1776,8 @@ function _addLayer(
 	params: JCanvasObject,
 	args?: Partial<JCanvasObject>,
 	method?: (args: JCanvasObject) => JQuery<HTMLElement>
-): JCanvasLayer | null {
-	const layer: JCanvasObject | JCanvasLayer = params._layer
-		? (args as JCanvasLayer)
-		: params;
+): JCanvasObject | null {
+	const layer: JCanvasObject = params._layer ? (args as JCanvasLayer) : params;
 
 	// Store arguments object for later use
 	params._args = args;
@@ -1879,7 +1877,7 @@ function _addLayer(
 		_coerceNumericProps(params);
 	}
 
-	return null;
+	return layer;
 }
 
 // Add a jCanvas layer
@@ -4055,7 +4053,7 @@ $.fn.drawImage = function drawImage(args) {
 		ctx: CanvasRenderingContext2D,
 		data: JCanvasInternalData,
 		params: JCanvasObject,
-		layer: JCanvasLayer | null
+		layer: JCanvasObject | null
 	) {
 		if (!img) {
 			return;
@@ -4171,12 +4169,12 @@ $.fn.drawImage = function drawImage(args) {
 		ctx: CanvasRenderingContext2D,
 		data: JCanvasInternalData,
 		params: JCanvasObject,
-		layer: JCanvasLayer | null
+		layer: JCanvasObject | null
 	) {
 		return function () {
 			const $canvas = $(canvas);
 			draw(canvas, ctx, data, params, layer);
-			if (params.layer && layer) {
+			if (params.layer && layer instanceof jCanvasLayer) {
 				// Trigger 'load' event for layers
 				_triggerLayerEvent($canvas, data, layer, "load");
 			} else if (params.load) {
