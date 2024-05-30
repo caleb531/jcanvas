@@ -335,7 +335,7 @@ function _setStyle(
 			// Handle functions
 			ctx[styleName] = styleValue.call(canvas, params);
 		} else {
-			// Handle string values
+			// Handle string, gradients, and patterns
 			ctx[styleName] = styleValue;
 		}
 	}
