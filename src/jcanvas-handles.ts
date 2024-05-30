@@ -1,6 +1,6 @@
 /**
  * @license jCanvas Handles
- * Copyright 2015 Caleb Evans
+ * Copyright 2015-2024 Caleb Evans
  * Released under the MIT license
  */
 import "jcanvas";

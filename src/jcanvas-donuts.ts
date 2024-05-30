@@ -1,6 +1,6 @@
 /**
  * @license jCanvas Donuts
- * Copyright 2013 Caleb Evans
+ * Copyright 2013-2024 Caleb Evans
  * Released under the MIT license
  */
 import "jcanvas";

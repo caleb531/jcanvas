@@ -1,3 +1,9 @@
+/**
+ * @license jCanvas TypeScript Declarations
+ * Copyright 2024 Caleb Evans
+ * Released under the MIT license
+ */
+
 declare module "jcanvas";
 declare module "jcanvas/dist/umd/jcanvas.min.js";
 declare module "jcanvas/dist/umd/jcanvas-crescents.min.js";
