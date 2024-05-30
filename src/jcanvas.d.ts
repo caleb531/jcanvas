@@ -118,7 +118,10 @@ interface JCanvasMaps {
 }
 
 interface JCanvasCache {
-	dataCache: Record<string, any>;
+	dataCache: {
+		_canvas?: HTMLCanvasElement;
+		_data?: JCanvasInternalData;
+	};
 	propCache: Partial<JCanvasObject>;
 	imageCache: Record<string, HTMLImageElement>;
 	pathCache: Record<string, Path2D>;
