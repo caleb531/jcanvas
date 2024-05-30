@@ -429,8 +429,6 @@ function _closePath(
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject
 ) {
-	let data;
-
 	// Optionally close path
 	if (params.closed) {
 		ctx.closePath();
@@ -489,7 +487,7 @@ function _closePath(
 	// Mask shape if chosen
 	if (params.mask) {
 		// Retrieve canvas data
-		data = _getCanvasData(canvas);
+		const data = _getCanvasData(canvas);
 		_enableMasking(ctx, data, params);
 	}
 }
@@ -874,13 +872,12 @@ $.fn.getEventHooks = function getEventHooks() {
 // Set event hooks for the selected canvases
 $.fn.setEventHooks = function setEventHooks(eventHooks) {
 	const $canvases = this;
-	let data;
 	for (let e = 0; e < $canvases.length; e += 1) {
 		const canvas = $canvases[e];
 		if (!_isCanvas(canvas)) {
 			continue;
 		}
-		data = _getCanvasData(canvas);
+		const data = _getCanvasData(canvas);
 		extendObject(data.eventHooks, eventHooks);
 	}
 	return $canvases;
@@ -1303,10 +1300,9 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 
 // Get topmost layer that intersects with event coordinates
 function _getIntersectingLayer(data: JCanvasInternalData) {
-	let layer: JCanvasLayer | null, mask: JCanvasObject, m;
-
 	// Store the topmost layer
-	layer = null;
+	let layer: JCanvasLayer | null = null;
+	let mask: JCanvasObject;
 
 	// Get the topmost layer whose visible area intersects event coordinates
 	for (let i = data.intersecting.length - 1; i >= 0; i -= 1) {
@@ -1317,7 +1313,7 @@ function _getIntersectingLayer(data: JCanvasInternalData) {
 		if (layer._masks) {
 			// Search previous masks to ensure
 			// layer is visible at event coordinates
-			for (m = layer._masks.length - 1; m >= 0; m -= 1) {
+			for (let m = layer._masks.length - 1; m >= 0; m -= 1) {
 				mask = layer._masks[m];
 				// If mask does not intersect event coordinates
 				if (!mask.intersects) {
@@ -1608,10 +1604,7 @@ $.fn.drawLayers = function drawLayers(args) {
 	let isImageLayer: boolean = false;
 
 	// The layer index from which to start redrawing the canvas
-	let index = params.index;
-	if (!index) {
-		index = 0;
-	}
+	const index = params.index || 0;
 
 	for (let e = 0; e < $canvases.length; e += 1) {
 		const canvas = $canvases[e];
@@ -2030,7 +2023,6 @@ function _blendColors(color1: string, color2: string, percentage: number) {
 // Animate jCanvas layer
 $.fn.animateLayer = function animateLayer(...args) {
 	const $canvases = this;
-	let $canvas, data, layer, props;
 
 	// Deal with all cases of argument placement
 	/*
@@ -2173,22 +2165,20 @@ $.fn.animateLayer = function animateLayer(...args) {
 		if (!_isCanvas(canvas)) {
 			continue;
 		}
-		$canvas = $(canvas);
+		const $canvas = $(canvas);
 		const ctx = _getContext(canvas);
 		if (!ctx) {
 			continue;
 		}
-		data = _getCanvasData(canvas);
+		const data = _getCanvasData(canvas);
 
 		// If a layer object was passed, use it the layer to be animated
-		layer = $canvas.getLayer(args[0]);
+		const layer = $canvas.getLayer(args[0]);
 
 		// Ignore layers that are functions
 		if (layer && layer._method !== $.fn.draw) {
 			// Do not modify original object
-			props = extendObject({}, args[1]);
-
-			props = _parseEndValues(canvas, layer, props);
+			const props = _parseEndValues(canvas, layer, extendObject({}, args[1]));
 
 			// Bypass jQuery CSS Hooks for CSS properties (width, opacity, etc.)
 			_hideProps(props, true);
