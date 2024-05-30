@@ -4179,7 +4179,7 @@ $.fn.drawImage = function drawImage(args) {
 			if (params.layer && layer) {
 				// Trigger 'load' event for layers
 				_triggerLayerEvent($canvas, data, layer, "load");
-			} else if (params.load && layer) {
+			} else if (params.load) {
 				// Run 'load' callback for non-layers
 				params.load.call($canvas[0], layer);
 			}
