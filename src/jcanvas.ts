@@ -6,7 +6,7 @@
 import $ from "jquery";
 import "./jcanvas.d";
 
-// Define local aliases to frequently used properties
+// Define local aliases t o frequently used properties
 const extendObject = Object.assign,
 	inArray = $.inArray,
 	typeOf = function (operand: any) {
@@ -74,12 +74,10 @@ const extendObject = Object.assign,
 		// Store all previous masks
 		masks: [],
 	},
-	css = {
+	css: JCanvasCss = {
 		// Define properties used in both CSS and jCanvas
 		props: ["width", "height", "opacity", "lineHeight"],
-		// List of CSS3 cursors that need to be prefixed
-		cursors: ["grab", "grabbing", "zoom-in", "zoom-out"],
-		propsObj: {} as Record<string, boolean>,
+		propsObj: {},
 	},
 	tangibleEvents: (
 		| JCanvasMouseEventName

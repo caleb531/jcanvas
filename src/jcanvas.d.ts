@@ -133,6 +133,11 @@ interface JCanvasBaseTransforms {
 	masks: JCanvasObject[];
 }
 
+interface JCanvasCss {
+	props: (keyof JCanvasObject)[];
+	propsObj: Record<string, boolean>;
+}
+
 interface JCanvasPx {
 	r: number;
 	g: number;
