@@ -1,5 +1,5 @@
 /**
- * @license jCanvas Hearts v21.0.0
+ * @license jCanvas Hearts
  * Copyright 2013 Caleb Evans
  * Released under the MIT license
  */
