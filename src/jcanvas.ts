@@ -81,7 +81,7 @@ const extendObject = Object.assign,
 		cursors: ["grab", "grabbing", "zoom-in", "zoom-out"],
 		propsObj: {} as Record<string, boolean>,
 	},
-	tangibleEvents = [
+	tangibleEvents: (JCanvasMouseEventName | JCanvasTouchEventName)[] = [
 		"mousedown",
 		"mousemove",
 		"mouseup",
@@ -569,7 +569,11 @@ jCanvas.extend = function extend(plugin) {
 		};
 		// Add drawing type to drawing map
 		if (plugin.type) {
-			maps.drawings[String(plugin.type)] = plugin.name;
+			// We need to type-assert because the nature of $.jCanvas.extend
+			// implies that plugin.type is always a custom type which is not
+			// inherently part of JCanvasLayerType
+			maps.drawings[plugin.type as JCanvasLayerType] =
+				plugin.name as JCanvasDrawingMethodName;
 		}
 	}
 	// @ts-expect-error TODO: fix this
@@ -604,7 +608,7 @@ class JCanvasInternalData {
 	};
 	// Data for the current event
 	event: {
-		type: string | null;
+		type: JCanvasInteractionEventName | null;
 		x: number | null;
 		y: number | null;
 		event?: Event | null;
@@ -1365,7 +1369,7 @@ function _drawLayer(
 function _handleLayerDrag(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
-	eventType: string
+	eventType: JCanvasInteractionEventName
 ) {
 	const drag = data.drag;
 	const layer = drag.layer as JCanvasLayer;
@@ -1470,7 +1474,7 @@ function _handleLayerDrag(
 function _setCursor(
 	$canvas: JQuery<HTMLCanvasElement>,
 	layer: JCanvasLayer,
-	eventType: string
+	eventType: JCanvasInteractionEventName
 ) {
 	let cursor;
 	if (layer.cursors) {
@@ -1505,11 +1509,7 @@ function _runEventCallback(
 	arg: any
 ) {
 	// Prevent callback from firing recursively
-	if (
-		callbacks[eventType as any] &&
-		layer._running &&
-		!layer._running[eventType]
-	) {
+	if (callbacks[eventType] && layer._running && !layer._running[eventType]) {
 		// Signify the start of callback execution for this event
 		layer._running[eventType] = true;
 		// Run event callback with the given arguments
@@ -1520,7 +1520,10 @@ function _runEventCallback(
 }
 
 // Determine if the given layer can "legally" fire the given event
-function _layerCanFireEvent(layer: JCanvasLayer, eventType: string) {
+function _layerCanFireEvent(
+	layer: JCanvasLayer,
+	eventType: string
+): eventType is JCanvasMouseEventName | JCanvasTouchEventName {
 	// If events are disable and if
 	// layer is tangible or event is not tangible
 	return (
@@ -1534,7 +1537,7 @@ function _triggerLayerEvent(
 	$canvas: JQuery<HTMLCanvasElement>,
 	data: JCanvasInternalData,
 	layer: JCanvasLayer,
-	eventType: string,
+	eventType: JCanvasEventName,
 	arg?: any
 ) {
 	// If layer can legally fire this event type
@@ -1567,7 +1570,10 @@ $.fn.triggerLayerEvent = function (layerId, eventType) {
 		const data = _getCanvasData(canvas);
 		const layer = $canvas.getLayer(layerId);
 		if (layer) {
-			_triggerLayerEvent($canvas, data, layer, eventType);
+			// We need to type assert here because the developer may trigger a
+			// custom event that is not inherently part of JCanvasEventName;
+			// this is a use case we want to allow
+			_triggerLayerEvent($canvas, data, layer, eventType as JCanvasEventName);
 		}
 	}
 	return $canvases;
@@ -1769,7 +1775,7 @@ function _addLayer(
 	canvas: HTMLCanvasElement,
 	params: JCanvasObject,
 	args?: Partial<JCanvasObject>,
-	method?: (args: JCanvasObject) => JQuery
+	method?: (args: JCanvasObject) => JQuery<HTMLElement>
 ): JCanvasLayer | null {
 	const layer: JCanvasObject | JCanvasLayer = params._layer
 		? (args as JCanvasLayer)
@@ -1791,7 +1797,7 @@ function _addLayer(
 		} else if (params.method) {
 			params._method = $.fn[params.method];
 		} else if (params.type) {
-			params._method = $.fn[maps.drawings[params.type] as keyof JQuery];
+			params._method = $.fn[maps.drawings[params.type]];
 		}
 	}
 
@@ -2340,23 +2346,24 @@ _supportColorProps([
 /* Event API */
 
 // Convert mouse event name to a corresponding touch event name (if possible)
-function _getTouchEventName(eventName: keyof typeof maps.touchEvents) {
-	// Detect touch event support
-	if (maps.touchEvents[eventName]) {
-		return maps.touchEvents[eventName];
+function _getTouchEventName(eventName: JCanvasInteractionEventName) {
+	const touchEventName = maps.touchEvents[eventName];
+	if (touchEventName) {
+		return touchEventName;
 	}
 	return eventName;
 }
 // Convert touch event name to a corresponding mouse event name
-function _getMouseEventName(eventName: string) {
-	if (maps.mouseEvents[eventName]) {
-		eventName = maps.mouseEvents[eventName];
+function _getMouseEventName(eventName: JCanvasInteractionEventName) {
+	const mouseEventName = maps.mouseEvents[eventName];
+	if (mouseEventName) {
+		return mouseEventName;
 	}
 	return eventName;
 }
 
 // Bind event to jCanvas layer using standard jQuery events
-function _createEvent(eventName: string) {
+function _createEvent(eventName: JCanvasInteractionEventName) {
 	jCanvas.events[eventName] = function ($canvas, data) {
 		// Retrieve canvas's event cache
 		const eventCache = data.event;
@@ -2409,7 +2416,7 @@ function _createEvent(eventName: string) {
 		}
 	};
 }
-function _createEvents(eventNames: string[]) {
+function _createEvents(eventNames: JCanvasInteractionEventName[]) {
 	for (let n = 0; n < eventNames.length; n += 1) {
 		_createEvent(eventNames[n]);
 	}

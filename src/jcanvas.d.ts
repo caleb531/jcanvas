@@ -19,7 +19,7 @@ declare module "jcanvas/dist/esm/jcanvas-handles.min.js";
 interface JCanvasPluginParams<TProps> {
 	name: string;
 	props?: Record<string, any>;
-	type?: keyofJCanvasMapsdrawings;
+	type?: string;
 	fn: (
 		this: HTMLCanvasElement,
 		ctx: CanvasRenderingContext2D,
@@ -27,10 +27,94 @@ interface JCanvasPluginParams<TProps> {
 	) => void;
 }
 
+type JCanvasLayerType =
+	| "arc"
+	| "bezier"
+	| "ellipse"
+	| "function"
+	| "image"
+	| "line"
+	| "path"
+	| "polygon"
+	| "slice"
+	| "quadratic"
+	| "rectangle"
+	| "text"
+	| "vector"
+	| "save"
+	| "restore"
+	| "rotate"
+	| "scale"
+	| "translate";
+
+type JCanvasDrawingMethodName =
+	| "drawArc"
+	| "drawBezier"
+	| "drawEllipse"
+	| "draw"
+	| "drawImage"
+	| "drawLine"
+	| "drawPath"
+	| "drawPolygon"
+	| "drawSlice"
+	| "drawQuadratic"
+	| "drawRect"
+	| "drawText"
+	| "drawVector"
+	| "saveCanvas"
+	| "restoreCanvas"
+	| "rotateCanvas"
+	| "scaleCanvas"
+	| "translateCanvas";
+
+type JCanvasMouseEventName =
+	| "click"
+	| "dblclick"
+	| "mousedown"
+	| "mouseup"
+	| "mousemove"
+	| "mouseover"
+	| "mouseout"
+	| "contextmenu";
+
+type JCanvasTouchEventName = "touchstart" | "touchmove" | "touchend";
+
+type JCanvasPointerEventName = "pointerdown" | "pointermove" | "pointerup";
+
+type JCanvasDragEventName = "dragstart" | "drag" | "dragstop" | "dragcancel";
+
+type JCanvasInteractionEventName =
+	| JCanvasMouseEventName
+	| JCanvasTouchEventName
+	| JCanvasPointerEventName
+	| JCanvasDragEventName;
+
+type JCanvasMechanicalEventName =
+	| "add"
+	| "remove"
+	| "change"
+	| "move"
+	| "animatestart"
+	| "animate"
+	| "animateend"
+	| "stop"
+	| "delay";
+
+type JCanvasImageEventName = "load";
+
+type JCanvasEventName =
+	| JCanvasInteractionEventName
+	| JCanvasMechanicalEventName
+	| JCanvasImageEventName;
+
 interface JCanvasMaps {
-	drawings: Record<string, string>;
-	touchEvents: Record<string, string>;
-	mouseEvents: Record<string, string>;
+	drawings: Record<JCanvasLayerType, JCanvasDrawingMethodName>;
+	touchEvents: Partial<
+		Record<JCanvasInteractionEventName, JCanvasTouchEventName>
+	>;
+	mouseEvents: Partial<
+		Record<JCanvasInteractionEventName, JCanvasMouseEventName>
+	>;
 }
 
 interface JCanvasCache {
