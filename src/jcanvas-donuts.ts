@@ -8,7 +8,7 @@ import $ from "jquery";
 
 const PI = Math.PI;
 
-$.jCanvas.extend<{ holeSize: number }>({
+$.jCanvas.extend({
 	name: "drawDonut",
 	type: "donut",
 	props: {

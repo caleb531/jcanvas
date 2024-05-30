@@ -39,7 +39,7 @@ function getIntersection(
 	return [xi, yi];
 }
 
-$.jCanvas.extend<{ eclipse: number }>({
+$.jCanvas.extend({
 	name: "drawCrescent",
 	type: "crescent",
 	props: {

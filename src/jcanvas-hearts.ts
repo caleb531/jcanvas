@@ -8,7 +8,7 @@ import $ from "jquery";
 
 const PI = Math.PI;
 
-$.jCanvas.extend<{ size: number }>({
+$.jCanvas.extend({
 	name: "drawHeart",
 	type: "heart",
 	props: {

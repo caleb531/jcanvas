@@ -16,9 +16,9 @@ declare module "jcanvas/dist/esm/jcanvas-donuts.min.js";
 declare module "jcanvas/dist/esm/jcanvas-hearts.min.js";
 declare module "jcanvas/dist/esm/jcanvas-handles.min.js";
 
-interface JCanvasPluginParams<TProps> {
+interface JCanvasPluginParams<TProps extends object> {
 	name: string;
-	props?: Record<string, any>;
+	props?: TProps;
 	type?: string;
 	fn: (
 		this: HTMLCanvasElement,
