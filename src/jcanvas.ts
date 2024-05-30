@@ -2893,28 +2893,16 @@ function _getConicY(y: number, radiusY: number, angle: number) {
 	return y + radiusY * sin(angle);
 }
 
-// Modify the path
+// Calculate angles and positioning for arcs/ellipses
 function _getConicOffsets(params: JCanvasObject, path: JCanvasObject) {
-	let offsetX: number;
-	let offsetY: number;
-	let angleDiff: number;
-
 	// Determine offset from dragging
-	if (params === path) {
-		offsetX = 0;
-		offsetY = 0;
-	} else {
-		offsetX = params.x;
-		offsetY = params.y;
-	}
+	const offsetX = params === path ? 0 : params.x;
+	const offsetY = params === path ? 0 : params.y;
+	// Ensure arrows are pointed correctly for CCW arcs
+	const angleDiff = path.ccw ? -PI / 180 : PI / 180;
 
 	const pathX = path.x + offsetX;
 	const pathY = path.y + offsetY;
-
-	// Convert default end angle to radians
-	if (!path.inDegrees && path.end === 360) {
-		path.end = PI * 2;
-	}
 
 	// Convert angles to radians, then offset to make 0deg due north of arc
 	const pathStartAngle = path.start * params._toRad - PI / 2;
@@ -2923,11 +2911,6 @@ function _getConicOffsets(params: JCanvasObject, path: JCanvasObject) {
 			? PI * 2
 			: path.end * params._toRad - PI / 2;
 
-	// Ensure arrows are pointed correctly for CCW arcs
-	angleDiff = PI / 180;
-	if (path.ccw) {
-		angleDiff *= -1;
-	}
 	return { pathX, pathY, angleDiff, pathStartAngle, pathEndAngle };
 }
 
