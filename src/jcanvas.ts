@@ -81,7 +81,11 @@ const extendObject = Object.assign,
 		cursors: ["grab", "grabbing", "zoom-in", "zoom-out"],
 		propsObj: {} as Record<string, boolean>,
 	},
-	tangibleEvents: (JCanvasMouseEventName | JCanvasTouchEventName)[] = [
+	tangibleEvents: (
+		| JCanvasMouseEventName
+		| JCanvasTouchEventName
+		| JCanvasPointerEventName
+	)[] = [
 		"mousedown",
 		"mousemove",
 		"mouseup",
@@ -90,6 +94,9 @@ const extendObject = Object.assign,
 		"touchstart",
 		"touchmove",
 		"touchend",
+		"pointerdown",
+		"pointermove",
+		"pointerup",
 	];
 
 // jCanvas object in which global settings are other data are stored
