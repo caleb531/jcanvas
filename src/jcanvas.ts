@@ -4612,5 +4612,3 @@ extendObject(jCanvas, {
 });
 $.jCanvas = jCanvas;
 $.jCanvasObject = jCanvasObject;
-
-export default jCanvas;
