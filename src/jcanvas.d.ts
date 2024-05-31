@@ -4,7 +4,10 @@
  * Released under the MIT license
  */
 
-declare module "jcanvas";
+declare module "jcanvas" {
+	let jCanvas: JCanvas;
+	export = jCanvas;
+}
 declare module "jcanvas/dist/umd/jcanvas.min.js";
 declare module "jcanvas/dist/umd/jcanvas-crescents.min.js";
 declare module "jcanvas/dist/umd/jcanvas-donuts.min.js";
