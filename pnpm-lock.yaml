@@ -1,7 +1,7 @@
 lockfileVersion: '6.0'
 
 settings:
-  autoInstallPeers: true
+  autoInstallPeers: false
   excludeLinksFromLockfile: false
 
 overrides:
@@ -20,6 +20,9 @@ devDependencies:
   '@typescript-eslint/parser':
     specifier: ^7.10.0
     version: 7.10.0(eslint@8.56.0)(typescript@5.4.5)
+  esbuild:
+    specifier: ^0.21.4
+    version: 0.21.4
   eslint:
     specifier: ^8.56.0
     version: 8.56.0
@@ -29,9 +32,6 @@ devDependencies:
   glob:
     specifier: ^10.3.10
     version: 10.3.10
-  jquery:
-    specifier: ^3.7.1
-    version: 3.7.1
   prettier:
     specifier: ^3.2.5
     version: 3.2.5
@@ -1235,10 +1235,6 @@ packages:
       '@isaacs/cliui': 8.0.2
     optionalDependencies:
       '@pkgjs/parseargs': 0.11.0
-    dev: true
-
-  /jquery@3.7.1:
-    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
     dev: true
 
   /js-yaml@4.1.0:
