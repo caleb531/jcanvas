@@ -499,7 +499,7 @@ function _closePath(
 
 // Transform (translate, scale, or rotate) shape
 function _transformShape(
-	canvas: HTMLCanvasElement,
+	_canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject,
 	width: number | null = null,
@@ -1353,7 +1353,6 @@ function _getIntersectingLayer(data: JCanvasInternalData) {
 // Draw individual layer (internal)
 function _drawLayer(
 	$canvas: JQuery,
-	ctx: CanvasRenderingContext2D,
 	layer: JCanvasLayer,
 	nextLayerIndex?: number
 ) {
@@ -1600,7 +1599,7 @@ $.fn.drawLayer = function drawLayer(layerId) {
 		}
 		const layer = $canvas.getLayer(layerId);
 		if (layer) {
-			_drawLayer($canvas, ctx, layer);
+			_drawLayer($canvas, layer);
 		}
 	}
 	return $canvases;
@@ -1657,7 +1656,7 @@ $.fn.drawLayers = function drawLayers(args) {
 				layer._fired = false;
 			}
 			// Draw layer
-			_drawLayer($canvas, ctx, layer, l + 1);
+			_drawLayer($canvas, layer, l + 1);
 			// Store list of previous masks for each layer
 			layer._masks = data.transforms.masks.slice(0);
 
@@ -3183,7 +3182,7 @@ $.fn.drawSlice = function drawSlice(args) {
 
 // Adds arrow to path using the given properties
 function _addArrow(
-	canvas: HTMLCanvasElement,
+	_canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject,
 	path: JCanvasObject,
@@ -3724,7 +3723,7 @@ $.fn.drawPath = function drawPath(args) {
 
 // Calculates font string and set it as the canvas font
 function _setCanvasFont(
-	canvas: HTMLCanvasElement,
+	_canvas: HTMLCanvasElement,
 	ctx: CanvasRenderingContext2D,
 	params: JCanvasObject
 ) {
