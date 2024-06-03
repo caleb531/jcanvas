@@ -9,7 +9,7 @@ export default inputPaths.map((inputPath) => {
   const inputFilenameWithoutExtension = path.basename(inputPath, ".ts");
   return {
     input: [inputPath],
-    external: ["jquery", "jcanvas"],
+    external: ["jquery"],
     output: [
       {
         file: `dist/umd/${inputFilenameWithoutExtension}.min.js`,

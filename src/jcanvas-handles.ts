@@ -3,7 +3,6 @@
  * Copyright 2015-2024 Caleb Evans
  * Released under the MIT license
  */
-import "jcanvas";
 import $ from "jquery";
 
 interface JCanvasLayerWithHandles extends JCanvasLayer {

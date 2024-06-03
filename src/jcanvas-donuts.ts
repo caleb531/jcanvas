@@ -3,7 +3,6 @@
  * Copyright 2013-2024 Caleb Evans
  * Released under the MIT license
  */
-import "jcanvas";
 import $ from "jquery";
 
 const PI = Math.PI;
