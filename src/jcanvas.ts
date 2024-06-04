@@ -983,7 +983,7 @@ $.fn.getLayerGroup = function getLayerGroup(groupId) {
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
 		if (!_isCanvas(canvas)) {
-			return [];
+			return undefined;
 		}
 
 		if (idType === "array") {
