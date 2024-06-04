@@ -39,6 +39,7 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.10",
+    "jquery": "^3.7.1",
     "prettier": "^3.2.5",
     "rollup": "^4.17.2",
     "rollup-plugin-esbuild": "^6.1.1",
