@@ -1779,7 +1779,7 @@ function _addLayer(
 	canvas: HTMLCanvasElement,
 	params: JCanvasObject,
 	args?: Partial<JCanvasObject>,
-	method?: (args: JCanvasObject) => JQuery<HTMLElement>
+	method?: (_args: JCanvasObject) => JQuery<HTMLElement>
 ): JCanvasObject {
 	const layer: JCanvasObject = params._layer ? (args as JCanvasLayer) : params;
 

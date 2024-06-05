@@ -20,6 +20,10 @@
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-this-alias": "off",
     "@typescript-eslint/ban-types": "off",
-    "no-constant-condition": "off"
+    "no-constant-condition": "off",
+    "no-unused-vars": [
+      "error",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+    ]
   }
 }
