@@ -261,12 +261,12 @@ interface JQuery {
 	stopLayer(layerId: JCanvasLayerId, clearQueue?: boolean): void;
 	stopLayerGroup(groupId: jCanvasLayerGroupId, clearQueue?: boolean): void;
 	draw(args: Partial<JCanvasObject>): JQuery;
-	clearCanvas(args?: JCanvasObject): JQuery;
-	saveCanvas(args?: JCanvasObject): JQuery;
-	restoreCanvas(args?: JCanvasObject): JQuery;
-	rotateCanvas(args?: JCanvasObject): JQuery;
-	scaleCanvas(args?: JCanvasObject): JQuery;
-	translateCanvas(args?: JCanvasObject): JQuery;
+	clearCanvas(args?: Partial<JCanvasObject>): JQuery;
+	saveCanvas(args?: Partial<JCanvasObject>): JQuery;
+	restoreCanvas(args?: Partial<JCanvasObject>): JQuery;
+	rotateCanvas(args?: Partial<JCanvasObject>): JQuery;
+	scaleCanvas(args?: Partial<JCanvasObject>): JQuery;
+	translateCanvas(args?: Partial<JCanvasObject>): JQuery;
 	drawRect(args: Partial<JCanvasObject>): JQuery;
 	drawArc(args: Partial<JCanvasObject>): JQuery;
 	drawEllipse(args: Partial<JCanvasObject>): JQuery;
