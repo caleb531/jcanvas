@@ -29,6 +29,6 @@ export default inputPaths.map((inputPath) => {
         },
       },
     ],
-    plugins: [commonjs(), esbuild({ minify: true })],
+    plugins: [commonjs(), esbuild({ minify: true, target: "es2020" })],
   };
 });
