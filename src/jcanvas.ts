@@ -1532,7 +1532,7 @@ function _layerCanFireEvent(
 	// layer is tangible or event is not tangible
 	return (
 		!layer.disableEvents &&
-		(!layer.intangible || $.inArray(eventType, tangibleEvents) === -1)
+		(!layer.intangible || inArray(eventType, tangibleEvents) === -1)
 	);
 }
 
