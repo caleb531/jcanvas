@@ -682,7 +682,7 @@ function _addLayerEvents(
 			// If layer has callback function to complement it
 			if (
 				layer[eventName as keyof JCanvasLayer] ||
-				(layer.cursors && layer.cursors[eventName])
+				layer.cursors?.[eventName]
 			) {
 				// Bind event to layer
 				_addExplicitLayerEvent($canvas, data, layer, eventName);
@@ -705,7 +705,7 @@ function _addLayerEvents(
 			for (let l = 0; l < data.layers.length; l += 1) {
 				layer = data.layers[l];
 				// If layer thinks it's still being moused over
-				if (layer && layer._hovered) {
+				if (layer?._hovered) {
 					// Trigger mouseout on layer
 					$canvas.triggerLayerEvent(data.layers[l], "mouseout");
 					shouldRedraw = true;
@@ -1285,7 +1285,7 @@ $.fn.removeLayerFromGroup = function removeLayerFromGroup(layerId, groupName) {
 		const $canvas = $($canvases[e]);
 		const layer = $canvas.getLayer(layerId);
 
-		if (layer && layer.groups) {
+		if (layer?.groups) {
 			// Find index of layer in group
 			const index = inArray(groupName, layer.groups);
 
@@ -1343,7 +1343,7 @@ function _getIntersectingLayer(data: JCanvasInternalData) {
 		}
 	}
 	// If resulting layer is intangible
-	if (layer && layer.intangible) {
+	if (layer?.intangible) {
 		// Cursor does not intersect this layer
 		layer = null;
 	}
@@ -1356,16 +1356,10 @@ function _drawLayer(
 	layer: JCanvasLayer,
 	nextLayerIndex?: number
 ) {
-	if (layer && layer.visible && layer._method) {
-		if (nextLayerIndex) {
-			layer._next = nextLayerIndex;
-		} else {
-			layer._next = null;
-		}
+	if (layer.visible && layer._method) {
+		layer._next = nextLayerIndex || null;
 		// If layer is an object, call its respective method
-		if (layer._method) {
-			layer._method.call($canvas, layer);
-		}
+		layer._method?.call($canvas, layer);
 	}
 }
 
@@ -1377,7 +1371,7 @@ function _handleLayerDrag(
 ) {
 	const drag = data.drag;
 	const layer = drag.layer as JCanvasLayer;
-	const dragGroups = (layer && layer.dragGroups) || [];
+	const dragGroups = layer?.dragGroups || [];
 	const layers = data.layers;
 
 	if (eventType === "mousemove" || eventType === "touchmove") {
@@ -2464,11 +2458,9 @@ function _detectEvents(
 			if (layer._path) {
 				intersects =
 					ctx.isPointInPath(layer._path, x, y) ||
-					(ctx.isPointInStroke && ctx.isPointInStroke(layer._path, x, y));
+					ctx.isPointInStroke(layer._path, x, y);
 			} else {
-				intersects =
-					ctx.isPointInPath(x, y) ||
-					(ctx.isPointInStroke && ctx.isPointInStroke(x, y));
+				intersects = ctx.isPointInPath(x, y) || ctx.isPointInStroke(x, y);
 			}
 		}
 		const transforms = data.transforms;
@@ -4229,7 +4221,7 @@ $.fn.drawImage = function drawImage(args) {
 			img = source;
 		} else if (source) {
 			const cachedImg = imageCache[source];
-			if (cachedImg && cachedImg.complete) {
+			if (cachedImg?.complete) {
 				// Get the image element from the cache if possible
 				img = cachedImg;
 			} else {
@@ -4520,13 +4512,14 @@ $.fn.getCanvasImage = function getCanvasImage(type, quality) {
 	const $canvases = this;
 	if ($canvases.length !== 0) {
 		const canvas = $canvases[0];
-		if (_isCanvas(canvas) && canvas.toDataURL) {
-			// JPEG quality defaults to 1
-			if (quality === undefined) {
-				quality = 1;
-			}
-			return canvas.toDataURL("image/" + type, quality);
+		if (!_isCanvas(canvas)) {
+			return null;
 		}
+		// JPEG quality defaults to 1
+		if (quality === undefined) {
+			quality = 1;
+		}
+		return canvas.toDataURL("image/" + type, quality);
 	}
 	return null;
 };
