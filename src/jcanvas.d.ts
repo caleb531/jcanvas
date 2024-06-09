@@ -378,6 +378,7 @@ interface JCanvasDefaults {
 	type: keyof JCanvasMaps["drawings"] | null;
 	visible: boolean;
 	width: number | null;
+	willReadFrequently: boolean;
 	x: number;
 	y: number;
 	each?: (

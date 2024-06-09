@@ -204,6 +204,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	type: keyof (typeof maps)["drawings"] | null = null;
 	visible: boolean = true;
 	width: number | null = null;
+	willReadFrequently: boolean = false;
 	x: number = 0;
 	y: number = 0;
 	[key: `x${number}`]: number;
@@ -265,7 +266,13 @@ function _isCanvas(element: HTMLElement): element is HTMLCanvasElement {
 function _getContext(
 	canvas: HTMLCanvasElement
 ): CanvasRenderingContext2D | null {
-	return canvas.getContext("2d");
+	if ($.jCanvas.defaults.willReadFrequently) {
+		return canvas.getContext("2d", {
+			willReadFrequently: $.jCanvas.defaults.willReadFrequently,
+		});
+	} else {
+		return canvas.getContext("2d");
+	}
 }
 
 // Coerce designated number properties from strings to numbers
