@@ -185,7 +185,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	source: string | HTMLImageElement | HTMLCanvasElement = "";
 	spread: number = 0;
 	start: number = 0;
-	startArrow: boolean = true;
+	startArrow: boolean = false;
 	strokeCap: CanvasRenderingContext2D["lineCap"] = "butt";
 	strokeDash: number[] | null = null;
 	strokeDashOffset: CanvasRenderingContext2D["lineDashOffset"] = 0;
