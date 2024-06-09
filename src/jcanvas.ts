@@ -1990,7 +1990,7 @@ function _normalizeColor(color: string) {
 }
 
 // Convert a color value to an array of RGB values
-function _colorToRgbArray(color: string) {
+function _convertColorToRgbArray(color: string) {
 	const normalizedColor: string = _normalizeColor(color);
 	// Parse RGB string
 	if (/^rgb/gi.test(normalizedColor)) {
@@ -2011,8 +2011,8 @@ function _colorToRgbArray(color: string) {
 
 // Blend two colors by the given percentage
 function _blendColors(color1: string, color2: string, percentage: number) {
-	const [r1, g1, b1, a1] = _colorToRgbArray(color1);
-	const [r2, g2, b2, a2] = _colorToRgbArray(color2);
+	const [r1, g1, b1, a1] = _convertColorToRgbArray(color1);
+	const [r2, g2, b2, a2] = _convertColorToRgbArray(color2);
 
 	const r = round(r1 + (r2 - r1) * percentage);
 	const g = round(g1 + (g2 - g1) * percentage);
