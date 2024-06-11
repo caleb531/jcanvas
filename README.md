@@ -3,11 +3,19 @@
 _Copyright 2017-2024, Caleb Evans_  
 _Released under the MIT license_
 
-jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with.
+jCanvas is a jQuery plugin that makes the HTML5 canvas easy to work with. For more details on what it can do, [visit the website](https://projects.calebevans.me/jcanvas/).
 
 ## [Download](https://projects.calebevans.me/jcanvas/downloads/)
 
 jCanvas requires jQuery 1.9 or newer, and supports both desktop and mobile browsers.
+
+If you are using a build pipeline, you can install jCanvas like so:
+
+```sh
+npm install jquery
+npm install jcanvas
+npm install -D @types/jquery # Only needed for TypeScript
+```
 
 ## [Documentation](https://projects.calebevans.me/jcanvas/docs/)
 
