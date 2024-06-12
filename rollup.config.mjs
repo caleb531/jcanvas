@@ -39,13 +39,16 @@ export default inputPaths.map((inputPath) => {
         targets: [
           {
             src: `src/${inputFilenameWithoutExtension}.d.ts`,
-            dest: "dist/umd",
+            dest: ["dist/umd", "dist/esm"],
             rename: `${inputFilenameWithoutExtension}.min.d.ts`,
-          },
-          {
-            src: `src/${inputFilenameWithoutExtension}.d.ts`,
-            dest: "dist/esm",
-            rename: `${inputFilenameWithoutExtension}.min.d.ts`,
+            transform: (contents) => {
+              // Since the main declaration file is getting renamed too, we must
+              // update the references to it from the plugin declaration files
+              return String(contents).replace(
+                /jcanvas\.d\.ts/g,
+                "jcanvas.min.d.ts"
+              );
+            },
           },
         ],
       }),
