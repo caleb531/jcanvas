@@ -107,7 +107,7 @@ type JCanvasEventName =
 	| JCanvasImageEventName;
 
 interface JCanvasMaps {
-	drawings: Record<JCanvasLayerType, JCanvasDrawingMethodName>;
+	drawings: Record<string, JCanvasDrawingMethodName>;
 	touchEvents: Partial<
 		Record<JCanvasInteractionEventName, JCanvasTouchEventName>
 	>;
@@ -375,7 +375,7 @@ interface JCanvasDefaults {
 	translate: number;
 	translateX: number;
 	translateY: number;
-	type: keyof JCanvasMaps["drawings"] | null;
+	type: string | null;
 	visible: boolean;
 	width: number | null;
 	willReadFrequently: boolean;

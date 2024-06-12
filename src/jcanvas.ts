@@ -201,7 +201,7 @@ class jCanvasDefaults implements JCanvasDefaults {
 	translate: number = 0;
 	translateX: number = 0;
 	translateY: number = 0;
-	type: keyof (typeof maps)["drawings"] | null = null;
+	type: string | null = null;
 	visible: boolean = true;
 	width: number | null = null;
 	willReadFrequently: boolean = false;

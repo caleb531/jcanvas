@@ -5,7 +5,7 @@
   "version": "23.0.0-rc.1",
   "main": "dist/umd/jcanvas.min.js",
   "module": "dist/esm/jcanvas.min.js",
-  "types": "src/jcanvas.d.ts",
+  "types": "dist/esm/jcanvas.d.ts",
   "scripts": {
     "build": "rollup -c",
     "prepare": "rollup -c",
@@ -43,6 +43,7 @@
     "prettier": "^3.2.5",
     "qunit": "^2.21.0",
     "rollup": "^4.17.2",
+    "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "tslib": "^2.6.2",
     "typescript": "^5.4.5"
