@@ -5,7 +5,7 @@
   "version": "23.0.0-rc.2",
   "main": "dist/umd/jcanvas.min.js",
   "module": "dist/esm/jcanvas.min.js",
-  "types": "dist/esm/jcanvas.d.ts",
+  "types": "dist/esm/jcanvas.min.d.ts",
   "scripts": {
     "build": "rollup -c",
     "prepare": "rollup -c",
