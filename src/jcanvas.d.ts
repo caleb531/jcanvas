@@ -238,28 +238,28 @@ interface JQuery {
 	addLayerToGroup(layerId: JCanvasLayerId, groupName: string): JQuery;
 	removeLayerFromGroup(layerId: JCanvasLayerId, groupName: string): JQuery;
 	triggerLayerEvent(layerId: JCanvasLayerId, eventType: string): JQuery;
-	drawLayer(layerId: JCanvasLayerId, groupName: string): void;
+	drawLayer(layerId: JCanvasLayerId, groupName: string): JQuery;
 	drawLayers(args?: {
 		clear?: boolean;
 		resetFire?: boolean;
 		index?: number;
 		complete?: () => void;
-	}): void;
-	addLayer(args: Partial<JCanvasObject>): void;
+	}): JQuery;
+	addLayer(args: Partial<JCanvasObject>): JQuery;
 	animateLayer(
 		layerId: JCanvasLayerId,
 		props: Partial<JCanvasAnimatableProps>,
 		...args: any[]
-	): void;
+	): JQuery;
 	animateLayerGroup(
 		groupId: jCanvasLayerGroupId,
 		props: Partial<JCanvasObject>,
 		...args: any[]
-	): void;
-	delayLayer(layerId: JCanvasLayerId, duration: number): void;
-	delayLayerGroup(groupId: jCanvasLayerGroupId, duration: number): void;
-	stopLayer(layerId: JCanvasLayerId, clearQueue?: boolean): void;
-	stopLayerGroup(groupId: jCanvasLayerGroupId, clearQueue?: boolean): void;
+	): JQuery;
+	delayLayer(layerId: JCanvasLayerId, duration: number): JQuery;
+	delayLayerGroup(groupId: jCanvasLayerGroupId, duration: number): JQuery;
+	stopLayer(layerId: JCanvasLayerId, clearQueue?: boolean): JQuery;
+	stopLayerGroup(groupId: jCanvasLayerGroupId, clearQueue?: boolean): JQuery;
 	draw(args: Partial<JCanvasObject>): JQuery;
 	clearCanvas(args?: Partial<JCanvasObject>): JQuery;
 	saveCanvas(args?: Partial<JCanvasObject>): JQuery;
@@ -282,7 +282,7 @@ interface JQuery {
 	drawImage(args: Partial<JCanvasObject>): JQuery;
 	createPattern(args: Partial<JCanvasObject>): CanvasPattern | null;
 	createGradient(args: Partial<JCanvasObject>): CanvasGradient | null;
-	setPixels(args: Partial<JCanvasObject>): void;
+	setPixels(args: Partial<JCanvasObject>): JQuery;
 	getCanvasImage(type: string, quality?: number): string | null;
 	detectPixelRatio(callback?: (ratio: number) => void): JQuery;
 }
