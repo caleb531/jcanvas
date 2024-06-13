@@ -581,11 +581,7 @@ jCanvas.extend = function extend(plugin) {
 		};
 		// Add drawing type to drawing map
 		if (plugin.type) {
-			// We need to type-assert because the nature of $.jCanvas.extend
-			// implies that plugin.type is always a custom type which is not
-			// inherently part of JCanvasLayerType
-			maps.drawings[plugin.type as JCanvasLayerType] =
-				plugin.name as JCanvasDrawingMethodName;
+			maps.drawings[plugin.type] = plugin.name as string;
 		}
 	}
 	// @ts-expect-error TODO: fix this
@@ -1800,7 +1796,7 @@ function _addLayer(
 		} else if (params.method) {
 			params._method = $.fn[params.method];
 		} else if (params.type) {
-			params._method = $.fn[maps.drawings[params.type]];
+			params._method = $.fn[maps.drawings[params.type] as keyof JQuery];
 		}
 	}
 

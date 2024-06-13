@@ -26,46 +26,6 @@ interface JCanvasPluginParams<TProps extends object> {
 	) => void;
 }
 
-type JCanvasLayerType =
-	| "arc"
-	| "bezier"
-	| "ellipse"
-	| "function"
-	| "image"
-	| "line"
-	| "path"
-	| "polygon"
-	| "slice"
-	| "quadratic"
-	| "rectangle"
-	| "text"
-	| "vector"
-	| "save"
-	| "restore"
-	| "rotate"
-	| "scale"
-	| "translate";
-
-type JCanvasDrawingMethodName =
-	| "drawArc"
-	| "drawBezier"
-	| "drawEllipse"
-	| "draw"
-	| "drawImage"
-	| "drawLine"
-	| "drawPath"
-	| "drawPolygon"
-	| "drawSlice"
-	| "drawQuadratic"
-	| "drawRect"
-	| "drawText"
-	| "drawVector"
-	| "saveCanvas"
-	| "restoreCanvas"
-	| "rotateCanvas"
-	| "scaleCanvas"
-	| "translateCanvas";
-
 type JCanvasMouseEventName =
 	| "click"
 	| "dblclick"
@@ -107,7 +67,7 @@ type JCanvasEventName =
 	| JCanvasImageEventName;
 
 interface JCanvasMaps {
-	drawings: Record<string, JCanvasDrawingMethodName>;
+	drawings: Record<string, string>;
 	touchEvents: Partial<
 		Record<JCanvasInteractionEventName, JCanvasTouchEventName>
 	>;
