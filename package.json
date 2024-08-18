@@ -31,14 +31,14 @@
   },
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^9.9.0",
     "@rollup/plugin-commonjs": "^25.0.7",
     "@types/jquery": "^3.5.30",
-    "@typescript-eslint/eslint-plugin": "^7.10.0",
-    "@typescript-eslint/parser": "^7.10.0",
     "esbuild": "^0.21.4",
-    "eslint": "^8.56.0",
+    "eslint": "^9.9.0",
     "eslint-config-prettier": "^9.1.0",
     "glob": "^10.3.10",
+    "globals": "^15.9.0",
     "jquery": "^3.7.1",
     "prettier": "^3.2.5",
     "qunit": "^2.21.0",
@@ -46,7 +46,8 @@
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "tslib": "^2.6.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.1.0"
   },
   "peerDependencies": {
     "jquery": ">=1.9.0"

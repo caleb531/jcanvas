@@ -248,7 +248,7 @@ function isString(operand: any): operand is string {
 }
 
 // Determines if the given operand is a function
-function isFunction(operand: any): operand is Function {
+function isFunction(operand: any): operand is (...args: any) => any {
 	return typeOf(operand) === "function";
 }
 
