@@ -8,9 +8,14 @@ on:
     tags:
       - "*"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: release
 
     steps:
       - uses: actions/checkout@v3
